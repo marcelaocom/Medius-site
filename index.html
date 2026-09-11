@@ -1108,16 +1108,44 @@
         </table>
     </div>
 
-    <script>
-        // BASE DE DADOS DOS CLIENTES
-        const databaseClientes = {
-            "estudio-marcelao-01": {
-                nome: "Marcelão Digital & Entertainment",
-                status: "SINCRONIZADO",
-                statusClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-                expires_at: "2026-12-31",
-                ativo: true,
-                sites: [
+  // BASE DE DADOS DOS CLIENTES (Fallback Seguro / Cloud)
+if (typeof databaseClientes === 'undefined' || Object.keys(databaseClientes).length === 0) {
+    var databaseClientes = {
+        "estudio-marcelao-01": {
+            nome: "Marcelão Digital & Entertainment",
+            status: "SINCRONIZADO",
+            statusClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+            expires_at: "2026-12-31",
+            ativo: true,
+            sites: [
+                {
+                    dominio: "marcelaodigital.com.br",
+                    tipo: "Site Institucional & Portfólio",
+                    ping: "22ms",
+                    sha: "Válida (99.98%)",
+                    saude: 100,
+                    descSaude: "Nó Operacional e Blindado",
+                    uptime: "99.98%",
+                    requisicoesHoje: "24,850",
+                    trafegoMin: 45,
+                    trafegoMax: 80
+                },
+                {
+                    dominio: "hotsite-carnaval.com.br",
+                    tipo: "Landing Page de Vendas & Eventos",
+                    ping: "19ms",
+                    sha: "Válida (100%)",
+                    saude: 99,
+                    descSaude: "Alta Performance // Cache Ativo",
+                    uptime: "100%",
+                    requisicoesHoje: "68,120",
+                    trafegoMin: 80,
+                    trafegoMax: 140
+                }
+            ]
+        }
+    };
+}
                     {
                         dominio: "marcelaodigital.com.br",
                         tipo: "Site Institucional & Portfólio",
