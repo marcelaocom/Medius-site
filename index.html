@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medius // Synchrony and Respect // QG Central & SecOps</title>
+    <title>Medius — Interaction system: synchrony and respect</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -11,9 +11,6 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     
     <style>
-        /* ========================================================
-           MOTOR DE VARIÁVEIS DINÂMICAS DO NEON (MEDIUS CORE)
-           ======================================================== */
         :root {
             --bg-base: #030610; 
             --bg-sidebar: #050b14;
@@ -27,22 +24,46 @@
             --border-thick: 2px;
         }
 
-        /* ========================================================
-           MÓDULO DE BOOT QUÁDRUPLO (PRE-LOADER TÁTICO)
-           ======================================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-base); 
+            color: #f9fafb; 
+            font-family: 'Courier New', Courier, monospace;
+            min-height: 100vh; 
+            overflow-x: hidden;
+        }
+
+        /* Efeito de iluminação de fundo */
+        body::before {
+            content: ''; 
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            width: 85vw; 
+            height: 85vh; 
+            background: radial-gradient(circle, var(--accent-glow-inset) 0%, transparent 70%);
+            z-index: -1; 
+            pointer-events: none; 
+            transition: all 0.5s ease;
+        }
+
+        /* BOOT QUÁDRUPLO */
         #bootScreen {
             position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100vw; 
-            height: 100dvh;
+            inset: 0;
             background-color: var(--bg-base); 
-            display: flex; 
+            display: none; 
             flex-direction: column;
             justify-content: center; 
             align-items: center; 
-            z-index: 9999;
-            transition: opacity 0.6s ease-in-out, visibility 0.6s ease-in-out;
+            z-index: 99999;
+            transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
         }
 
         #bootScreen.fade-out { 
@@ -56,7 +77,7 @@
             align-items: center; 
             gap: 16px; 
             width: 85%; 
-            max-width: 400px; 
+            max-width: 420px; 
         }
 
         .boot-logo {
@@ -75,7 +96,6 @@
             color: #64748b; 
             text-transform: uppercase; 
             letter-spacing: 2px; 
-            font-family: 'Courier New', Courier, monospace; 
             text-align: center;
         }
 
@@ -96,87 +116,12 @@
             transition: width 0.1s linear; 
         }
 
-        .boot-counter { 
-            font-size: 0.85rem; 
-            color: var(--accent-color); 
-            font-weight: 700; 
-            font-family: 'Courier New', Courier, monospace; 
-        }
-
-        /* ========================================================
-           ESTRUTURA GERAL DO PAINEL
-           ======================================================== */
+        /* CARDS E BORDAS NEON DINÂMICAS */
         @keyframes rotate-neon { 
             0% { transform: rotate(0deg); } 
             100% { transform: rotate(360deg); } 
         }
 
-        body {
-            background-color: var(--bg-base); 
-            color: #f9fafb; 
-            font-family: 'Courier New', Courier, monospace;
-            margin: 0; 
-            display: flex; 
-            min-height: 100vh; 
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: ''; 
-            position: fixed; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%);
-            width: 80vw; 
-            height: 80vh; 
-            background: radial-gradient(circle, var(--accent-glow-inset) 0%, transparent 70%);
-            z-index: -1; 
-            pointer-events: none; 
-            transition: all 0.5s ease;
-        }
-
-        aside {
-            background-color: var(--bg-sidebar); 
-            border-right: var(--border-thick) solid var(--accent-color);
-            box-shadow: 2px 0 15px var(--accent-glow); 
-            transition: width 0.3s ease; 
-            width: 280px; 
-            z-index: 50; 
-            display: flex; 
-            flex-direction: column;
-        }
-
-        aside.recolhido { 
-            width: 80px; 
-        }
-
-        aside.recolhido .menu-texto, 
-        aside.recolhido .brand-texto, 
-        aside.recolhido .status-box { 
-            display: none; 
-        }
-
-        aside.recolhido .toggle-icon { 
-            transform: rotate(180deg); 
-        }
-
-        .header-neon { 
-            border-bottom: 3px solid var(--accent-color); 
-            box-shadow: 0 10px 20px -10px var(--accent-glow-strong); 
-            transition: all 0.3s ease; 
-        }
-        
-        .neon-divider {
-            border-bottom: 2px solid var(--accent-glow-strong); 
-            box-shadow: 0 4px 10px -4px var(--accent-glow);
-            padding-bottom: 10px; 
-            margin-bottom: 15px; 
-            transition: all 0.3s ease;
-        }
-
-        /* ========================================================
-           EFEITO "PISTA DE CORRIDA NEON" NOS CARDS
-           ======================================================== */
         .cyber-card {
             background-color: transparent; 
             border-radius: 8px; 
@@ -196,7 +141,7 @@
             left: -50%; 
             width: 200%; 
             height: 200%;
-            background: conic-gradient(transparent, rgba(255,255,255,0.1), transparent, var(--accent-color));
+            background: conic-gradient(transparent, rgba(255,255,255,0.08), transparent, var(--accent-color));
             animation: rotate-neon 3s linear infinite; 
             opacity: 0; 
             transition: opacity 0.3s ease; 
@@ -226,9 +171,44 @@
             z-index: 3; 
         }
 
-        /* ========================================================
-           EFEITO "PISTA DE CORRIDA NEON" NO MENU
-           ======================================================== */
+        /* MENU LATERAL */
+        aside {
+            background-color: var(--bg-sidebar); 
+            border-right: var(--border-thick) solid var(--accent-color);
+            box-shadow: 2px 0 15px var(--accent-glow); 
+            transition: width 0.3s ease; 
+            width: 280px; 
+            z-index: 50; 
+            display: flex; 
+            flex-direction: column;
+        }
+
+        aside.recolhido { 
+            width: 80px; 
+        }
+
+        aside.recolhido .menu-texto, 
+        aside.recolhido .brand-texto, 
+        aside.recolhido .status-box { 
+            display: none; 
+        }
+
+        aside.recolhido .toggle-icon { 
+            transform: rotate(180deg); 
+        }
+
+        .header-neon { 
+            border-bottom: 3px solid var(--accent-color); 
+            box-shadow: 0 10px 20px -10px var(--accent-glow-strong); 
+        }
+        
+        .neon-divider {
+            border-bottom: 2px solid var(--accent-glow-strong); 
+            box-shadow: 0 4px 10px -4px var(--accent-glow);
+            padding-bottom: 10px; 
+            margin-bottom: 15px; 
+        }
+
         .menu-item {
             position: relative; 
             overflow: hidden; 
@@ -237,6 +217,7 @@
             background-color: transparent; 
             transition: all 0.3s ease; 
             border: 1px solid transparent;
+            cursor: pointer;
         }
 
         .menu-item::before {
@@ -282,9 +263,7 @@
             width: 100%; 
         }
 
-        /* ========================================================
-           ALERTA CRÍTICO
-           ======================================================== */
+        /* ALERTA CRÍTICO */
         .alerta-critico { 
             --accent-color: #ef4444 !important; 
             --accent-glow: rgba(239, 68, 68, 0.4) !important; 
@@ -297,9 +276,7 @@
             animation: rotate-neon 1s linear infinite !important; 
         }
 
-        /* ========================================================
-           EQUALIZADOR PARAMÉTRICO
-           ======================================================== */
+        /* EQUALIZADOR PARAMÉTRICO */
         .eq-container { 
             display: flex; 
             gap: 2px; 
@@ -313,7 +290,6 @@
             border-radius: 1px; 
             animation: eq 1s ease-in-out infinite alternate; 
             box-shadow: 0 0 5px var(--accent-glow-strong); 
-            transition: all 0.3s ease; 
         }
 
         .eq-bar:nth-child(1) { animation-delay: 0.1s; } 
@@ -327,97 +303,60 @@
             100% { height: 16px; } 
         }
 
-        /* ========================================================
-           SISTEMA DE TOOLTIPS
-           ======================================================== */
-        .tooltip { 
-            position: relative; 
-            display: inline-block; 
-            margin-left: 6px; 
-            cursor: pointer; 
+        /* ABAS SUPERIORES DE SITES DO CLIENTE */
+        .tab-site-btn {
+            background-color: #050a14;
+            border: 1px solid #1e293b;
+            color: #94a3b8;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: monospace;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .info-icon { 
-            background: transparent; 
-            color: var(--accent-color); 
-            border: 2px solid var(--accent-color); 
-            border-radius: 50%; 
-            width: 16px; 
-            height: 16px; 
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 10px; 
-            font-family: Arial; 
-            font-weight: bold; 
-            box-shadow: 0 0 6px var(--accent-glow); 
-            transition: all 0.2s ease; 
+        .tab-site-btn:hover {
+            border-color: var(--accent-color);
+            color: #ffffff;
         }
 
-        .info-icon:hover { 
-            background: var(--accent-color); 
-            color: var(--bg-base); 
-            box-shadow: 0 0 15px var(--accent-color); 
+        .tab-site-btn.active {
+            background-color: rgba(0, 210, 255, 0.1);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-glow);
+            font-weight: bold;
         }
 
-        .tooltip .tooltip-text { 
-            visibility: hidden; 
-            width: 220px; 
-            background-color: #030610; 
-            color: #f8fafc; 
-            text-align: left; 
-            border-radius: 6px; 
-            padding: 10px; 
-            position: absolute; 
-            bottom: 140%; 
-            left: 50%; 
-            margin-left: -110px; 
-            opacity: 0; 
-            transition: opacity 0.3s; 
-            font-family: Arial; 
-            font-size: 0.75rem; 
-            border: 2px solid var(--accent-color); 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.9), 0 0 20px var(--accent-glow); 
-            z-index: 100; 
-            pointer-events: none; 
+        /* KILL SWITCH (403 FORBIDDEN) */
+        #killSwitchScreen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 7, 18, 0.98);
+            backdrop-filter: blur(12px);
+            z-index: 999999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
         }
 
-        .tooltip:hover .tooltip-text { 
-            visibility: visible; 
-            opacity: 1; 
+        .lock-pulse {
+            animation: pulse-red 2s infinite;
         }
 
-        /* ========================================================
-           SCROLLBAR E APEXCHARTS CUSTOM CSS
-           ======================================================== */
-        ::-webkit-scrollbar { 
-            width: 6px; 
+        @keyframes pulse-red {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.5)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(239, 68, 68, 0.9)); }
         }
 
-        ::-webkit-scrollbar-track { 
-            background: var(--bg-base); 
-        }
-
-        ::-webkit-scrollbar-thumb { 
-            background: var(--accent-glow-strong); 
-            border-radius: 3px; 
-        }
-        
-        .apexcharts-tooltip { 
-            background: #030610 !important; 
-            border: 1px solid var(--accent-color) !important; 
-            color: #fff !important; 
-            font-family: 'Courier New', monospace !important; 
-        }
-
-        .apexcharts-tooltip-title { 
-            background: rgba(0,0,0,0.5) !important; 
-            border-bottom: 1px solid var(--accent-color) !important; 
-        }
-
-        /* ========================================================
-           ESTILO DO RELATÓRIO PDF (MODO DOCUMENTO LIMPO)
-           ======================================================== */
+        /* FOLHA DE RELATÓRIO PDF OCULTA */
         #relatorio-pdf-clean {
             position: absolute;
             left: -9999px;
@@ -484,871 +423,947 @@
             <div class="boot-progress-bar">
                 <div class="boot-progress-fill" id="bootProgressFill"></div>
             </div>
-            <div class="boot-counter" id="bootCounter">0%</div>
+            <div class="boot-counter text-xs font-mono" id="bootCounter" style="color: var(--accent-color);">0%</div>
         </div>
     </div>
 
-    <div id="relatorio-pdf-clean">
-        <h1 id="pdf-titulo">AUDITORIA // MEDIUS</h1>
-        
-        <p>
-            <strong>Data da Emissão:</strong> 
-            <span id="pdf-data"></span>
+    <div id="killSwitchScreen">
+        <div class="lock-pulse mb-6">
+            <i data-lucide="shield-alert" class="w-20 h-20 text-red-500"></i>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-black text-red-500 tracking-wider font-mono mb-2">403 FORBIDDEN</h1>
+        <h2 class="text-xl font-bold text-white mb-4">Acesso ao Sistema Suspenso</h2>
+        <p class="text-slate-400 max-w-md mb-8 text-sm">
+            A licença deste nó foi pausada pelo Sistema de Governança <strong>Medius Core SDK</strong>.
+            Entre em contato com a administração para restabelecer a sincronia do contrato.
         </p>
-        <p>
-            <strong>Status Geral:</strong> Malha Operacional (Synchrony & Respect)
-        </p>
-
-        <h2>MÉTRICAS DE DESEMPENHO E SEGURANÇA</h2>
-        <table class="pdf-table">
-            <thead>
-                <tr>
-                    <th>Indicador</th>
-                    <th>Valor Registrado</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Coesão de DOM</td>
-                    <td>100.00%</td>
-                </tr>
-                <tr>
-                    <td>Bloqueios de Sanitização (Heurística)</td>
-                    <td id="pdf-sanitizacao-val">--</td>
-                </tr>
-                <tr>
-                    <td>Nós Ativos (Blindados)</td>
-                    <td id="pdf-ativos-val">--</td>
-                </tr>
-                <tr>
-                    <td>Licenças Inadimplentes (Bloqueadas)</td>
-                    <td id="pdf-vencidos-val">--</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <h2>DETALHAMENTO DA MALHA DE CONTRATOS</h2>
-        <table class="pdf-table">
-            <thead>
-                <tr>
-                    <th>Client ID</th>
-                    <th>Status de Acesso</th>
-                    <th>Expiração do Contrato</th>
-                </tr>
-            </thead>
-            <tbody id="pdf-tabela-body">
-                </tbody>
-        </table>
-        
-        <p style="margin-top: 40px; text-align: center; font-size: 10px; color: #94a3b8;">
-            Documento gerado e certificado automaticamente pelo ecossistema Medius Core SDK Engine.
-        </p>
+        <button onclick="alternarKillSwitch(false)" class="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-600 text-xs font-mono transition">
+            [Ambiente de Teste] Restaurar Acesso
+        </button>
     </div>
 
-    <aside id="sidebar" class="py-6 flex flex-col justify-between">
-        <div>
-            <div class="flex items-center justify-between px-4 mb-6 neon-divider">
-                <div class="flex items-center gap-3 overflow-hidden whitespace-nowrap">
-                    <i data-lucide="shield-check" class="w-8 h-8 flex-shrink-0" style="color: var(--accent-color); filter: drop-shadow(0 0 5px var(--accent-glow-strong));"></i>
-                    <div class="brand-texto">
-                        <h1 class="font-bold tracking-wider text-sm text-white">MEDIUS</h1>
-                        <p class="text-[9px] text-slate-400 uppercase tracking-widest">Synchrony & Respect</p>
+    <div id="portal-login" class="flex flex-col items-center justify-center min-h-screen p-6 relative z-10">
+        <div class="cyber-card max-w-md w-full p-8">
+            <div class="text-center mb-8">
+                <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-blue-500/10 border border-blue-500/40 flex items-center justify-center">
+                    <i data-lucide="shield-check" class="w-8 h-8" style="color: var(--accent-color); filter: drop-shadow(0 0 8px var(--accent-glow-strong));"></i>
+                </div>
+                <h1 class="text-2xl font-black tracking-wider text-white">MEDIUS // GATEWAY</h1>
+                <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest font-mono">Synchrony and Respect</p>
+            </div>
+
+            <div class="space-y-3 mb-6">
+                <button onclick="autenticarComo('admin')" class="w-full py-3 px-4 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 font-mono text-xs flex items-center justify-center gap-2 transition">
+                    <i data-lucide="terminal" class="w-4 h-4"></i> Entrar como Administrador Master (QG)
+                </button>
+                <button onclick="autenticarComo('cliente', 'estudio-marcelao-01')" class="w-full py-3 px-4 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/40 font-mono text-xs flex items-center justify-center gap-2 transition">
+                    <i data-lucide="user-check" class="w-4 h-4"></i> Entrar como Cliente (Marcelão Digital)
+                </button>
+            </div>
+
+            <div class="flex items-center gap-3 my-4">
+                <div class="flex-1 h-px bg-slate-800"></div>
+                <span class="text-[10px] text-slate-500 uppercase font-mono">Ou use credencial</span>
+                <div class="flex-1 h-px bg-slate-800"></div>
+            </div>
+
+            <form onsubmit="realizarLoginManual(event)" class="space-y-4 font-mono text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">Identificador / Token:</label>
+                    <input type="text" id="login-user" placeholder="admin ou #estudio-marcelao-01" class="w-full bg-[#030610] border border-slate-700 rounded p-2.5 text-white outline-none focus:border-cyan-400">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Chave de Acesso SHA-256:</label>
+                    <input type="password" id="login-pass" placeholder="••••••••••••" class="w-full bg-[#030610] border border-slate-700 rounded p-2.5 text-white outline-none focus:border-cyan-400">
+                </div>
+                <button type="submit" class="w-full py-3 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold border border-slate-600 transition flex items-center justify-center gap-2">
+                    <i data-lucide="key" class="w-4 h-4"></i> Validar Acesso à Malha
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="painel-admin" class="hidden flex min-h-screen w-full">
+        <aside id="sidebar" class="py-6 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between px-4 mb-6 neon-divider">
+                    <div class="flex items-center gap-3 overflow-hidden whitespace-nowrap">
+                        <i data-lucide="shield-check" class="w-8 h-8 flex-shrink-0" style="color: var(--accent-color); filter: drop-shadow(0 0 5px var(--accent-glow-strong));"></i>
+                        <div class="brand-texto">
+                            <h1 class="font-bold tracking-wider text-sm text-white">MEDIUS</h1>
+                            <p class="text-[9px] text-slate-400 uppercase tracking-widest">QG Gênesis // Admin</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white transition relative z-10">
+                        <i data-lucide="chevron-left" class="toggle-icon w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <nav class="space-y-2 px-3 font-sans text-sm">
+                    <button onclick="mudarSecao('visao-geral')" id="btn-visao-geral" class="menu-item ativo w-full">
+                        <div>
+                            <i data-lucide="layout-dashboard" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Visão Geral</span>
+                        </div>
+                    </button>
+                    <button onclick="mudarSecao('tme')" id="btn-tme" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="activity" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">TME // Monitoramento</span>
+                        </div>
+                    </button>
+                    <button onclick="mudarSecao('camaleao')" id="btn-camaleao" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="palette" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Motor Camaleão</span>
+                        </div>
+                    </button>
+                    <button onclick="mudarSecao('secops')" id="btn-secops" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Muralha SecOps</span>
+                        </div>
+                    </button>
+                    <button onclick="mudarSecao('whitelabel')" id="btn-whitelabel" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="sliders" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Módulo White Label</span>
+                        </div>
+                    </button>
+                </nav>
+            </div>
+            
+            <div class="px-4 space-y-3">
+                <button onclick="realizarLogout()" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-red-400 rounded border border-slate-800 text-xs font-mono flex items-center justify-center gap-2 transition">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i> <span class="menu-texto">Encerrar Sessão</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-screen overflow-hidden">
+            <header class="bg-[#050b1a] header-neon p-5 flex justify-between items-center z-20">
+                <div>
+                    <h2 class="text-base md:text-lg font-bold tracking-wide uppercase font-mono" style="color: var(--accent-color); text-shadow: 0 0 10px var(--accent-glow);">Cockpit Gênesis Master</h2>
+                    <p class="text-xs text-slate-400 font-sans mt-0.5" id="label-empresa-ativa">Operando sob <span class="text-white font-semibold">Medius Core Enterprise</span></p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="simularAtaqueReal()" class="text-[10px] uppercase font-mono text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-500 px-3 py-1.5 rounded transition">
+                        Simular Anomalia SecOps
+                    </button>
+                    <button onclick="gerarRelatorioLimpo()" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded border border-slate-600 text-xs font-mono font-bold transition">
+                        <i data-lucide="file-down" class="w-3.5 h-3.5"></i> PDF
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+
+                <div id="mod-tme" class="dash-module hidden">
+                    
+                    <div class="cyber-card mb-6 p-5">
+                        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                            
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded bg-blue-600/10 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="crosshair" class="w-6 h-6 text-blue-400" style="filter: drop-shadow(0 0 5px rgba(59,130,246,0.5));"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-3">
+                                        <h2 class="text-lg font-bold text-white font-mono" id="tme-client-name">Marcelão Digital & Entertainment</h2>
+                                        <span id="tme-client-status" class="px-2 py-0.5 text-[10px] border rounded font-sans tracking-wider bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                                            SINCRONIZADO
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 font-mono mt-1">
+                                        Site Ativo: <span id="tme-active-site-display" class="font-bold text-cyan-400">marcelaodigital.com.br</span> 
+                                        <span class="mx-2 text-slate-600">|</span> 
+                                        Ping: <span id="tme-client-ping" class="text-blue-400">22ms</span>
+                                        <span class="mx-2 text-slate-600">|</span> 
+                                        SHA-256: <span id="tme-client-sha" class="text-indigo-400">Válida (99.98%)</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-3 bg-[#030610] p-2.5 rounded-lg border border-slate-800 w-full lg:w-auto">
+                                <div class="flex flex-col">
+                                    <label class="text-[9px] text-slate-500 font-mono uppercase tracking-wider">1. Selecionar Cliente</label>
+                                    <select id="tme-select-client" onchange="aoTrocarClienteTME(this.value)" class="bg-transparent text-slate-200 text-xs font-mono outline-none py-1 cursor-pointer">
+                                        <option value="estudio-marcelao-01" selected>Marcelão Digital (#estudio-01)</option>
+                                        <option value="balada-prime-02">Balada Prime (#prime-02)</option>
+                                        <option value="lounge-vip-03">Lounge VIP (#lounge-03)</option>
+                                        <option value="cliente-inadimplente-04">Studio Alpha (#bloqueado-04)</option>
+                                    </select>
+                                </div>
+
+                                <div class="w-px h-8 bg-slate-800 hidden sm:block"></div>
+
+                                <div class="flex flex-col">
+                                    <label class="text-[9px] text-slate-500 font-mono uppercase tracking-wider">2. Selecionar Site / Nó</label>
+                                    <select id="tme-select-site" onchange="aoTrocarSiteTME(this.value)" class="bg-transparent text-cyan-300 text-xs font-mono outline-none py-1 cursor-pointer">
+                                        </select>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                        <div class="cyber-card col-span-1 md:col-span-8">
+                            <div>
+                                <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
+                                    <span class="flex items-center gap-2">
+                                        <i data-lucide="activity" class="w-4 h-4"></i> Tráfego em Tempo Real do Site (RPS)
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 font-mono uppercase">Taxa: 2000ms</span>
+                                </h3>
+                                <div id="chart-trafego-admin" style="min-height: 250px;"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="cyber-card col-span-1 md:col-span-4">
+                            <div class="h-full flex flex-col">
+                                <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+                                    <i data-lucide="crosshair" class="w-4 h-4"></i> Índice de Integridade
+                                </h3>
+                                <div class="flex-1 flex flex-col items-center justify-center pb-6">
+                                    <div id="chart-saude-admin"></div>
+                                    <p class="text-xs text-slate-400 font-mono mt-2" id="tme-health-desc">Nó Operacional e Blindado</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white transition relative z-10">
-                    <i data-lucide="chevron-left" class="toggle-icon w-5 h-5"></i>
-                </button>
+
+                <div id="mod-visao-geral" class="dash-module space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div class="cyber-card">
+                            <div>
+                                <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
+                                    COESÃO DOM
+                                    <div class="eq-container">
+                                        <div class="eq-bar"></div>
+                                        <div class="eq-bar"></div>
+                                        <div class="eq-bar"></div>
+                                    </div>
+                                </div>
+                                <div class="text-2xl font-bold font-mono text-white">100.00%</div>
+                            </div>
+                        </div>
+                        
+                        <div id="card-heuristica" class="cyber-card">
+                            <div>
+                                <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
+                                    SANITIZAÇÃO
+                                    <div class="eq-container">
+                                        <div class="eq-bar"></div>
+                                        <div class="eq-bar"></div>
+                                        <div class="eq-bar"></div>
+                                    </div>
+                                </div>
+                                <div class="text-2xl font-bold font-mono text-white" id="dado-sanitizacao">1,428</div>
+                            </div>
+                        </div>
+                        
+                        <div class="cyber-card">
+                            <div>
+                                <div class="text-[11px] text-slate-400 font-mono neon-divider">NÓS ATIVOS</div>
+                                <div class="text-2xl font-bold text-white font-mono" id="count-ativos">3</div>
+                            </div>
+                        </div>
+                        
+                        <div class="cyber-card">
+                            <div>
+                                <div class="text-[11px] text-slate-400 font-mono neon-divider">INADIMPLENTES</div>
+                                <div class="text-2xl font-bold text-amber-400 font-mono" id="count-vencidos">1</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cyber-card">
+                        <div>
+                            <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
+                                <span>Malha Geral de Contratos & Ativos</span>
+                                <span class="text-xs text-slate-400">4 Clientes Cadastrados</span>
+                            </h3>
+                            <table class="w-full text-left font-sans text-xs">
+                                <thead>
+                                    <tr class="text-slate-400 font-mono uppercase border-b border-slate-800 pb-2">
+                                        <th class="py-2">Cliente / ID</th>
+                                        <th class="py-2">Sites Cobertos</th>
+                                        <th class="py-2">Status</th>
+                                        <th class="py-2">Expiração</th>
+                                        <th class="py-2 text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-clientes-admin" class="divide-y divide-slate-800/60">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div id="term-secops" class="cyber-card font-mono text-xs">
+                            <div>
+                                <div class="neon-divider flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                                    <span class="text-white font-bold uppercase">Firewall SecOps</span>
+                                </div>
+                                <div class="h-32 overflow-y-auto space-y-2 text-slate-400" id="log-secops">
+                                    <div class="border-l-2 border-emerald-500 pl-3 bg-emerald-500/5 p-2">
+                                        <span class="text-emerald-400 font-bold">[AUTO-CURA]</span> SHA-256 Íntegra no nó #estudio-marcelao-01.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="cyber-card font-mono text-xs">
+                            <div>
+                                <div class="neon-divider flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                                    <span class="text-white font-bold uppercase">Motor Camaleão</span>
+                                </div>
+                                <div class="h-32 overflow-y-auto space-y-2 text-slate-400">
+                                    <div class="border-l-2 border-indigo-500 pl-3 bg-indigo-500/5 p-2">
+                                        <span class="text-indigo-400 font-bold">[UI INJECT]</span> Variáveis dinâmicas ativas.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="mod-whitelabel" class="cyber-card dash-module hidden">
+                    <div>
+                        <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Personalização White Label</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+                            <div>
+                                <label class="block text-slate-400 mb-1">Nome da Agência:</label>
+                                <input type="text" id="input-nome-empresa" value="Medius Core Enterprise" oninput="atualizarWhiteLabel()" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">Cor do Neon:</label>
+                                <select id="select-cor-neon" onchange="atualizarWhiteLabel()" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white">
+                                    <option value="#00d2ff">Ciano Cyber</option>
+                                    <option value="#00ffaa">Verde Esmeralda</option>
+                                    <option value="#818cf8">Índigo Camaleão</option>
+                                    <option value="#ff0055">Vermelho Neon</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="painel-cliente" class="hidden flex flex-col min-h-screen">
+        <header class="border-b border-slate-800 bg-[#070d1a] px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center">
+                    <i data-lucide="activity" class="w-5 h-5 text-blue-400"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-white text-base leading-tight" id="client-view-name">Marcelão Digital & Entertainment</h1>
+                    <p class="text-xs text-slate-400 font-mono">Contrato: <span class="text-blue-400" id="client-view-id">#estudio-marcelao-01</span></p>
+                </div>
             </div>
 
-            <nav class="space-y-2 px-3 font-sans text-sm">
-                <button onclick="mudarSecao('visao-geral')" id="btn-visao-geral" class="menu-item ativo w-full">
-                    <div>
-                        <i data-lucide="layout-dashboard" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
-                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Visão Geral Unificada</span>
-                    </div>
-                </button>
-                <button onclick="mudarSecao('monitoramento')" id="btn-monitoramento" class="menu-item w-full">
-                    <div>
-                        <i data-lucide="activity" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
-                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Central de Monitoramento</span>
-                    </div>
-                </button>
-                <button onclick="mudarSecao('camaleao')" id="btn-camaleao" class="menu-item w-full">
-                    <div>
-                        <i data-lucide="palette" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
-                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Motor Camaleão (UI)</span>
-                    </div>
-                </button>
-                <button onclick="mudarSecao('secops')" id="btn-secops" class="menu-item w-full">
-                    <div>
-                        <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
-                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Muralha SecOps</span>
-                    </div>
-                </button>
-                <button onclick="mudarSecao('whitelabel')" id="btn-whitelabel" class="menu-item w-full">
-                    <div>
-                        <i data-lucide="sliders" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
-                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Módulo White Label</span>
-                    </div>
-                </button>
-                <button onclick="mudarSecao('ajuda')" id="btn-ajuda" class="menu-item w-full">
-                    <div>
-                        <i data-lucide="help-circle" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
-                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Central de Ajuda</span>
-                    </div>
-                </button>
-            </nav>
-        </div>
-        
-        <div class="status-box px-6 pt-6 neon-divider" style="border-bottom:none; border-top: 2px solid var(--accent-glow-strong); box-shadow: 0 -4px 10px -4px var(--accent-glow); margin-bottom: 0;">
-            <p class="text-xs text-slate-500 font-mono relative z-10">Status: <span class="font-bold" style="color: var(--accent-color); text-shadow: 0 0 8px var(--accent-glow-strong);">ONLINE</span></p>
-        </div>
-    </aside>
-
-    <main class="flex-1 flex flex-col h-screen overflow-hidden">
-        <header class="bg-[#050b1a] header-neon p-6 flex justify-between items-center z-20">
-            <div>
-                <h2 class="text-lg font-bold tracking-wide uppercase font-mono" style="color: var(--accent-color); text-shadow: 0 0 10px var(--accent-glow);">Centro de Comando Gênesis</h2>
-                <p class="text-xs text-slate-400 font-sans mt-1" id="label-empresa-ativa">Operando com <span class="text-white font-semibold">Medius Core Enterprise</span></p>
-            </div>
             <div class="flex items-center gap-4">
-                <button onclick="simularAtaqueReal()" class="text-[10px] uppercase font-mono text-slate-500 hover:text-red-500 transition mr-4 border border-slate-700 hover:border-red-500 px-2 py-1 rounded">
-                    Simular Anomalia
+                <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-full text-xs text-emerald-400 font-mono">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span>PROTEÇÃO ATIVA</span>
+                </div>
+                <button onclick="alternarKillSwitch(true)" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded text-xs font-mono transition">
+                    Testar Kill Switch
                 </button>
-                <button onclick="gerarRelatorioLimpo()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-md border border-slate-600 text-xs font-mono font-bold transition cyber-card">
-                    <div>
-                        <i data-lucide="file-down" class="w-4 h-4"></i> Relatório PDF
-                    </div>
+                <button onclick="realizarLogout()" class="text-slate-400 hover:text-white text-xs font-mono transition flex items-center gap-1">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Sair
                 </button>
             </div>
         </header>
 
-        <div id="area-conteudo" class="flex-1 overflow-y-auto p-8 space-y-8">
-
-            <div id="mod-monitoramento" class="dash-module hidden">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-                    <div class="cyber-card col-span-1 md:col-span-8">
-                        <div>
-                            <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
-                                <i data-lucide="activity" class="w-4 h-4"></i> Fluxo de Telemetria (RPS) - Tempo Real
-                            </h3>
-                            <div id="chart-trafego" style="min-height: 250px;"></div>
-                        </div>
-                    </div>
-                    <div class="cyber-card col-span-1 md:col-span-4">
-                        <div class="h-full flex flex-col">
-                            <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
-                                <i data-lucide="crosshair" class="w-4 h-4"></i> Saúde da Malha SecOps
-                            </h3>
-                            <div class="flex-1 flex flex-col items-center justify-center pb-8">
-                                <div id="chart-saude"></div>
-                                <p class="text-xs text-slate-400 font-mono mt-2">Nós Operacionais 100%</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="cyber-card col-span-1 md:col-span-12">
-                        <div>
-                            <h3 class="font-mono text-sm neon-divider flex justify-between items-center" style="color: var(--accent-color);">
-                                <span class="flex items-center gap-2">
-                                    <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Histórico de Interceptações SecOps (Volume/Minuto)
-                                </span>
-                            </h3>
-                            <div id="chart-historico" style="min-height: 250px;"></div>
-                        </div>
-                    </div>
+        <div class="border-b border-slate-800/80 bg-[#040813] px-6 py-3">
+            <div class="max-w-7xl mx-auto flex items-center gap-3 overflow-x-auto" id="client-sites-tabs-container">
                 </div>
-            </div>
-
-            <div id="mod-visao-geral" class="dash-module">
-                <div id="mod-metricas" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div id="card-coesao" class="cyber-card dash-submodule transition-colors duration-300">
-                        <div>
-                            <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
-                                COESÃO DOM
-                                <div class="eq-container">
-                                    <div class="eq-bar"></div>
-                                    <div class="eq-bar"></div>
-                                    <div class="eq-bar"></div>
-                                </div>
-                            </div>
-                            <div class="text-2xl font-bold font-mono text-white" style="text-shadow: 0 0 10px var(--accent-glow-strong);">100.00%</div>
-                        </div>
-                    </div>
-                    
-                    <div id="card-heuristica" class="cyber-card dash-submodule transition-colors duration-300">
-                        <div>
-                            <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
-                                SANITIZAÇÃO 
-                                <div class="eq-container">
-                                    <div class="eq-bar"></div>
-                                    <div class="eq-bar"></div>
-                                    <div class="eq-bar"></div>
-                                    <div class="eq-bar"></div>
-                                    <div class="eq-bar"></div>
-                                </div>
-                            </div>
-                            <div class="text-2xl font-bold font-mono text-white" id="dado-sanitizacao" style="text-shadow: 0 0 10px var(--accent-glow-strong);">1,428</div>
-                        </div>
-                    </div>
-                    
-                    <div id="card-escudos" class="cyber-card dash-submodule">
-                        <div>
-                            <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
-                                KILL SWITCH 
-                                <div class="tooltip">
-                                    <span class="info-icon">i</span>
-                                    <span class="tooltip-text">Nós sob monitoramento.</span>
-                                </div>
-                            </div>
-                            <div class="text-2xl font-bold text-white font-mono" id="count-ativos">--</div>
-                        </div>
-                    </div>
-                    
-                    <div id="card-licencas" class="cyber-card dash-submodule">
-                        <div>
-                            <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
-                                INADIMPLENTES 
-                                <div class="tooltip">
-                                    <span class="info-icon">i</span>
-                                    <span class="tooltip-text">Acessos revogados.</span>
-                                </div>
-                            </div>
-                            <div class="text-2xl font-bold text-amber-400 font-mono" id="count-vencidos">--</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="mod-tabela" class="cyber-card mb-8">
-                    <div>
-                        <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color); text-shadow: 0 0 8px var(--accent-glow);">
-                            <i data-lucide="server" class="w-4 h-4"></i> Malha de Execução de Contratos
-                        </h3>
-                        <table class="w-full text-left font-sans text-sm">
-                            <thead>
-                                <tr class="text-xs uppercase text-slate-400 font-mono">
-                                    <th class="pb-2">Client ID</th>
-                                    <th class="pb-2">Kill Switch</th>
-                                    <th class="pb-2">UI Tokens</th>
-                                    <th class="pb-2">Expiração</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabela-clientes" class="divide-y divide-slate-800/60">
-                                <tr><td colspan="4" class="py-2 text-slate-500 font-mono">Carregando...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="mod-terminais" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div id="term-secops" class="cyber-card font-mono text-xs transition-colors duration-300">
-                        <div>
-                            <div class="neon-divider flex justify-between items-center">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_5px_#ef4444]"></span>
-                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                                    <span class="ml-2 text-white font-bold uppercase">Firewall SecOps</span>
-                                </div>
-                                <div class="eq-container hidden" id="eq-alerta">
-                                    <div class="eq-bar"></div>
-                                    <div class="eq-bar"></div>
-                                </div>
-                            </div>
-                            <div class="h-32 overflow-y-auto space-y-2 text-slate-400 pr-2" id="log-secops">
-                                <div class="border-l-2 border-red-500 pl-3 bg-red-500/5 p-2">
-                                    <span class="text-red-400 font-bold">[KILL SWITCH]</span> Ação: 403 Engajado.
-                                </div>
-                                <div class="border-l-2 border-emerald-500 pl-3 bg-emerald-500/5 p-2">
-                                    <span class="text-emerald-400 font-bold">[AUTO-CURA]</span> SHA-256 Íntegra.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="term-camaleao" class="cyber-card font-mono text-xs">
-                        <div>
-                            <div class="neon-divider flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_5px_#6366f1]"></span>
-                                <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                                <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                                <span class="ml-2 text-white font-bold uppercase">Motor Camaleão</span>
-                            </div>
-                            <div class="h-32 overflow-y-auto space-y-2 text-slate-400 pr-2">
-                                <div class="border-l-2 border-indigo-500 pl-3 bg-indigo-500/5 p-2">
-                                    <span class="text-indigo-400 font-bold">[UI INJECT]</span> Variáveis aplicadas.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="mod-whitelabel" class="cyber-card dash-module hidden">
-                <div>
-                    <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
-                        <i data-lucide="sliders" class="w-4 h-4"></i> Módulo White Label & Revenda
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-sans text-xs">
-                        <div>
-                            <label class="block text-slate-400 font-mono mb-1">Nome da Agência:</label>
-                            <input type="text" id="input-nome-empresa" value="Medius Core Enterprise" oninput="atualizarWhiteLabel()" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white font-mono focus:border-cyan-400 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-slate-400 font-mono mb-1">Cor do Neon (Matriz):</label>
-                            <select id="select-cor-neon" onchange="atualizarWhiteLabel()" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white font-mono outline-none">
-                                <option value="#00d2ff">Ciano Cyber (Padrão)</option>
-                                <option value="#00ffaa">Ciano Esmeraldado (Sinal Verde)</option>
-                                <option value="#818cf8">Índigo Camaleão</option>
-                                <option value="#ff0055">Alerta Vermelho Neon</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="mod-ajuda" class="cyber-card dash-module hidden">
-                <div>
-                    <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
-                        <i data-lucide="help-circle" class="w-4 h-4"></i> Central de Ajuda Gênesis
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-sans text-xs">
-                        <div class="bg-black/40 p-4 rounded border border-slate-800">
-                            <h4 class="font-mono mb-2 font-semibold" style="color: var(--accent-color)">Kill Switch Remoto</h4>
-                            <p class="text-slate-400">Opera via remote-config.json injetando Tela 403 para inadimplentes.</p>
-                        </div>
-                        <div class="bg-black/40 p-4 rounded border border-slate-800">
-                            <h4 class="font-mono mb-2 font-semibold" style="color: var(--accent-color)">Auto-Cura de DOM</h4>
-                            <p class="text-slate-400">Validação SHA-256 contínua contra tampering de frontend.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
-    </main>
+
+        <main class="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 space-y-6">
+            
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <h2 class="text-xl font-bold text-white" id="client-active-domain-title">marcelaodigital.com.br</h2>
+                    <p class="text-xs text-slate-400" id="client-active-domain-desc">Site Institucional & Portfólio</p>
+                </div>
+                <div class="text-xs font-mono text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
+                    Latência: <span class="text-blue-400" id="client-active-ping">22ms</span> | Status: <span class="text-emerald-400">100% Blindado</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="cyber-card p-4">
+                    <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Uptime Mensal</div>
+                    <div class="text-2xl font-bold text-white font-mono" id="client-card-uptime">99.98%</div>
+                </div>
+
+                <div class="cyber-card p-4">
+                    <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Requisições Hoje</div>
+                    <div class="text-2xl font-bold text-white font-mono" id="client-card-req">24,850</div>
+                </div>
+
+                <div class="cyber-card p-4">
+                    <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Integridade de DOM</div>
+                    <div class="text-2xl font-bold text-white font-mono" id="client-card-dom">100%</div>
+                </div>
+
+                <div class="cyber-card p-4">
+                    <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Contrato Válido Até</div>
+                    <div class="text-2xl font-bold text-white font-mono">31/12/2026</div>
+                </div>
+            </div>
+
+            <div class="cyber-card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-400"></i>
+                        Acessos e Interações em Tempo Real no Domínio
+                    </h3>
+                    <span class="text-xs font-mono text-slate-500">Taxa: 2.5s</span>
+                </div>
+                <div id="chart-trafego-cliente" style="min-height: 240px;"></div>
+            </div>
+        </main>
+
+        <footer class="border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-500 font-mono">
+            Plataforma protegida e governada por <strong>Medius Core SDK</strong> — <em>synchrony and respect</em>.
+        </footer>
+    </div>
+
+    <div id="relatorio-pdf-clean">
+        <h1 id="pdf-titulo">AUDITORIA // MEDIUS</h1>
+        <p><strong>Data da Emissão:</strong> <span id="pdf-data"></span></p>
+        <p><strong>Status Geral:</strong> Malha Operacional (Synchrony & Respect)</p>
+
+        <h2>MÉTRICAS FORENSES</h2>
+        <table class="pdf-table">
+            <tr><td>Coesão de DOM</td><td>100.00%</td></tr>
+            <tr><td>Bloqueios Heurísticos</td><td id="pdf-sanitizacao-val">--</td></tr>
+            <tr><td>Nós Ativos</td><td id="pdf-ativos-val">--</td></tr>
+            <tr><td>Inadimplentes</td><td id="pdf-vencidos-val">--</td></tr>
+        </table>
+    </div>
 
     <script>
-        // Inicializa ícones Lucide
-        lucide.createIcons();
+        // BASE DE DADOS HIERÁRQUICA (CLIENTES + MÚLTIPLOS SITES)
+        const databaseClientes = {
+            "estudio-marcelao-01": {
+                nome: "Marcelão Digital & Entertainment",
+                status: "SINCRONIZADO",
+                statusClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+                expires_at: "2026-12-31",
+                ativo: true,
+                sites: [
+                    {
+                        dominio: "marcelaodigital.com.br",
+                        tipo: "Site Institucional & Portfólio",
+                        ping: "22ms",
+                        sha: "Válida (99.98%)",
+                        saude: 100,
+                        descSaude: "Nó Operacional e Blindado",
+                        uptime: "99.98%",
+                        requisicoesHoje: "24,850",
+                        trafegoMin: 45,
+                        trafegoMax: 80
+                    },
+                    {
+                        dominio: "hotsite-carnaval.com.br",
+                        tipo: "Landing Page de Vendas & Eventos",
+                        ping: "19ms",
+                        sha: "Válida (100%)",
+                        saude: 99,
+                        descSaude: "Alta Performance // Cache Ativo",
+                        uptime: "100%",
+                        requisicoesHoje: "68,120",
+                        trafegoMin: 80,
+                        trafegoMax: 140
+                    },
+                    {
+                        dominio: "vip-experience.com.br",
+                        tipo: "Hotsite Promocional e Reservas",
+                        ping: "26ms",
+                        sha: "Válida (99.95%)",
+                        saude: 97,
+                        descSaude: "Nó Saudável e Estável",
+                        uptime: "99.92%",
+                        requisicoesHoje: "12,340",
+                        trafegoMin: 25,
+                        trafegoMax: 50
+                    }
+                ]
+            },
+            "balada-prime-02": {
+                nome: "Balada Prime Nightclub",
+                status: "SINCRONIZADO",
+                statusClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+                expires_at: "2026-10-15",
+                ativo: true,
+                sites: [
+                    {
+                        dominio: "baladaprime.com.br",
+                        tipo: "Portal Oficial do Club",
+                        ping: "28ms",
+                        sha: "Válida (100%)",
+                        saude: 98,
+                        descSaude: "Nó Saudável e Estável",
+                        uptime: "99.95%",
+                        requisicoesHoje: "31,400",
+                        trafegoMin: 50,
+                        trafegoMax: 95
+                    },
+                    {
+                        dominio: "ingressos.baladaprime.com.br",
+                        tipo: "Checkout e Bilheteria",
+                        ping: "34ms",
+                        sha: "Válida (99.90%)",
+                        saude: 96,
+                        descSaude: "Carga Constante",
+                        uptime: "99.90%",
+                        requisicoesHoje: "45,900",
+                        trafegoMin: 60,
+                        trafegoMax: 110
+                    }
+                ]
+            },
+            "lounge-vip-03": {
+                nome: "Lounge VIP & Eventos",
+                status: "EM ALERTA (CARGA)",
+                statusClass: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+                expires_at: "2026-08-30",
+                ativo: true,
+                sites: [
+                    {
+                        dominio: "loungevipeventos.com",
+                        tipo: "Site de Reservas Corporativas",
+                        ping: "85ms",
+                        sha: "Válida (99.10%)",
+                        saude: 82,
+                        descSaude: "Tráfego Elevado // Atenção",
+                        uptime: "98.80%",
+                        requisicoesHoje: "15,800",
+                        trafegoMin: 65,
+                        trafegoMax: 105
+                    }
+                ]
+            },
+            "cliente-inadimplente-04": {
+                nome: "Studio Alpha Produções",
+                status: "BLOQUEADO (403)",
+                statusClass: "bg-red-500/10 text-red-400 border-red-500/30",
+                expires_at: "2025-12-31",
+                ativo: false,
+                sites: [
+                    {
+                        dominio: "studioalphavideo.com.br",
+                        tipo: "Portal de Conteúdo",
+                        ping: "OFFLINE",
+                        sha: "Revogada (Kill Switch)",
+                        saude: 0,
+                        descSaude: "Acesso Suspenso por Inadimplência",
+                        uptime: "0.00%",
+                        requisicoesHoje: "0",
+                        trafegoMin: 0,
+                        trafegoMax: 2
+                    }
+                ]
+            }
+        };
 
-        // GLOBALS
-        let chartTrafego;
-        let chartSaude;
-        let chartHistorico;
-        let corAtual = '#00d2ff';
-        let menuAberto = true;
-        let dadosClientesCache = {}; 
+        // ESTADOS GLOBAIS
+        let perfilLogado = null; // 'admin' ou 'cliente'
+        let clienteLogadoKey = null;
+        let siteAtivoClienteIdx = 0;
+
+        let tmeClienteKey = "estudio-marcelao-01";
+        let tmeSiteIdx = 0;
+
+        let chartTrafegoAdmin, chartSaudeAdmin, chartTrafegoCliente;
+        let seriesAdminData = Array.from({length: 20}, () => 45);
+        let seriesClienteData = Array.from({length: 15}, () => 35);
+        let corAtual = "#00d2ff";
 
         // ==========================================
-        // MOTOR DE BOOT QUÁDRUPLO
+        // CONTROLE DE LOGIN E ROTEAMENTO
         // ==========================================
-        function iniciarBoot() {
+        function autenticarComo(tipo, clientId = null) {
+            perfilLogado = tipo;
+            clienteLogadoKey = clientId;
+
+            document.getElementById('portal-login').classList.add('hidden');
+
+            if (tipo === 'admin') {
+                executarBootAnimado(() => {
+                    document.getElementById('painel-admin').classList.remove('hidden');
+                    lucide.createIcons();
+                    initAdminCharts();
+                    renderizarTabelaAdmin();
+                    aoTrocarClienteTME(tmeClienteKey);
+                });
+            } else if (tipo === 'cliente') {
+                executarBootAnimado(() => {
+                    document.getElementById('painel-cliente').classList.remove('hidden');
+                    carregarConsoleDoCliente(clientId || "estudio-marcelao-01");
+                });
+            }
+        }
+
+        function realizarLoginManual(e) {
+            e.preventDefault();
+            const user = document.getElementById('login-user').value.trim().toLowerCase();
+            if (user === 'admin') {
+                autenticarComo('admin');
+            } else if (databaseClientes[user]) {
+                autenticarComo('cliente', user);
+            } else {
+                autenticarComo('cliente', 'estudio-marcelao-01');
+            }
+        }
+
+        function realizarLogout() {
+            document.getElementById('painel-admin').classList.add('hidden');
+            document.getElementById('painel-cliente').classList.add('hidden');
+            document.getElementById('portal-login').classList.remove('hidden');
+            perfilLogado = null;
+            clienteLogadoKey = null;
+        }
+
+        // ==========================================
+        // BOOT QUÁDRUPLO
+        // ==========================================
+        function executarBootAnimado(callbackConclusao) {
             const bootScreen = document.getElementById('bootScreen');
             const progressFill = document.getElementById('bootProgressFill');
             const bootCounter = document.getElementById('bootCounter');
             const bootStatus = document.getElementById('bootStatus');
 
-            const mensagensFase1 = [
-                "Iniciando núcleos neurais...", 
-                "Calibrando processamento UI..."
-            ];
-            const mensagensFase2 = [
-                "Iniciando Varredura SecOps...", 
-                "Validando heurística de rede..."
-            ];
-            const mensagensFase3 = [
-                "Sincronizando Malha de Contratos...", 
-                "Conectando ao banco de dados remoto..."
-            ];
-            const mensagensFase4 = [
-                "Armando Escudos Defensivos...", 
-                "Desbloqueando Cockpit Central..."
+            bootScreen.style.display = 'flex';
+            bootScreen.classList.remove('fade-out');
+
+            const msgsFases = [
+                "Fase 1: Iniciando núcleos neurais...",
+                "Fase 2: Varredura de Segurança SecOps...",
+                "Fase 3: Sincronizando Malha TME...",
+                "Fase 4: Desbloqueando Cockpit Autorizado..."
             ];
 
             let progresso = 0;
-            let faseAtual = 1;
-            
-            const intervaloBoot = setInterval(() => {
-                progresso += Math.floor(Math.random() * 8) + 5;
-                
-                if (progresso >= 100) {
-                    if (faseAtual < 4) {
-                        progresso = 0;
-                        faseAtual++;
-                        
-                        progressFill.style.transition = 'none';
-                        progressFill.style.width = '0%';
-                        
-                        if(faseAtual === 2) {
-                            bootStatus.textContent = "Reboot Fase 2: Segurança...";
-                        }
-                        if(faseAtual === 3) {
-                            bootStatus.textContent = "Reboot Fase 3: Sincronização...";
-                        }
-                        if(faseAtual === 4) {
-                            bootStatus.textContent = "Reboot Fase 4: Interface Final...";
-                        }
-                        
-                        setTimeout(() => { 
-                            progressFill.style.transition = 'width 0.1s linear'; 
-                        }, 50);
+            let fase = 1;
 
+            const intervalo = setInterval(() => {
+                progresso += Math.floor(Math.random() * 12) + 8;
+                if (progresso >= 100) {
+                    if (fase < 4) {
+                        progresso = 0;
+                        fase++;
+                        bootStatus.textContent = msgsFases[fase - 1];
                     } else {
                         progresso = 100;
-                        clearInterval(intervaloBoot);
-                        bootStatus.textContent = "Sistema 100% Operacional.";
+                        clearInterval(intervalo);
                         progressFill.style.width = '100%';
                         bootCounter.textContent = '100%';
 
                         setTimeout(() => {
                             bootScreen.classList.add('fade-out');
-                            setTimeout(() => { 
-                                bootScreen.style.display = 'none'; 
-                            }, 600); 
-                        }, 400);
-                    }
-                } else {
-                    progressFill.style.width = progresso + '%';
-                    bootCounter.textContent = progresso + '%';
-
-                    let msgs;
-                    if(faseAtual === 1) { msgs = mensagensFase1; }
-                    if(faseAtual === 2) { msgs = mensagensFase2; }
-                    if(faseAtual === 3) { msgs = mensagensFase3; }
-                    if(faseAtual === 4) { msgs = mensagensFase4; }
-
-                    if (progresso > 50) {
-                        bootStatus.textContent = msgs[1];
-                    } else if (progresso > 10) {
-                        bootStatus.textContent = msgs[0];
+                            setTimeout(() => {
+                                bootScreen.style.display = 'none';
+                                if (callbackConclusao) callbackConclusao();
+                            }, 500);
+                        }, 300);
                     }
                 }
-            }, 80);
+                progressFill.style.width = progresso + '%';
+                bootCounter.textContent = progresso + '%';
+            }, 60);
         }
 
         // ==========================================
-        // SISTEMA DE NAVEGAÇÃO E GRÁFICOS
+        // OPERAÇÃO DO PROTOCOLO TME (ADMIN)
         // ==========================================
-        function toggleSidebar() {
-            menuAberto = !menuAberto; 
-            document.getElementById('sidebar').classList.toggle('recolhido');
+        function aoTrocarClienteTME(clientId) {
+            tmeClienteKey = clientId;
+            const cliente = databaseClientes[clientId];
+            if (!cliente) return;
+
+            document.getElementById('tme-client-name').innerText = cliente.nome;
+            const badge = document.getElementById('tme-client-status');
+            badge.innerText = cliente.status;
+            badge.className = `px-2 py-0.5 text-[10px] border rounded font-sans tracking-wider ${cliente.statusClass}`;
+
+            // Preenche o Seletor 2 (Sites do Cliente)
+            const siteSelect = document.getElementById('tme-select-site');
+            siteSelect.innerHTML = '';
+            cliente.sites.forEach((site, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.text = site.dominio;
+                siteSelect.appendChild(opt);
+            });
+
+            aoTrocarSiteTME(0);
         }
 
-        function mudarSecao(secao) {
-            document.querySelectorAll('.menu-item').forEach(el => {
-                el.classList.remove('ativo');
-            });
-            
-            document.getElementById('btn-' + secao).classList.add('ativo');
-            
-            document.querySelectorAll('.dash-module').forEach(el => {
-                el.classList.add('hidden');
-            });
-            
-            if (['visao-geral', 'camaleao', 'secops'].includes(secao)) {
-                document.getElementById('mod-visao-geral').classList.remove('hidden');
-                
-                if (secao === 'visao-geral') {
-                    document.getElementById('mod-metricas').classList.remove('hidden');
-                    document.getElementById('mod-tabela').classList.remove('hidden');
-                    document.getElementById('mod-terminais').classList.remove('hidden');
-                    document.getElementById('card-coesao').classList.remove('hidden');
-                    document.getElementById('card-heuristica').classList.remove('hidden');
-                    document.getElementById('card-escudos').classList.remove('hidden');
-                    document.getElementById('card-licencas').classList.remove('hidden');
-                    document.getElementById('term-secops').classList.remove('hidden');
-                    document.getElementById('term-camaleao').classList.remove('hidden');
-                } else if (secao === 'camaleao') {
-                    document.getElementById('mod-tabela').classList.add('hidden');
-                    document.getElementById('card-heuristica').classList.add('hidden');
-                    document.getElementById('card-escudos').classList.add('hidden');
-                    document.getElementById('card-licencas').classList.add('hidden');
-                    document.getElementById('term-secops').classList.add('hidden');
-                } else if (secao === 'secops') {
-                    document.getElementById('card-coesao').classList.add('hidden');
-                    document.getElementById('term-camaleao').classList.add('hidden');
-                }
-            } 
-            else if (secao === 'monitoramento') {
-                document.getElementById('mod-monitoramento').classList.remove('hidden');
-                window.dispatchEvent(new Event('resize')); 
+        function aoTrocarSiteTME(siteIdx) {
+            tmeSiteIdx = parseInt(siteIdx);
+            const cliente = databaseClientes[tmeClienteKey];
+            const site = cliente.sites[tmeSiteIdx];
+            if (!site) return;
+
+            document.getElementById('tme-active-site-display').innerText = site.dominio;
+            document.getElementById('tme-client-ping').innerText = site.ping;
+            document.getElementById('tme-client-sha').innerText = site.sha;
+            document.getElementById('tme-health-desc').innerText = site.descSaude;
+
+            if (chartSaudeAdmin) {
+                chartSaudeAdmin.updateSeries([site.saude]);
             }
-            else if (secao === 'whitelabel') {
-                document.getElementById('mod-whitelabel').classList.remove('hidden');
-            }
-            else if (secao === 'ajuda') {
-                document.getElementById('mod-ajuda').classList.remove('hidden');
-            }
+
+            // Log no terminal SecOps
+            const logBox = document.getElementById('log-secops');
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const novoLog = document.createElement('div');
+            novoLog.className = "border-l-2 border-blue-500 pl-3 bg-blue-500/5 p-2";
+            novoLog.innerHTML = `<span class="text-blue-400 font-bold">[TME]</span> [${timestamp}] Inspecionando ${site.dominio} (#${tmeClienteKey}).`;
+            logBox.prepend(novoLog);
         }
 
-        function initCharts() {
-            let seriesData = Array.from({length: 20}, () => Math.floor(Math.random() * 70) + 20);
+        function initAdminCharts() {
+            if (chartTrafegoAdmin) return;
 
-            const optionsTrafego = {
-                series: [
-                    { 
-                        name: 'RPS', 
-                        data: seriesData 
-                    }
-                ],
-                chart: { 
-                    type: 'area', 
-                    height: 250, 
-                    toolbar: { 
-                        show: false 
-                    }, 
-                    animations: { 
-                        enabled: true, 
-                        dynamicAnimation: { 
-                            speed: 1000 
-                        } 
-                    } 
-                },
-                colors: [corAtual], 
-                fill: { 
-                    type: 'gradient', 
-                    gradient: { 
-                        shadeIntensity: 1, 
-                        opacityFrom: 0.4, 
-                        opacityTo: 0.05 
-                    } 
-                },
-                dataLabels: { 
-                    enabled: false 
-                }, 
-                stroke: { 
-                    curve: 'smooth', 
-                    width: 2 
-                },
-                xaxis: { 
-                    labels: { 
-                        show: false 
-                    }, 
-                    axisBorder: { 
-                        show: false 
-                    }, 
-                    axisTicks: { 
-                        show: false 
-                    } 
-                },
-                yaxis: { 
-                    labels: { 
-                        style: { 
-                            colors: '#94a3b8', 
-                            fontFamily: 'monospace' 
-                        } 
-                    } 
-                },
-                grid: { 
-                    borderColor: 'rgba(255,255,255,0.05)', 
-                    strokeDashArray: 4 
-                }
-            };
-            chartTrafego = new ApexCharts(document.querySelector("#chart-trafego"), optionsTrafego);
-            chartTrafego.render();
-
-            const optionsSaude = {
-                series: [100], 
-                chart: { 
-                    type: 'radialBar', 
-                    height: 250 
-                }, 
+            const optTrafego = {
+                series: [{ name: 'RPS (Nó Específico)', data: seriesAdminData }],
+                chart: { type: 'area', height: 250, toolbar: { show: false }, animations: { speed: 800 } },
                 colors: [corAtual],
-                plotOptions: { 
-                    radialBar: { 
-                        hollow: { 
-                            size: '60%' 
-                        }, 
-                        track: { 
-                            background: 'rgba(255,255,255,0.05)' 
-                        }, 
-                        dataLabels: { 
-                            value: { 
-                                color: '#fff', 
-                                fontSize: '24px', 
-                                formatter: function(val) { 
-                                    return val + "%" 
-                                } 
-                            } 
-                        } 
-                    } 
-                }
+                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05 } },
+                stroke: { curve: 'smooth', width: 2 },
+                xaxis: { labels: { show: false }, axisBorder: { show: false } },
+                yaxis: { labels: { style: { colors: '#94a3b8', fontFamily: 'monospace' } } },
+                grid: { borderColor: 'rgba(255,255,255,0.05)', strokeDashArray: 4 }
             };
-            chartSaude = new ApexCharts(document.querySelector("#chart-saude"), optionsSaude);
-            chartSaude.render();
+            chartTrafegoAdmin = new ApexCharts(document.querySelector("#chart-trafego-admin"), optTrafego);
+            chartTrafegoAdmin.render();
 
-            const optionsHistorico = {
-                series: [
-                    { 
-                        name: 'Bloqueios', 
-                        data: [44, 55, 41, 67, 22, 43, 21, 33, 45, 31, 87, 65, 35] 
-                    }
-                ],
-                chart: { 
-                    type: 'bar', 
-                    height: 250, 
-                    toolbar: { 
-                        show: false 
-                    } 
-                }, 
+            const optSaude = {
+                series: [100],
+                chart: { type: 'radialBar', height: 240 },
                 colors: [corAtual],
-                plotOptions: { 
-                    bar: { 
-                        borderRadius: 2, 
-                        columnWidth: '40%' 
-                    } 
-                }, 
-                dataLabels: { 
-                    enabled: false 
-                },
-                xaxis: { 
-                    categories: ['10:00','10:05','10:10','10:15','10:20','10:25','10:30','10:35','10:40','10:45','10:50','10:55','11:00'], 
-                    labels: { 
-                        style: { 
-                            colors: '#94a3b8' 
-                        } 
-                    } 
-                },
-                yaxis: { 
-                    labels: { 
-                        style: { 
-                            colors: '#94a3b8' 
-                        } 
-                    } 
-                }, 
-                grid: { 
-                    borderColor: 'rgba(255,255,255,0.05)', 
-                    strokeDashArray: 4 
+                plotOptions: {
+                    radialBar: {
+                        hollow: { size: '60%' },
+                        track: { background: 'rgba(255,255,255,0.05)' },
+                        dataLabels: { value: { color: '#fff', fontSize: '24px', formatter: val => val + "%" } }
+                    }
                 }
             };
-            chartHistorico = new ApexCharts(document.querySelector("#chart-historico"), optionsHistorico);
-            chartHistorico.render();
+            chartSaudeAdmin = new ApexCharts(document.querySelector("#chart-saude-admin"), optSaude);
+            chartSaudeAdmin.render();
 
-            setInterval(() => { 
-                seriesData.shift(); 
-                seriesData.push(Math.floor(Math.random() * 70) + 20); 
-                chartTrafego.updateSeries([{ data: seriesData }]); 
+            // Loop de telemetria contínua
+            setInterval(() => {
+                if (perfilLogado === 'admin') {
+                    const cli = databaseClientes[tmeClienteKey];
+                    const site = cli.sites[tmeSiteIdx] || cli.sites[0];
+                    seriesAdminData.shift();
+                    let val = Math.floor(Math.random() * (site.trafegoMax - site.trafegoMin + 1)) + site.trafegoMin;
+                    seriesAdminData.push(val);
+                    chartTrafegoAdmin.updateSeries([{ data: seriesAdminData }]);
+                }
             }, 2000);
         }
 
-        function atualizarWhiteLabel() {
-            const nomeEmpresa = document.getElementById('input-nome-empresa').value;
-            corAtual = document.getElementById('select-cor-neon').value;
-            
-            document.getElementById('label-empresa-ativa').innerHTML = `Operando com <span class="text-white font-semibold">${nomeEmpresa}</span>`;
-            document.documentElement.style.setProperty('--accent-color', corAtual);
-            
-            let r = parseInt(corAtual.slice(1,3), 16);
-            let g = parseInt(corAtual.slice(3,5), 16);
-            let b = parseInt(corAtual.slice(5,7), 16);
-            
-            document.documentElement.style.setProperty('--accent-glow', `rgba(${r},${g},${b},0.4)`);
-            document.documentElement.style.setProperty('--accent-glow-strong', `rgba(${r},${g},${b},0.8)`);
-            document.documentElement.style.setProperty('--accent-glow-inset', `rgba(${r},${g},${b},0.2)`);
-            
-            document.getElementById('pdf-titulo').style.borderBottom = `2px solid ${corAtual}`;
-            
-            if(chartTrafego) {
-                chartTrafego.updateOptions({ colors: [corAtual] });
-            }
-            if(chartSaude) {
-                chartSaude.updateOptions({ colors: [corAtual] });
-            }
-            if(chartHistorico) {
-                chartHistorico.updateOptions({ colors: [corAtual] });
-            }
-        }
+        function renderizarTabelaAdmin() {
+            const tbody = document.getElementById('tabela-clientes-admin');
+            tbody.innerHTML = '';
+            let ativos = 0, vencidos = 0;
 
-        let bloqueiosHeuristicos = 1428;
-        
-        function simularAtaqueReal() {
-            const termSecOps = document.getElementById('term-secops');
-            const cardHeuristica = document.getElementById('card-heuristica');
-            const eqAlerta = document.getElementById('eq-alerta');
-            const logBox = document.getElementById('log-secops');
+            Object.keys(databaseClientes).forEach(key => {
+                const c = databaseClientes[key];
+                if (c.ativo) ativos++; else vencidos++;
 
-            termSecOps.classList.add('alerta-critico'); 
-            cardHeuristica.classList.add('alerta-critico'); 
-            eqAlerta.classList.remove('hidden');
-            
-            bloqueiosHeuristicos++;
-            document.getElementById('dado-sanitizacao').innerText = bloqueiosHeuristicos.toLocaleString('pt-BR');
-            
-            const novoLog = document.createElement('div'); 
-            novoLog.className = "border-l-2 border-red-500 pl-3 bg-red-500/10 p-2 mb-2 animate-pulse text-white"; 
-            novoLog.innerHTML = `<span class="text-red-400 font-bold">[TAMPERING]</span> Alerta SecOps Acionado. Injeção Bloqueada.`; 
-            logBox.prepend(novoLog);
-            
-            setTimeout(() => { 
-                termSecOps.classList.remove('alerta-critico'); 
-                cardHeuristica.classList.remove('alerta-critico'); 
-                eqAlerta.classList.add('hidden'); 
-                novoLog.classList.remove('animate-pulse', 'text-white'); 
-                novoLog.classList.add('text-slate-400'); 
-            }, 4000);
-        }
+                const dominios = c.sites.map(s => s.dominio).join(', ');
 
-        // ==========================================
-        // DADOS E CONEXÃO COM A MALHA JSON
-        // ==========================================
-        async function carregarMalha() {
-            try {
-                const res = await fetch('../upgrade/remote-config.json');
-                const data = await res.json();
-                dadosClientesCache = data.clients; 
-                renderizarTabelas();
-            } catch (e) {
-                console.error("Erro malha: Simulando base local.");
-                dadosClientesCache = {
-                    "estudio-marcelao-01": { 
-                        "status": true, 
-                        "expires_at": "2026-12-31" 
-                    },
-                    "cliente-inadimplente-02": { 
-                        "status": false, 
-                        "expires_at": "2026-12-31" 
-                    },
-                    "cliente-expirado-03": { 
-                        "status": true, 
-                        "expires_at": "2024-12-31" 
-                    }
-                };
-                renderizarTabelas();
-            }
-        }
-
-        function renderizarTabelas() {
-            const tbodyUI = document.getElementById('tabela-clientes');
-            const tbodyPDF = document.getElementById('pdf-tabela-body');
-            
-            tbodyUI.innerHTML = '';
-            tbodyPDF.innerHTML = '';
-            
-            let ativos = 0; 
-            let vencidos = 0;
-
-            Object.keys(dadosClientesCache).forEach(clientId => {
-                const client = dadosClientesCache[clientId];
-                const estaVencido = new Date() > new Date(client.expires_at);
-                const blockAtivo = client.status === false;
-                const dataFormatada = new Date(client.expires_at).toLocaleDateString('pt-BR');
-                
-                if (!blockAtivo && !estaVencido) {
-                    ativos++;
-                }
-                if (estaVencido || blockAtivo) {
-                    vencidos++;
-                }
-
-                // Tabela da Interface (Neon)
-                tbodyUI.innerHTML += `
-                    <tr class="hover:bg-slate-800/40 transition relative z-10">
-                        <td class="py-2 text-white font-mono">${clientId}</td>
-                        <td class="py-2">
-                            <span class="px-2 py-1 text-[10px] border rounded ${blockAtivo ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'}">
-                                ${blockAtivo ? 'Bloqueado' : 'Blindado'}
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="py-2.5 font-mono text-white font-medium">
+                            ${c.nome} <br><span class="text-slate-500 text-[10px]">#${key}</span>
+                        </td>
+                        <td class="py-2.5 text-slate-300 font-mono text-[11px] max-w-xs truncate" title="${dominios}">${dominios}</td>
+                        <td class="py-2.5">
+                            <span class="px-2 py-0.5 text-[10px] border rounded ${c.ativo ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}">
+                                ${c.status}
                             </span>
                         </td>
-                        <td class="py-2">
-                            <span class="px-2 py-1 text-[10px] border rounded bg-indigo-500/10 text-indigo-300 border-indigo-500/30">Sincronizado</span>
-                        </td>
-                        <td class="py-2 ${estaVencido ? 'text-red-400' : 'text-slate-300'}">
-                            ${dataFormatada}
-                        </td>
-                    </tr>
-                `;
-
-                // Tabela do PDF (Modo Documento)
-                tbodyPDF.innerHTML += `
-                    <tr>
-                        <td>
-                            <strong>${clientId}</strong>
-                        </td>
-                        <td style="color: ${blockAtivo ? '#ef4444' : '#10b981'}; font-weight: bold;">
-                            ${blockAtivo ? 'Revogado' : 'Permitido'}
-                        </td>
-                        <td style="color: ${estaVencido ? '#ef4444' : '#334155'};">
-                            ${dataFormatada}
+                        <td class="py-2.5 font-mono text-slate-300">${c.expires_at}</td>
+                        <td class="py-2.5 text-right font-mono">
+                            <button onclick="selecionarClienteTMEPelaTabela('${key}')" class="text-cyan-400 hover:text-white underline">
+                                TME
+                            </button>
                         </td>
                     </tr>
                 `;
             });
-            
-            document.getElementById('count-ativos').innerText = ativos; 
-            document.getElementById('pdf-ativos-val').innerText = ativos; 
-            
+
+            document.getElementById('count-ativos').innerText = ativos;
             document.getElementById('count-vencidos').innerText = vencidos;
-            document.getElementById('pdf-vencidos-val').innerText = vencidos;
+        }
+
+        function selecionarClienteTMEPelaTabela(key) {
+            document.getElementById('tme-select-client').value = key;
+            aoTrocarClienteTME(key);
+            mudarSecao('tme');
+        }
+
+        function mudarSecao(secao) {
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('ativo'));
+            const btn = document.getElementById('btn-' + secao);
+            if (btn) btn.classList.add('ativo');
+
+            document.querySelectorAll('#painel-admin .dash-module').forEach(el => el.classList.add('hidden'));
+
+            if (secao === 'visao-geral') {
+                document.getElementById('mod-visao-geral').classList.remove('hidden');
+            } else if (secao === 'tme') {
+                document.getElementById('mod-tme').classList.remove('hidden');
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+            } else if (secao === 'whitelabel') {
+                document.getElementById('mod-whitelabel').classList.remove('hidden');
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('recolhido');
         }
 
         // ==========================================
-        // MOTOR DE RELATÓRIO FORENSE (DOCUMENTO LIMPO)
+        // CONSOLE EXCLUSIVO DO CLIENTE (COM ABAS DE SITES)
         // ==========================================
+        function carregarConsoleDoCliente(clientId) {
+            const cliente = databaseClientes[clientId] || databaseClientes["estudio-marcelao-01"];
+            document.getElementById('client-view-name').innerText = cliente.nome;
+            document.getElementById('client-view-id').innerText = '#' + clientId;
+
+            // Renderiza as Abas Superiores de Sites (Opção 2)
+            const tabsContainer = document.getElementById('client-sites-tabs-container');
+            tabsContainer.innerHTML = '';
+
+            cliente.sites.forEach((site, index) => {
+                const btn = document.createElement('button');
+                btn.className = `tab-site-btn ${index === 0 ? 'active' : ''}`;
+                btn.id = `tab-site-${index}`;
+                btn.innerHTML = `<i data-lucide="globe" class="w-3.5 h-3.5"></i> ${site.dominio}`;
+                btn.onclick = () => selecionarSiteCliente(clientId, index);
+                tabsContainer.appendChild(btn);
+            });
+
+            lucide.createIcons();
+            selecionarSiteCliente(clientId, 0);
+            initClienteChart();
+        }
+
+        function selecionarSiteCliente(clientId, siteIndex) {
+            siteAtivoClienteIdx = siteIndex;
+            const cliente = databaseClientes[clientId];
+            const site = cliente.sites[siteIndex];
+
+            // Atualiza botões das abas
+            document.querySelectorAll('.tab-site-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`tab-site-${siteIndex}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Atualiza indicadores do site ativo
+            document.getElementById('client-active-domain-title').innerText = site.dominio;
+            document.getElementById('client-active-domain-desc').innerText = site.tipo;
+            document.getElementById('client-active-ping').innerText = site.ping;
+            document.getElementById('client-card-uptime').innerText = site.uptime;
+            document.getElementById('client-card-req').innerText = site.requisicoesHoje;
+        }
+
+        function initClienteChart() {
+            if (chartTrafegoCliente) return;
+
+            const opt = {
+                series: [{ name: 'Acessos/min', data: seriesClienteData }],
+                chart: { type: 'area', height: 240, toolbar: { show: false }, animations: { speed: 800 } },
+                colors: ['#3b82f6'],
+                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.05 } },
+                stroke: { curve: 'smooth', width: 2 },
+                xaxis: { labels: { show: false }, axisBorder: { show: false } },
+                yaxis: { labels: { style: { colors: '#64748b', fontFamily: 'monospace' } } },
+                grid: { borderColor: 'rgba(255,255,255,0.05)', strokeDashArray: 4 }
+            };
+
+            chartTrafegoCliente = new ApexCharts(document.querySelector("#chart-trafego-cliente"), opt);
+            chartTrafegoCliente.render();
+
+            setInterval(() => {
+                if (perfilLogado === 'cliente') {
+                    seriesClienteData.shift();
+                    seriesClienteData.push(Math.floor(Math.random() * 40) + 25);
+                    chartTrafegoCliente.updateSeries([{ data: seriesClienteData }]);
+                }
+            }, 2500);
+        }
+
+        function alternarKillSwitch(bloquear) {
+            document.getElementById('killSwitchScreen').style.display = bloquear ? 'flex' : 'none';
+        }
+
+        // ==========================================
+        // ANOMALIA & WHITE LABEL
+        // ==========================================
+        function simularAtaqueReal() {
+            const term = document.getElementById('term-secops');
+            term.classList.add('alerta-critico');
+
+            const logBox = document.getElementById('log-secops');
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const novoLog = document.createElement('div');
+            novoLog.className = "border-l-2 border-red-500 pl-3 bg-red-500/10 p-2 mb-2 animate-pulse text-white";
+            novoLog.innerHTML = `<span class="text-red-400 font-bold">[TAMPERING]</span> [${timestamp}] Tentativa de quebra de DOM neutralizada no site ativo.`;
+            logBox.prepend(novoLog);
+
+            setTimeout(() => term.classList.remove('alerta-critico'), 3500);
+        }
+
+        function atualizarWhiteLabel() {
+            const nome = document.getElementById('input-nome-empresa').value;
+            corAtual = document.getElementById('select-cor-neon').value;
+
+            document.getElementById('label-empresa-ativa').innerHTML = `Operando sob <span class="text-white font-semibold">${nome}</span>`;
+            document.documentElement.style.setProperty('--accent-color', corAtual);
+
+            if (chartTrafegoAdmin) chartTrafegoAdmin.updateOptions({ colors: [corAtual] });
+            if (chartSaudeAdmin) chartSaudeAdmin.updateOptions({ colors: [corAtual] });
+        }
+
         function gerarRelatorioLimpo() {
-            const nomeEmpresa = document.getElementById('input-nome-empresa').value.toUpperCase();
-            document.getElementById('pdf-titulo').innerHTML = `AUDITORIA // ${nomeEmpresa}`;
             document.getElementById('pdf-data').innerText = new Date().toLocaleString('pt-BR');
-            document.getElementById('pdf-sanitizacao-val').innerText = bloqueiosHeuristicos;
+            document.getElementById('pdf-sanitizacao-val').innerText = '1,428';
+            document.getElementById('pdf-ativos-val').innerText = '3';
+            document.getElementById('pdf-vencidos-val').innerText = '1';
 
-            const divLimpa = document.getElementById('relatorio-pdf-clean');
-            divLimpa.style.display = 'block';
+            const elemento = document.getElementById('relatorio-pdf-clean');
+            elemento.style.display = 'block';
 
-            const loader = document.createElement('div');
-            loader.style.position = 'fixed';
-            loader.style.top = '0'; 
-            loader.style.left = '0';
-            loader.style.width = '100vw'; 
-            loader.style.height = '100vh';
-            loader.style.backgroundColor = 'var(--bg-base)';
-            loader.style.zIndex = '999999'; 
-            loader.style.display = 'flex'; 
-            loader.style.flexDirection = 'column';
-            loader.style.alignItems = 'center'; 
-            loader.style.justifyContent = 'center';
-            loader.innerHTML = `
-                <div style="font-family: monospace; color: var(--accent-color); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 3px; animation: pulseFade 1s infinite alternate;">
-                    Compilando Relatório Forense...
-                </div>
-                <div style="margin-top: 15px; width: 250px; height: 2px; background: rgba(255,255,255,0.05); overflow: hidden; border-radius: 2px;">
-                    <div style="width: 50%; height: 100%; background: var(--accent-color); box-shadow: 0 0 10px var(--accent-color); animation: loaderSlide 1s infinite linear;"></div>
-                </div>
-                <style>
-                    @keyframes loaderSlide { 
-                        0% { transform: translateX(-100%); } 
-                        100% { transform: translateX(200%); } 
-                    }
-                    @keyframes pulseFade { 
-                        0% { opacity: 0.5; } 
-                        100% { opacity: 1; } 
-                    }
-                </style>
-            `;
-            document.body.appendChild(loader);
-
-            setTimeout(() => {
-                html2pdf().set({ 
-                    margin: 0.5, 
-                    filename: `Auditoria_Medius_${new Date().getTime()}.pdf`, 
-                    jsPDF: { 
-                        unit: 'in', 
-                        format: 'a4', 
-                        orientation: 'portrait' 
-                    } 
-                }).from(divLimpa).save().then(() => {
-                    divLimpa.style.display = 'none';
-                    document.body.removeChild(loader);
-                });
-            }, 600);
+            html2pdf().set({
+                margin: 0.5,
+                filename: `Relatorio_Medius_${new Date().getTime()}.pdf`,
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            }).from(elemento).save().then(() => {
+                elemento.style.display = 'none';
+            });
         }
 
-        // ==========================================
-        // EVENTO DE START
-        // ==========================================
         window.addEventListener('DOMContentLoaded', () => {
-            iniciarBoot();    
-            initCharts();     
-            carregarMalha();  
+            lucide.createIcons();
         });
-
     </script>
 </body>
 </html>
