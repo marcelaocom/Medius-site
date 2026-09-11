@@ -1109,8 +1109,9 @@
     </div>
 
   // BASE DE DADOS DOS CLIENTES (Fallback Seguro / Cloud)
-if (typeof databaseClientes === 'undefined' || Object.keys(databaseClientes).length === 0) {
-    var databaseClientes = {
+if (typeof databaseClientes === 'undefined') { window.databaseClientes = {}; }
+if (Object.keys(databaseClientes).length === 0) {
+    databaseClientes = {
         "estudio-marcelao-01": {
             nome: "Marcelão Digital & Entertainment",
             status: "SINCRONIZADO",
