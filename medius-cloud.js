@@ -1,8 +1,8 @@
 // ==========================================
 // MEDIUS CLOUD CORE // SUPABASE INTEGRATION
 // ==========================================
-const SUPABASE_URL = 'SUA_PROJECT_URL_AQUI'; 
-const SUPABASE_ANON_KEY = 'SUA_ANON_KEY_AQUI';
+const SUPABASE_URL = 'https://fkxrcspkxtgiioduwxol.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZreHJjc3BreHRnaWlvZHV3eG9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzk2NzMsImV4cCI6MjEwNDcxNTY3M30.ObemWIIUk8VnqPKT5-kX62TENDyEMrXn7IN8WFe4_wo';
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -44,7 +44,7 @@ async function sincronizarMalhaDaNuvem() {
 
         console.log("[MEDIUS CORE] Malha sincronizada com sucesso via Supabase!");
         
-        // Se as funções de renderização do painel já estiverem carregadas, atualiza a tela
+        // Atualiza a tela se as funções de renderização do painel estiverem presentes
         if (typeof renderizarTabelaAdmin === 'function') {
             renderizarTabelaAdmin();
         }
