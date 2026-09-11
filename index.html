@@ -1590,8 +1590,62 @@
             });
         }
 
+        function cadastrarNovoCliente(e) {
+            e.preventDefault();
+            const id = document.getElementById('novo-cli-id').value.trim().toLowerCase().replace(/\s+/g, '-');
+            const nome = document.getElementById('novo-cli-nome').value.trim();
+            const dominio = document.getElementById('novo-cli-dominio').value.trim();
+            const expires = document.getElementById('novo-cli-exp').value;
+
+            if (databaseClientes[id]) {
+                alert('Erro: Este ID/Token já está registrado na malha!');
+                return;
+            }
+
+            databaseClientes[id] = {
+                nome: nome,
+                status: "SINCRONIZADO",
+                statusClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+                expires_at: expires || "2026-12-31",
+                ativo: true,
+                sites: [
+                    {
+                        dominio: dominio,
+                        tipo: "Portal / Hotsite Comercial",
+                        ping: "24ms",
+                        sha: "Válida (100%)",
+                        saude: 100,
+                        descSaude: "Nó Operacional Recém-Registrado",
+                        uptime: "100%",
+                        requisicoesHoje: "1,200",
+                        trafegoMin: 20,
+                        trafegoMax: 60
+                    }
+                ]
+            };
+
+            // Salva no localStorage para persistir os cadastros
+            localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
+
+            alert(`Sucesso! O nó #${id} foi blindado e integrado à malha.`);
+            e.target.reset();
+            renderizarTabelaAdmin();
+            mudarSecaoAdmin('visao-geral');
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
+            // Carrega clientes salvos anteriormente se houverem
+            const salvo = localStorage.getItem('medius_database_clientes');
+            if (salvo) {
+                try {
+                    const parsed = JSON.parse(salvo);
+                    if (Object.keys(parsed).length > 0) {
+                        databaseClientes = parsed;
+                    }
+                } catch(err) { console.error(err); }
+            }
+            renderizarTabelaAdmin();
         });
     </script>
 </body>
