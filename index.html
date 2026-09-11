@@ -38,7 +38,6 @@
             overflow-x: hidden;
         }
 
-        /* Efeito de iluminação de fundo */
         body::before {
             content: ''; 
             position: fixed; 
@@ -116,7 +115,7 @@
             transition: width 0.1s linear; 
         }
 
-        /* CARDS E BORDAS NEON DINÂMICAS */
+        /* CARDS E ANIMAÇÕES */
         @keyframes rotate-neon { 
             0% { transform: rotate(0deg); } 
             100% { transform: rotate(360deg); } 
@@ -171,7 +170,7 @@
             z-index: 3; 
         }
 
-        /* MENU LATERAL */
+        /* SIDEBARS */
         aside {
             background-color: var(--bg-sidebar); 
             border-right: var(--border-thick) solid var(--accent-color);
@@ -303,7 +302,7 @@
             100% { height: 16px; } 
         }
 
-        /* ABAS SUPERIORES DE SITES DO CLIENTE */
+        /* ABAS DE SITES */
         .tab-site-btn {
             background-color: #050a14;
             border: 1px solid #1e293b;
@@ -317,6 +316,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            white-space: nowrap;
         }
 
         .tab-site-btn:hover {
@@ -332,7 +332,7 @@
             font-weight: bold;
         }
 
-        /* KILL SWITCH (403 FORBIDDEN) */
+        /* KILL SWITCH (403) */
         #killSwitchScreen {
             display: none;
             position: fixed;
@@ -356,7 +356,7 @@
             50% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(239, 68, 68, 0.9)); }
         }
 
-        /* FOLHA DE RELATÓRIO PDF OCULTA */
+        /* PDF CLEAN */
         #relatorio-pdf-clean {
             position: absolute;
             left: -9999px;
@@ -435,7 +435,7 @@
         <h2 class="text-xl font-bold text-white mb-4">Acesso ao Sistema Suspenso</h2>
         <p class="text-slate-400 max-w-md mb-8 text-sm">
             A licença deste nó foi pausada pelo Sistema de Governança <strong>Medius Core SDK</strong>.
-            Entre em contato com a administração para restabelecer a sincronia do contrato.
+            Entre em contacto com a administração para restabelecer a sincronia do contrato.
         </p>
         <button onclick="alternarKillSwitch(false)" class="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-600 text-xs font-mono transition">
             [Ambiente de Teste] Restaurar Acesso
@@ -463,7 +463,7 @@
 
             <div class="flex items-center gap-3 my-4">
                 <div class="flex-1 h-px bg-slate-800"></div>
-                <span class="text-[10px] text-slate-500 uppercase font-mono">Ou use credencial</span>
+                <span class="text-[10px] text-slate-500 uppercase font-mono">Ou autenticação direta</span>
                 <div class="flex-1 h-px bg-slate-800"></div>
             </div>
 
@@ -484,7 +484,7 @@
     </div>
 
     <div id="painel-admin" class="hidden flex min-h-screen w-full">
-        <aside id="sidebar" class="py-6 flex flex-col justify-between">
+        <aside id="sidebar-admin" class="py-6 flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between px-4 mb-6 neon-divider">
                     <div class="flex items-center gap-3 overflow-hidden whitespace-nowrap">
@@ -494,37 +494,37 @@
                             <p class="text-[9px] text-slate-400 uppercase tracking-widest">QG Gênesis // Admin</p>
                         </div>
                     </div>
-                    <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white transition relative z-10">
+                    <button onclick="toggleSidebarAdmin()" class="text-slate-400 hover:text-white transition relative z-10">
                         <i data-lucide="chevron-left" class="toggle-icon w-5 h-5"></i>
                     </button>
                 </div>
 
                 <nav class="space-y-2 px-3 font-sans text-sm">
-                    <button onclick="mudarSecao('visao-geral')" id="btn-visao-geral" class="menu-item ativo w-full">
+                    <button onclick="mudarSecaoAdmin('visao-geral')" id="btn-adm-visao-geral" class="menu-item ativo w-full">
                         <div>
                             <i data-lucide="layout-dashboard" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Visão Geral</span>
                         </div>
                     </button>
-                    <button onclick="mudarSecao('tme')" id="btn-tme" class="menu-item w-full">
+                    <button onclick="mudarSecaoAdmin('tme')" id="btn-adm-tme" class="menu-item w-full">
                         <div>
                             <i data-lucide="activity" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">TME // Monitoramento</span>
                         </div>
                     </button>
-                    <button onclick="mudarSecao('camaleao')" id="btn-camaleao" class="menu-item w-full">
+                    <button onclick="mudarSecaoAdmin('camaleao')" id="btn-adm-camaleao" class="menu-item w-full">
                         <div>
                             <i data-lucide="palette" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Motor Camaleão</span>
                         </div>
                     </button>
-                    <button onclick="mudarSecao('secops')" id="btn-secops" class="menu-item w-full">
+                    <button onclick="mudarSecaoAdmin('secops')" id="btn-adm-secops" class="menu-item w-full">
                         <div>
                             <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Muralha SecOps</span>
                         </div>
                     </button>
-                    <button onclick="mudarSecao('whitelabel')" id="btn-whitelabel" class="menu-item w-full">
+                    <button onclick="mudarSecaoAdmin('whitelabel')" id="btn-adm-whitelabel" class="menu-item w-full">
                         <div>
                             <i data-lucide="sliders" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Módulo White Label</span>
@@ -559,10 +559,8 @@
             <div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
 
                 <div id="mod-tme" class="dash-module hidden">
-                    
                     <div class="cyber-card mb-6 p-5">
                         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                            
                             <div class="flex items-center gap-4">
                                 <div class="w-12 h-12 rounded bg-blue-600/10 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
                                     <i data-lucide="crosshair" class="w-6 h-6 text-blue-400" style="filter: drop-shadow(0 0 5px rgba(59,130,246,0.5));"></i>
@@ -600,10 +598,9 @@
                                 <div class="flex flex-col">
                                     <label class="text-[9px] text-slate-500 font-mono uppercase tracking-wider">2. Selecionar Site / Nó</label>
                                     <select id="tme-select-site" onchange="aoTrocarSiteTME(this.value)" class="bg-transparent text-cyan-300 text-xs font-mono outline-none py-1 cursor-pointer">
-                                        </select>
+                                    </select>
                                 </div>
                             </div>
-
                         </div>
                     </div>
 
@@ -683,7 +680,7 @@
                         <div>
                             <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
                                 <span>Malha Geral de Contratos & Ativos</span>
-                                <span class="text-xs text-slate-400">4 Clientes Cadastrados</span>
+                                <span class="text-xs text-slate-400">4 Clientes Registados</span>
                             </h3>
                             <table class="w-full text-left font-sans text-xs">
                                 <thead>
@@ -696,7 +693,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tabela-clientes-admin" class="divide-y divide-slate-800/60">
-                                    </tbody>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -756,93 +753,224 @@
         </main>
     </div>
 
-    <div id="painel-cliente" class="hidden flex flex-col min-h-screen">
-        <header class="border-b border-slate-800 bg-[#070d1a] px-6 py-4 flex flex-wrap justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center">
-                    <i data-lucide="activity" class="w-5 h-5 text-blue-400"></i>
+    <div id="painel-cliente" class="hidden flex min-h-screen w-full">
+        <aside id="sidebar-cliente" class="py-6 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between px-4 mb-6 neon-divider">
+                    <div class="flex items-center gap-3 overflow-hidden whitespace-nowrap">
+                        <i data-lucide="shield-check" class="w-8 h-8 flex-shrink-0" style="color: var(--accent-color); filter: drop-shadow(0 0 5px var(--accent-glow-strong));"></i>
+                        <div class="brand-texto">
+                            <h1 class="font-bold tracking-wider text-sm text-white">MEDIUS</h1>
+                            <p class="text-[9px] text-slate-400 uppercase tracking-widest">Portal do Cliente</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleSidebarCliente()" class="text-slate-400 hover:text-white transition relative z-10">
+                        <i data-lucide="chevron-left" class="toggle-icon w-5 h-5"></i>
+                    </button>
                 </div>
-                <div>
-                    <h1 class="font-bold text-white text-base leading-tight" id="client-view-name">Marcelão Digital & Entertainment</h1>
-                    <p class="text-xs text-slate-400 font-mono">Contrato: <span class="text-blue-400" id="client-view-id">#estudio-marcelao-01</span></p>
-                </div>
+
+                <nav class="space-y-2 px-3 font-sans text-sm">
+                    <button onclick="mudarSecaoCliente('visao-geral')" id="btn-cli-visao" class="menu-item ativo w-full">
+                        <div>
+                            <i data-lucide="layout-dashboard" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Visão Geral</span>
+                        </div>
+                    </button>
+                    <button onclick="mudarSecaoCliente('dominios')" id="btn-cli-dominios" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="globe" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Meus Domínios</span>
+                        </div>
+                    </button>
+                    <button onclick="mudarSecaoCliente('auditoria')" id="btn-cli-auditoria" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="shield-check" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Auditoria SecOps</span>
+                        </div>
+                    </button>
+                    <button onclick="mudarSecaoCliente('contrato')" id="btn-cli-contrato" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="file-text" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Contrato & Licença</span>
+                        </div>
+                    </button>
+                    <button onclick="mudarSecaoCliente('suporte')" id="btn-cli-suporte" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="headphones" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Suporte Técnico</span>
+                        </div>
+                    </button>
+                </nav>
             </div>
-
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-full text-xs text-emerald-400 font-mono">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                    <span>PROTEÇÃO ATIVA</span>
-                </div>
-                <button onclick="alternarKillSwitch(true)" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded text-xs font-mono transition">
-                    Testar Kill Switch
-                </button>
-                <button onclick="realizarLogout()" class="text-slate-400 hover:text-white text-xs font-mono transition flex items-center gap-1">
-                    <i data-lucide="log-out" class="w-4 h-4"></i> Sair
-                </button>
-            </div>
-        </header>
-
-        <div class="border-b border-slate-800/80 bg-[#040813] px-6 py-3">
-            <div class="max-w-7xl mx-auto flex items-center gap-3 overflow-x-auto" id="client-sites-tabs-container">
-                </div>
-        </div>
-
-        <main class="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 space-y-6">
             
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                <div>
-                    <h2 class="text-xl font-bold text-white" id="client-active-domain-title">marcelaodigital.com.br</h2>
-                    <p class="text-xs text-slate-400" id="client-active-domain-desc">Site Institucional & Portfólio</p>
+            <div class="px-4 space-y-3">
+                <button onclick="realizarLogout()" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-red-400 rounded border border-slate-800 text-xs font-mono flex items-center justify-center gap-2 transition">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i> <span class="menu-texto">Encerrar Sessão</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-screen overflow-hidden">
+            <header class="border-b border-slate-800 bg-[#070d1a] px-6 py-4 flex flex-wrap justify-between items-center gap-4 z-20">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center">
+                        <i data-lucide="activity" class="w-5 h-5 text-blue-400"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-white text-base leading-tight" id="client-view-name">Marcelão Digital & Entertainment</h1>
+                        <p class="text-xs text-slate-400 font-mono">Contrato: <span class="text-blue-400" id="client-view-id">#estudio-marcelao-01</span></p>
+                    </div>
                 </div>
-                <div class="text-xs font-mono text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
-                    Latência: <span class="text-blue-400" id="client-active-ping">22ms</span> | Status: <span class="text-emerald-400">100% Blindado</span>
+
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-full text-xs text-emerald-400 font-mono">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span>PROTEÇÃO ATIVA (SHA-256)</span>
+                    </div>
+                    <button onclick="alternarKillSwitch(true)" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded text-xs font-mono transition">
+                        Testar Kill Switch
+                    </button>
                 </div>
+            </header>
+
+            <div class="border-b border-slate-800/80 bg-[#040813] px-6 py-3" id="client-tabs-bar">
+                <div class="max-w-7xl mx-auto flex items-center gap-3 overflow-x-auto" id="client-sites-tabs-container">
+                    </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="cyber-card p-4">
-                    <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Uptime Mensal</div>
-                    <div class="text-2xl font-bold text-white font-mono" id="client-card-uptime">99.98%</div>
+            <div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+
+                <div id="cli-sec-visao" class="client-module space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div>
+                            <h2 class="text-xl font-bold text-white font-mono" id="client-active-domain-title">marcelaodigital.com.br</h2>
+                            <p class="text-xs text-slate-400" id="client-active-domain-desc">Site Institucional & Portfólio</p>
+                        </div>
+                        <div class="text-xs font-mono text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
+                            Latência: <span class="text-blue-400" id="client-active-ping">22ms</span> | Status: <span class="text-emerald-400">100% Blindado</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div class="cyber-card p-4">
+                            <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Uptime Mensal</div>
+                            <div class="text-2xl font-bold text-white font-mono" id="client-card-uptime">99.98%</div>
+                        </div>
+
+                        <div class="cyber-card p-4">
+                            <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Requisições Hoje</div>
+                            <div class="text-2xl font-bold text-white font-mono" id="client-card-req">24,850</div>
+                        </div>
+
+                        <div class="cyber-card p-4">
+                            <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Integridade de DOM</div>
+                            <div class="text-2xl font-bold text-white font-mono">100%</div>
+                        </div>
+
+                        <div class="cyber-card p-4">
+                            <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Contrato Válido Até</div>
+                            <div class="text-2xl font-bold text-white font-mono" id="client-card-exp">31/12/2026</div>
+                        </div>
+                    </div>
+
+                    <div class="cyber-card p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-sm font-semibold text-white flex items-center gap-2 font-mono">
+                                <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-400"></i>
+                                Tráfego e Interações no Domínio Selecionado
+                            </h3>
+                            <span class="text-xs font-mono text-slate-500">Taxa: 2.5s</span>
+                        </div>
+                        <div id="chart-trafego-cliente" style="min-height: 240px;"></div>
+                    </div>
                 </div>
 
-                <div class="cyber-card p-4">
-                    <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Requisições Hoje</div>
-                    <div class="text-2xl font-bold text-white font-mono" id="client-card-req">24,850</div>
+                <div id="cli-sec-dominios" class="client-module hidden space-y-6">
+                    <div class="cyber-card">
+                        <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
+                            <span>Domínios e Projetos sob Cobertura da Licença</span>
+                            <span class="text-xs text-slate-400">Proteção Ativa</span>
+                        </h3>
+                        <table class="w-full text-left font-sans text-xs">
+                            <thead>
+                                <tr class="text-slate-400 font-mono uppercase border-b border-slate-800 pb-2">
+                                    <th class="py-2">Endereço Web (Domínio)</th>
+                                    <th class="py-2">Tipo de Aplicação</th>
+                                    <th class="py-2">Certificado SSL</th>
+                                    <th class="py-2">Escudo SHA-256</th>
+                                    <th class="py-2 text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="client-domains-table-body" class="divide-y divide-slate-800/60 font-mono">
+                                </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div class="cyber-card p-4">
-                    <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Integridade de DOM</div>
-                    <div class="text-2xl font-bold text-white font-mono" id="client-card-dom">100%</div>
+                <div id="cli-sec-auditoria" class="client-module hidden space-y-6">
+                    <div class="cyber-card">
+                        <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+                            <i data-lucide="terminal" class="w-4 h-4"></i> Relatório de Integridade e Histórico de Eventos
+                        </h3>
+                        <div class="bg-black/50 p-4 rounded border border-slate-800 font-mono text-xs space-y-2 max-h-96 overflow-y-auto" id="client-audit-logs">
+                            <div class="text-emerald-400">[08:00:15] Medius Core SDK acoplado com sucesso.</div>
+                            <div class="text-blue-400">[08:15:30] Verificação de coesão de layout: 100% estável.</div>
+                            <div class="text-slate-500">[09:22:40] Escudo SecOps realizou varredura periódica: Nenhuma adulteração detetada.</div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="cyber-card p-4">
-                    <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Contrato Válido Até</div>
-                    <div class="text-2xl font-bold text-white font-mono">31/12/2026</div>
+                <div id="cli-sec-contrato" class="client-module hidden space-y-6">
+                    <div class="cyber-card">
+                        <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Informações Contratuais & Licenciamento</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-mono">
+                            <div class="bg-black/40 p-4 rounded border border-slate-800 space-y-2">
+                                <p><span class="text-slate-400">Titular da Licença:</span> <strong class="text-white" id="cli-contract-name">Marcelão Digital & Entertainment</strong></p>
+                                <p><span class="text-slate-400">Identificador do Nó:</span> <strong class="text-cyan-400" id="cli-contract-id">#estudio-marcelao-01</strong></p>
+                                <p><span class="text-slate-400">Nível de Serviço:</span> <span class="text-emerald-400 font-bold">ENTERPRISE (Sincronia Total)</span></p>
+                            </div>
+                            <div class="bg-black/40 p-4 rounded border border-slate-800 space-y-2">
+                                <p><span class="text-slate-400">Data de Expiração:</span> <strong class="text-white" id="cli-contract-exp">31/12/2026</strong></p>
+                                <p><span class="text-slate-400">Renovação:</span> <span class="text-emerald-400">Automática com Garantia de SLA</span></p>
+                                <p><span class="text-slate-400">Kill Switch Remoto:</span> <span class="text-slate-300">Em Armamento Preventivo</span></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <div id="cli-sec-suporte" class="client-module hidden space-y-6">
+                    <div class="cyber-card">
+                        <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Canal Direto de Engenharia & Suporte</h3>
+                        <p class="text-xs text-slate-400 mb-4 font-sans">
+                            O ecossistema Medius opera com supervisão contínua 24/7. Caso necessite de intervenção técnica ou alinhamento de layout, contacte o nosso canal dedicado.
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+                            <div class="bg-black/40 p-4 rounded border border-slate-800">
+                                <h4 class="text-white font-bold mb-2">Central de Incidentes</h4>
+                                <p class="text-slate-400">Tempo de resposta prioritário: &lt; 15 minutos</p>
+                                <p class="text-cyan-400 mt-2">suporte@medius.security</p>
+                            </div>
+                            <div class="bg-black/40 p-4 rounded border border-slate-800">
+                                <h4 class="text-white font-bold mb-2">Engenheiro Designado</h4>
+                                <p class="text-slate-400">Responsável pela Malha B2B</p>
+                                <p class="text-emerald-400 mt-2">Canal Direto de Operações Ativo</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="cyber-card p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-sm font-semibold text-white flex items-center gap-2">
-                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-400"></i>
-                        Acessos e Interações em Tempo Real no Domínio
-                    </h3>
-                    <span class="text-xs font-mono text-slate-500">Taxa: 2.5s</span>
-                </div>
-                <div id="chart-trafego-cliente" style="min-height: 240px;"></div>
-            </div>
+            <footer class="border-t border-slate-800/80 py-3 px-6 text-center text-xs text-slate-500 font-mono">
+                Plataforma governada e blindada por <strong>Medius Core SDK</strong> — <em>synchrony and respect</em>.
+            </footer>
         </main>
-
-        <footer class="border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-500 font-mono">
-            Plataforma protegida e governada por <strong>Medius Core SDK</strong> — <em>synchrony and respect</em>.
-        </footer>
     </div>
 
     <div id="relatorio-pdf-clean">
         <h1 id="pdf-titulo">AUDITORIA // MEDIUS</h1>
         <p><strong>Data da Emissão:</strong> <span id="pdf-data"></span></p>
         <p><strong>Status Geral:</strong> Malha Operacional (Synchrony & Respect)</p>
-
         <h2>MÉTRICAS FORENSES</h2>
         <table class="pdf-table">
             <tr><td>Coesão de DOM</td><td>100.00%</td></tr>
@@ -853,7 +981,7 @@
     </div>
 
     <script>
-        // BASE DE DADOS HIERÁRQUICA (CLIENTES + MÚLTIPLOS SITES)
+        // BASE DE DADOS DOS CLIENTES
         const databaseClientes = {
             "estudio-marcelao-01": {
                 nome: "Marcelão Digital & Entertainment",
@@ -978,7 +1106,7 @@
         };
 
         // ESTADOS GLOBAIS
-        let perfilLogado = null; // 'admin' ou 'cliente'
+        let perfilLogado = null;
         let clienteLogadoKey = null;
         let siteAtivoClienteIdx = 0;
 
@@ -991,7 +1119,7 @@
         let corAtual = "#00d2ff";
 
         // ==========================================
-        // CONTROLE DE LOGIN E ROTEAMENTO
+        // LOGIN E LOGOUT
         // ==========================================
         function autenticarComo(tipo, clientId = null) {
             perfilLogado = tipo;
@@ -1036,7 +1164,7 @@
         }
 
         // ==========================================
-        // BOOT QUÁDRUPLO
+        // BOOT TÁTICO
         // ==========================================
         function executarBootAnimado(callbackConclusao) {
             const bootScreen = document.getElementById('bootScreen');
@@ -1050,7 +1178,7 @@
             const msgsFases = [
                 "Fase 1: Iniciando núcleos neurais...",
                 "Fase 2: Varredura de Segurança SecOps...",
-                "Fase 3: Sincronizando Malha TME...",
+                "Fase 3: Sincronizando Malha de Contratos...",
                 "Fase 4: Desbloqueando Cockpit Autorizado..."
             ];
 
@@ -1085,7 +1213,7 @@
         }
 
         // ==========================================
-        // OPERAÇÃO DO PROTOCOLO TME (ADMIN)
+        // OPERAÇÃO TME // ADMIN
         // ==========================================
         function aoTrocarClienteTME(clientId) {
             tmeClienteKey = clientId;
@@ -1097,7 +1225,6 @@
             badge.innerText = cliente.status;
             badge.className = `px-2 py-0.5 text-[10px] border rounded font-sans tracking-wider ${cliente.statusClass}`;
 
-            // Preenche o Seletor 2 (Sites do Cliente)
             const siteSelect = document.getElementById('tme-select-site');
             siteSelect.innerHTML = '';
             cliente.sites.forEach((site, index) => {
@@ -1125,12 +1252,11 @@
                 chartSaudeAdmin.updateSeries([site.saude]);
             }
 
-            // Log no terminal SecOps
             const logBox = document.getElementById('log-secops');
             const timestamp = new Date().toLocaleTimeString('pt-BR');
             const novoLog = document.createElement('div');
             novoLog.className = "border-l-2 border-blue-500 pl-3 bg-blue-500/5 p-2";
-            novoLog.innerHTML = `<span class="text-blue-400 font-bold">[TME]</span> [${timestamp}] Inspecionando ${site.dominio} (#${tmeClienteKey}).`;
+            novoLog.innerHTML = `<span class="text-blue-400 font-bold">[TME]</span> [${timestamp}] Alvo: ${site.dominio} (#${tmeClienteKey}).`;
             logBox.prepend(novoLog);
         }
 
@@ -1165,7 +1291,6 @@
             chartSaudeAdmin = new ApexCharts(document.querySelector("#chart-saude-admin"), optSaude);
             chartSaudeAdmin.render();
 
-            // Loop de telemetria contínua
             setInterval(() => {
                 if (perfilLogado === 'admin') {
                     const cli = databaseClientes[tmeClienteKey];
@@ -1217,12 +1342,12 @@
         function selecionarClienteTMEPelaTabela(key) {
             document.getElementById('tme-select-client').value = key;
             aoTrocarClienteTME(key);
-            mudarSecao('tme');
+            mudarSecaoAdmin('tme');
         }
 
-        function mudarSecao(secao) {
-            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('ativo'));
-            const btn = document.getElementById('btn-' + secao);
+        function mudarSecaoAdmin(secao) {
+            document.querySelectorAll('#sidebar-admin .menu-item').forEach(el => el.classList.remove('ativo'));
+            const btn = document.getElementById('btn-adm-' + secao);
             if (btn) btn.classList.add('ativo');
 
             document.querySelectorAll('#painel-admin .dash-module').forEach(el => el.classList.add('hidden'));
@@ -1237,19 +1362,24 @@
             }
         }
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('recolhido');
+        function toggleSidebarAdmin() {
+            document.getElementById('sidebar-admin').classList.toggle('recolhido');
         }
 
         // ==========================================
-        // CONSOLE EXCLUSIVO DO CLIENTE (COM ABAS DE SITES)
+        // CONSOLE DO CLIENTE & MENU DEDICADO
         // ==========================================
         function carregarConsoleDoCliente(clientId) {
             const cliente = databaseClientes[clientId] || databaseClientes["estudio-marcelao-01"];
+            
             document.getElementById('client-view-name').innerText = cliente.nome;
             document.getElementById('client-view-id').innerText = '#' + clientId;
+            document.getElementById('cli-contract-name').innerText = cliente.nome;
+            document.getElementById('cli-contract-id').innerText = '#' + clientId;
+            document.getElementById('cli-contract-exp').innerText = cliente.expires_at;
+            document.getElementById('client-card-exp').innerText = cliente.expires_at;
 
-            // Renderiza as Abas Superiores de Sites (Opção 2)
+            // Render das Abas de Sites (Opção 2)
             const tabsContainer = document.getElementById('client-sites-tabs-container');
             tabsContainer.innerHTML = '';
 
@@ -1262,9 +1392,65 @@
                 tabsContainer.appendChild(btn);
             });
 
+            // Render da Tabela "Meus Domínios"
+            const domTable = document.getElementById('client-domains-table-body');
+            domTable.innerHTML = '';
+            cliente.sites.forEach((site, index) => {
+                domTable.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="py-2.5 text-white font-bold">${site.dominio}</td>
+                        <td class="py-2.5 text-slate-300">${site.tipo}</td>
+                        <td class="py-2.5"><span class="px-2 py-0.5 text-[10px] rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">ATIVO (256-bit)</span></td>
+                        <td class="py-2.5 text-indigo-400">${site.sha}</td>
+                        <td class="py-2.5 text-right">
+                            <button onclick="selecionarSiteCliente('${clientId}', ${index}); mudarSecaoCliente('visao-geral');" class="text-cyan-400 hover:text-white underline">
+                                Inspecionar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
             lucide.createIcons();
             selecionarSiteCliente(clientId, 0);
             initClienteChart();
+            mudarSecaoCliente('visao-geral');
+        }
+
+        function mudarSecaoCliente(secao) {
+            document.querySelectorAll('#sidebar-cliente .menu-item').forEach(el => el.classList.remove('ativo'));
+            
+            // Ativa o botão correto
+            const btnMap = {
+                'visao-geral': 'btn-cli-visao',
+                'dominios': 'btn-cli-dominios',
+                'auditoria': 'btn-cli-auditoria',
+                'contrato': 'btn-cli-contrato',
+                'suporte': 'btn-cli-suporte'
+            };
+            const btn = document.getElementById(btnMap[secao]);
+            if (btn) btn.classList.add('ativo');
+
+            // Esconde todos os módulos
+            document.querySelectorAll('#painel-cliente .client-module').forEach(el => el.classList.add('hidden'));
+
+            // Controla a barra de abas de sites
+            const tabsBar = document.getElementById('client-tabs-bar');
+            if (secao === 'visao-geral') {
+                tabsBar.classList.remove('hidden');
+                document.getElementById('cli-sec-visao').classList.remove('hidden');
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+            } else {
+                tabsBar.classList.add('hidden');
+                if (secao === 'dominios') document.getElementById('cli-sec-dominios').classList.remove('hidden');
+                if (secao === 'auditoria') document.getElementById('cli-sec-auditoria').classList.remove('hidden');
+                if (secao === 'contrato') document.getElementById('cli-sec-contrato').classList.remove('hidden');
+                if (secao === 'suporte') document.getElementById('cli-sec-suporte').classList.remove('hidden');
+            }
+        }
+
+        function toggleSidebarCliente() {
+            document.getElementById('sidebar-cliente').classList.toggle('recolhido');
         }
 
         function selecionarSiteCliente(clientId, siteIndex) {
@@ -1272,12 +1458,10 @@
             const cliente = databaseClientes[clientId];
             const site = cliente.sites[siteIndex];
 
-            // Atualiza botões das abas
             document.querySelectorAll('.tab-site-btn').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById(`tab-site-${siteIndex}`);
             if (activeBtn) activeBtn.classList.add('active');
 
-            // Atualiza indicadores do site ativo
             document.getElementById('client-active-domain-title').innerText = site.dominio;
             document.getElementById('client-active-domain-desc').innerText = site.tipo;
             document.getElementById('client-active-ping').innerText = site.ping;
@@ -1316,7 +1500,7 @@
         }
 
         // ==========================================
-        // ANOMALIA & WHITE LABEL
+        // ANOMALIA, WHITE LABEL & PDF
         // ==========================================
         function simularAtaqueReal() {
             const term = document.getElementById('term-secops');
@@ -1326,7 +1510,7 @@
             const timestamp = new Date().toLocaleTimeString('pt-BR');
             const novoLog = document.createElement('div');
             novoLog.className = "border-l-2 border-red-500 pl-3 bg-red-500/10 p-2 mb-2 animate-pulse text-white";
-            novoLog.innerHTML = `<span class="text-red-400 font-bold">[TAMPERING]</span> [${timestamp}] Tentativa de quebra de DOM neutralizada no site ativo.`;
+            novoLog.innerHTML = `<span class="text-red-400 font-bold">[TAMPERING]</span> [${timestamp}] Tentativa de quebra de DOM neutralizada no nó ativo.`;
             logBox.prepend(novoLog);
 
             setTimeout(() => term.classList.remove('alerta-critico'), 3500);
