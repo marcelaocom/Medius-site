@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medius // Synchrony and Respect // QG Central & SecOps</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    <style>
+        /* ========================================================
+           MOTOR DE VARIÁVEIS DINÂMICAS DO NEON (MEDIUS CORE)
+           ======================================================== */
+        :root {
+            --bg-base: #030610; 
+            --bg-sidebar: #050b14;
+            --bg-card: rgba(10, 17, 32, 0.75); 
+            
+            --accent-color: #00d2ff; 
+            --accent-glow: rgba(0, 210, 255, 0.3);
+            --accent-glow-strong: rgba(0, 210, 255, 0.7);
+            --accent-glow-inset: rgba(0, 210, 255, 0.15);
+            
+            --border-thick: 2px;
+        }
+
+        /* ========================================================
+           MÓDULO DE BOOT QUÁDRUPLO (PRE-LOADER TÁTICO)
+           ======================================================== */
+        #bootScreen {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100dvh;
+            background-color: var(--bg-base); 
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            z-index: 9999;
+            transition: opacity 0.6s ease-in-out, visibility 0.6s ease-in-out;
+        }
+
+        #bootScreen.fade-out { 
+            opacity: 0; 
+            visibility: hidden; 
+        }
+
+        .boot-container { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 16px; 
+            width: 85%; 
+            max-width: 400px; 
+        }
+
+        .boot-logo {
+            font-size: 2.2rem; 
+            font-weight: 900; 
+            color: transparent;
+            -webkit-text-stroke: 1.5px var(--accent-color); 
+            letter-spacing: 4px;
+            text-transform: uppercase; 
+            text-shadow: 0 0 20px var(--accent-glow-strong);
+            text-align: center;
+        }
+
+        .boot-status-text { 
+            font-size: 0.75rem; 
+            color: #64748b; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            font-family: 'Courier New', Courier, monospace; 
+            text-align: center;
+        }
+
+        .boot-progress-bar { 
+            width: 100%; 
+            height: 4px; 
+            background: rgba(255, 255, 255, 0.05); 
+            border-radius: 4px; 
+            overflow: hidden; 
+            border: 1px solid var(--accent-glow); 
+        }
+
+        .boot-progress-fill { 
+            width: 0%; 
+            height: 100%; 
+            background: var(--accent-color); 
+            box-shadow: 0 0 10px var(--accent-color); 
+            transition: width 0.1s linear; 
+        }
+
+        .boot-counter { 
+            font-size: 0.85rem; 
+            color: var(--accent-color); 
+            font-weight: 700; 
+            font-family: 'Courier New', Courier, monospace; 
+        }
+
+        /* ========================================================
+           ESTRUTURA GERAL DO PAINEL
+           ======================================================== */
+        @keyframes rotate-neon { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+
+        body {
+            background-color: var(--bg-base); 
+            color: #f9fafb; 
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0; 
+            display: flex; 
+            min-height: 100vh; 
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: ''; 
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            width: 80vw; 
+            height: 80vh; 
+            background: radial-gradient(circle, var(--accent-glow-inset) 0%, transparent 70%);
+            z-index: -1; 
+            pointer-events: none; 
+            transition: all 0.5s ease;
+        }
+
+        aside {
+            background-color: var(--bg-sidebar); 
+            border-right: var(--border-thick) solid var(--accent-color);
+            box-shadow: 2px 0 15px var(--accent-glow); 
+            transition: width 0.3s ease; 
+            width: 280px; 
+            z-index: 50; 
+            display: flex; 
+            flex-direction: column;
+        }
+
+        aside.recolhido { 
+            width: 80px; 
+        }
+
+        aside.recolhido .menu-texto, 
+        aside.recolhido .brand-texto, 
+        aside.recolhido .status-box { 
+            display: none; 
+        }
+
+        aside.recolhido .toggle-icon { 
+            transform: rotate(180deg); 
+        }
+
+        .header-neon { 
+            border-bottom: 3px solid var(--accent-color); 
+            box-shadow: 0 10px 20px -10px var(--accent-glow-strong); 
+            transition: all 0.3s ease; 
+        }
+        
+        .neon-divider {
+            border-bottom: 2px solid var(--accent-glow-strong); 
+            box-shadow: 0 4px 10px -4px var(--accent-glow);
+            padding-bottom: 10px; 
+            margin-bottom: 15px; 
+            transition: all 0.3s ease;
+        }
+
+        /* ========================================================
+           EFEITO "PISTA DE CORRIDA NEON" NOS CARDS
+           ======================================================== */
+        .cyber-card {
+            background-color: transparent; 
+            border-radius: 8px; 
+            position: relative; 
+            overflow: hidden; 
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5), 
+                        0 2px 8px var(--accent-glow), 
+                        0 2px 0 0 var(--accent-color); 
+            transition: all 0.3s ease;
+        }
+
+        .cyber-card::before {
+            content: ''; 
+            position: absolute; 
+            top: -50%; 
+            left: -50%; 
+            width: 200%; 
+            height: 200%;
+            background: conic-gradient(transparent, rgba(255,255,255,0.1), transparent, var(--accent-color));
+            animation: rotate-neon 3s linear infinite; 
+            opacity: 0; 
+            transition: opacity 0.3s ease; 
+            z-index: 1;
+        }
+
+        .cyber-card:hover::before { 
+            opacity: 1; 
+        }
+
+        .cyber-card::after {
+            content: ''; 
+            position: absolute; 
+            inset: 2px; 
+            background-color: var(--bg-card); 
+            border-radius: 6px; 
+            z-index: 2;
+        }
+
+        .cyber-card:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 0 25px var(--accent-color); 
+        }
+
+        .cyber-card > * { 
+            position: relative; 
+            z-index: 3; 
+        }
+
+        /* ========================================================
+           EFEITO "PISTA DE CORRIDA NEON" NO MENU
+           ======================================================== */
+        .menu-item {
+            position: relative; 
+            overflow: hidden; 
+            border-radius: 6px; 
+            padding: 0.75rem; 
+            background-color: transparent; 
+            transition: all 0.3s ease; 
+            border: 1px solid transparent;
+        }
+
+        .menu-item::before {
+            content: ''; 
+            position: absolute; 
+            top: -50%; 
+            left: -50%; 
+            width: 200%; 
+            height: 200%;
+            background: conic-gradient(transparent, transparent, transparent, var(--accent-color));
+            animation: rotate-neon 2s linear infinite; 
+            opacity: 0; 
+            transition: opacity 0.3s ease; 
+            z-index: 1;
+        }
+
+        .menu-item:hover::before, 
+        .menu-item.ativo::before { 
+            opacity: 1; 
+        }
+
+        .menu-item::after {
+            content: ''; 
+            position: absolute; 
+            inset: 1px; 
+            background-color: var(--bg-sidebar); 
+            border-radius: 5px; 
+            z-index: 2; 
+            transition: background-color 0.3s ease;
+        }
+
+        .menu-item:hover::after, 
+        .menu-item.ativo::after { 
+            background-color: var(--accent-glow-inset); 
+        }
+
+        .menu-item > * { 
+            position: relative; 
+            z-index: 3; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.75rem; 
+            width: 100%; 
+        }
+
+        /* ========================================================
+           ALERTA CRÍTICO
+           ======================================================== */
+        .alerta-critico { 
+            --accent-color: #ef4444 !important; 
+            --accent-glow: rgba(239, 68, 68, 0.4) !important; 
+            --accent-glow-strong: rgba(239, 68, 68, 0.8) !important; 
+            --accent-glow-inset: rgba(239, 68, 68, 0.2) !important; 
+        }
+
+        .alerta-critico::before { 
+            opacity: 1 !important; 
+            animation: rotate-neon 1s linear infinite !important; 
+        }
+
+        /* ========================================================
+           EQUALIZADOR PARAMÉTRICO
+           ======================================================== */
+        .eq-container { 
+            display: flex; 
+            gap: 2px; 
+            height: 16px; 
+            align-items: flex-end; 
+        }
+
+        .eq-bar { 
+            width: 3px; 
+            background-color: var(--accent-color); 
+            border-radius: 1px; 
+            animation: eq 1s ease-in-out infinite alternate; 
+            box-shadow: 0 0 5px var(--accent-glow-strong); 
+            transition: all 0.3s ease; 
+        }
+
+        .eq-bar:nth-child(1) { animation-delay: 0.1s; } 
+        .eq-bar:nth-child(2) { animation-delay: 0.4s; }
+        .eq-bar:nth-child(3) { animation-delay: 0.2s; } 
+        .eq-bar:nth-child(4) { animation-delay: 0.5s; } 
+        .eq-bar:nth-child(5) { animation-delay: 0.3s; }
+
+        @keyframes eq { 
+            0% { height: 4px; } 
+            100% { height: 16px; } 
+        }
+
+        /* ========================================================
+           SISTEMA DE TOOLTIPS
+           ======================================================== */
+        .tooltip { 
+            position: relative; 
+            display: inline-block; 
+            margin-left: 6px; 
+            cursor: pointer; 
+        }
+
+        .info-icon { 
+            background: transparent; 
+            color: var(--accent-color); 
+            border: 2px solid var(--accent-color); 
+            border-radius: 50%; 
+            width: 16px; 
+            height: 16px; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 10px; 
+            font-family: Arial; 
+            font-weight: bold; 
+            box-shadow: 0 0 6px var(--accent-glow); 
+            transition: all 0.2s ease; 
+        }
+
+        .info-icon:hover { 
+            background: var(--accent-color); 
+            color: var(--bg-base); 
+            box-shadow: 0 0 15px var(--accent-color); 
+        }
+
+        .tooltip .tooltip-text { 
+            visibility: hidden; 
+            width: 220px; 
+            background-color: #030610; 
+            color: #f8fafc; 
+            text-align: left; 
+            border-radius: 6px; 
+            padding: 10px; 
+            position: absolute; 
+            bottom: 140%; 
+            left: 50%; 
+            margin-left: -110px; 
+            opacity: 0; 
+            transition: opacity 0.3s; 
+            font-family: Arial; 
+            font-size: 0.75rem; 
+            border: 2px solid var(--accent-color); 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.9), 0 0 20px var(--accent-glow); 
+            z-index: 100; 
+            pointer-events: none; 
+        }
+
+        .tooltip:hover .tooltip-text { 
+            visibility: visible; 
+            opacity: 1; 
+        }
+
+        /* ========================================================
+           SCROLLBAR E APEXCHARTS CUSTOM CSS
+           ======================================================== */
+        ::-webkit-scrollbar { 
+            width: 6px; 
+        }
+
+        ::-webkit-scrollbar-track { 
+            background: var(--bg-base); 
+        }
+
+        ::-webkit-scrollbar-thumb { 
+            background: var(--accent-glow-strong); 
+            border-radius: 3px; 
+        }
+        
+        .apexcharts-tooltip { 
+            background: #030610 !important; 
+            border: 1px solid var(--accent-color) !important; 
+            color: #fff !important; 
+            font-family: 'Courier New', monospace !important; 
+        }
+
+        .apexcharts-tooltip-title { 
+            background: rgba(0,0,0,0.5) !important; 
+            border-bottom: 1px solid var(--accent-color) !important; 
+        }
+
+        /* ========================================================
+           ESTILO DO RELATÓRIO PDF (MODO DOCUMENTO LIMPO)
+           ======================================================== */
+        #relatorio-pdf-clean {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            width: 750px;
+            background: #ffffff;
+            color: #000000;
+            padding: 40px;
+            font-family: Arial, Helvetica, sans-serif;
+            box-sizing: border-box;
+            z-index: -999;
+        }
+
+        #relatorio-pdf-clean h1 {
+            color: #0f172a;
+            font-size: 24px;
+            border-bottom: 2px solid #00d2ff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        #relatorio-pdf-clean p {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        #relatorio-pdf-clean h2 {
+            font-size: 16px;
+            color: #1e293b;
+            margin-top: 30px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 5px;
+        }
+
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+
+        .pdf-table th, .pdf-table td {
+            border: 1px solid #cbd5e1;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .pdf-table th {
+            background-color: #f1f5f9;
+            font-weight: bold;
+            color: #334155;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="bootScreen">
+        <div class="boot-container">
+            <div class="boot-logo">MEDIUS CORE</div>
+            <div class="boot-status-text" id="bootStatus">Iniciando núcleos neurais...</div>
+            <div class="boot-progress-bar">
+                <div class="boot-progress-fill" id="bootProgressFill"></div>
+            </div>
+            <div class="boot-counter" id="bootCounter">0%</div>
+        </div>
+    </div>
+
+    <div id="relatorio-pdf-clean">
+        <h1 id="pdf-titulo">AUDITORIA // MEDIUS</h1>
+        
+        <p>
+            <strong>Data da Emissão:</strong> 
+            <span id="pdf-data"></span>
+        </p>
+        <p>
+            <strong>Status Geral:</strong> Malha Operacional (Synchrony & Respect)
+        </p>
+
+        <h2>MÉTRICAS DE DESEMPENHO E SEGURANÇA</h2>
+        <table class="pdf-table">
+            <thead>
+                <tr>
+                    <th>Indicador</th>
+                    <th>Valor Registrado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Coesão de DOM</td>
+                    <td>100.00%</td>
+                </tr>
+                <tr>
+                    <td>Bloqueios de Sanitização (Heurística)</td>
+                    <td id="pdf-sanitizacao-val">--</td>
+                </tr>
+                <tr>
+                    <td>Nós Ativos (Blindados)</td>
+                    <td id="pdf-ativos-val">--</td>
+                </tr>
+                <tr>
+                    <td>Licenças Inadimplentes (Bloqueadas)</td>
+                    <td id="pdf-vencidos-val">--</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>DETALHAMENTO DA MALHA DE CONTRATOS</h2>
+        <table class="pdf-table">
+            <thead>
+                <tr>
+                    <th>Client ID</th>
+                    <th>Status de Acesso</th>
+                    <th>Expiração do Contrato</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-tabela-body">
+                </tbody>
+        </table>
+        
+        <p style="margin-top: 40px; text-align: center; font-size: 10px; color: #94a3b8;">
+            Documento gerado e certificado automaticamente pelo ecossistema Medius Core SDK Engine.
+        </p>
+    </div>
+
+    <aside id="sidebar" class="py-6 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center justify-between px-4 mb-6 neon-divider">
+                <div class="flex items-center gap-3 overflow-hidden whitespace-nowrap">
+                    <i data-lucide="shield-check" class="w-8 h-8 flex-shrink-0" style="color: var(--accent-color); filter: drop-shadow(0 0 5px var(--accent-glow-strong));"></i>
+                    <div class="brand-texto">
+                        <h1 class="font-bold tracking-wider text-sm text-white">MEDIUS</h1>
+                        <p class="text-[9px] text-slate-400 uppercase tracking-widest">Synchrony & Respect</p>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white transition relative z-10">
+                    <i data-lucide="chevron-left" class="toggle-icon w-5 h-5"></i>
+                </button>
+            </div>
+
+            <nav class="space-y-2 px-3 font-sans text-sm">
+                <button onclick="mudarSecao('visao-geral')" id="btn-visao-geral" class="menu-item ativo w-full">
+                    <div>
+                        <i data-lucide="layout-dashboard" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Visão Geral Unificada</span>
+                    </div>
+                </button>
+                <button onclick="mudarSecao('monitoramento')" id="btn-monitoramento" class="menu-item w-full">
+                    <div>
+                        <i data-lucide="activity" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Central de Monitoramento</span>
+                    </div>
+                </button>
+                <button onclick="mudarSecao('camaleao')" id="btn-camaleao" class="menu-item w-full">
+                    <div>
+                        <i data-lucide="palette" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Motor Camaleão (UI)</span>
+                    </div>
+                </button>
+                <button onclick="mudarSecao('secops')" id="btn-secops" class="menu-item w-full">
+                    <div>
+                        <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Muralha SecOps</span>
+                    </div>
+                </button>
+                <button onclick="mudarSecao('whitelabel')" id="btn-whitelabel" class="menu-item w-full">
+                    <div>
+                        <i data-lucide="sliders" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Módulo White Label</span>
+                    </div>
+                </button>
+                <button onclick="mudarSecao('ajuda')" id="btn-ajuda" class="menu-item w-full">
+                    <div>
+                        <i data-lucide="help-circle" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                        <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Central de Ajuda</span>
+                    </div>
+                </button>
+            </nav>
+        </div>
+        
+        <div class="status-box px-6 pt-6 neon-divider" style="border-bottom:none; border-top: 2px solid var(--accent-glow-strong); box-shadow: 0 -4px 10px -4px var(--accent-glow); margin-bottom: 0;">
+            <p class="text-xs text-slate-500 font-mono relative z-10">Status: <span class="font-bold" style="color: var(--accent-color); text-shadow: 0 0 8px var(--accent-glow-strong);">ONLINE</span></p>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <header class="bg-[#050b1a] header-neon p-6 flex justify-between items-center z-20">
+            <div>
+                <h2 class="text-lg font-bold tracking-wide uppercase font-mono" style="color: var(--accent-color); text-shadow: 0 0 10px var(--accent-glow);">Centro de Comando Gênesis</h2>
+                <p class="text-xs text-slate-400 font-sans mt-1" id="label-empresa-ativa">Operando com <span class="text-white font-semibold">Medius Core Enterprise</span></p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="simularAtaqueReal()" class="text-[10px] uppercase font-mono text-slate-500 hover:text-red-500 transition mr-4 border border-slate-700 hover:border-red-500 px-2 py-1 rounded">
+                    Simular Anomalia
+                </button>
+                <button onclick="gerarRelatorioLimpo()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-md border border-slate-600 text-xs font-mono font-bold transition cyber-card">
+                    <div>
+                        <i data-lucide="file-down" class="w-4 h-4"></i> Relatório PDF
+                    </div>
+                </button>
+            </div>
+        </header>
+
+        <div id="area-conteudo" class="flex-1 overflow-y-auto p-8 space-y-8">
+
+            <div id="mod-monitoramento" class="dash-module hidden">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div class="cyber-card col-span-1 md:col-span-8">
+                        <div>
+                            <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+                                <i data-lucide="activity" class="w-4 h-4"></i> Fluxo de Telemetria (RPS) - Tempo Real
+                            </h3>
+                            <div id="chart-trafego" style="min-height: 250px;"></div>
+                        </div>
+                    </div>
+                    <div class="cyber-card col-span-1 md:col-span-4">
+                        <div class="h-full flex flex-col">
+                            <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+                                <i data-lucide="crosshair" class="w-4 h-4"></i> Saúde da Malha SecOps
+                            </h3>
+                            <div class="flex-1 flex flex-col items-center justify-center pb-8">
+                                <div id="chart-saude"></div>
+                                <p class="text-xs text-slate-400 font-mono mt-2">Nós Operacionais 100%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cyber-card col-span-1 md:col-span-12">
+                        <div>
+                            <h3 class="font-mono text-sm neon-divider flex justify-between items-center" style="color: var(--accent-color);">
+                                <span class="flex items-center gap-2">
+                                    <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Histórico de Interceptações SecOps (Volume/Minuto)
+                                </span>
+                            </h3>
+                            <div id="chart-historico" style="min-height: 250px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mod-visao-geral" class="dash-module">
+                <div id="mod-metricas" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div id="card-coesao" class="cyber-card dash-submodule transition-colors duration-300">
+                        <div>
+                            <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
+                                COESÃO DOM
+                                <div class="eq-container">
+                                    <div class="eq-bar"></div>
+                                    <div class="eq-bar"></div>
+                                    <div class="eq-bar"></div>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold font-mono text-white" style="text-shadow: 0 0 10px var(--accent-glow-strong);">100.00%</div>
+                        </div>
+                    </div>
+                    
+                    <div id="card-heuristica" class="cyber-card dash-submodule transition-colors duration-300">
+                        <div>
+                            <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
+                                SANITIZAÇÃO 
+                                <div class="eq-container">
+                                    <div class="eq-bar"></div>
+                                    <div class="eq-bar"></div>
+                                    <div class="eq-bar"></div>
+                                    <div class="eq-bar"></div>
+                                    <div class="eq-bar"></div>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold font-mono text-white" id="dado-sanitizacao" style="text-shadow: 0 0 10px var(--accent-glow-strong);">1,428</div>
+                        </div>
+                    </div>
+                    
+                    <div id="card-escudos" class="cyber-card dash-submodule">
+                        <div>
+                            <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
+                                KILL SWITCH 
+                                <div class="tooltip">
+                                    <span class="info-icon">i</span>
+                                    <span class="tooltip-text">Nós sob monitoramento.</span>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-white font-mono" id="count-ativos">--</div>
+                        </div>
+                    </div>
+                    
+                    <div id="card-licencas" class="cyber-card dash-submodule">
+                        <div>
+                            <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
+                                INADIMPLENTES 
+                                <div class="tooltip">
+                                    <span class="info-icon">i</span>
+                                    <span class="tooltip-text">Acessos revogados.</span>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-amber-400 font-mono" id="count-vencidos">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="mod-tabela" class="cyber-card mb-8">
+                    <div>
+                        <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color); text-shadow: 0 0 8px var(--accent-glow);">
+                            <i data-lucide="server" class="w-4 h-4"></i> Malha de Execução de Contratos
+                        </h3>
+                        <table class="w-full text-left font-sans text-sm">
+                            <thead>
+                                <tr class="text-xs uppercase text-slate-400 font-mono">
+                                    <th class="pb-2">Client ID</th>
+                                    <th class="pb-2">Kill Switch</th>
+                                    <th class="pb-2">UI Tokens</th>
+                                    <th class="pb-2">Expiração</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-clientes" class="divide-y divide-slate-800/60">
+                                <tr><td colspan="4" class="py-2 text-slate-500 font-mono">Carregando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="mod-terminais" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div id="term-secops" class="cyber-card font-mono text-xs transition-colors duration-300">
+                        <div>
+                            <div class="neon-divider flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_5px_#ef4444]"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                    <span class="ml-2 text-white font-bold uppercase">Firewall SecOps</span>
+                                </div>
+                                <div class="eq-container hidden" id="eq-alerta">
+                                    <div class="eq-bar"></div>
+                                    <div class="eq-bar"></div>
+                                </div>
+                            </div>
+                            <div class="h-32 overflow-y-auto space-y-2 text-slate-400 pr-2" id="log-secops">
+                                <div class="border-l-2 border-red-500 pl-3 bg-red-500/5 p-2">
+                                    <span class="text-red-400 font-bold">[KILL SWITCH]</span> Ação: 403 Engajado.
+                                </div>
+                                <div class="border-l-2 border-emerald-500 pl-3 bg-emerald-500/5 p-2">
+                                    <span class="text-emerald-400 font-bold">[AUTO-CURA]</span> SHA-256 Íntegra.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="term-camaleao" class="cyber-card font-mono text-xs">
+                        <div>
+                            <div class="neon-divider flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_5px_#6366f1]"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                                <span class="ml-2 text-white font-bold uppercase">Motor Camaleão</span>
+                            </div>
+                            <div class="h-32 overflow-y-auto space-y-2 text-slate-400 pr-2">
+                                <div class="border-l-2 border-indigo-500 pl-3 bg-indigo-500/5 p-2">
+                                    <span class="text-indigo-400 font-bold">[UI INJECT]</span> Variáveis aplicadas.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mod-whitelabel" class="cyber-card dash-module hidden">
+                <div>
+                    <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+                        <i data-lucide="sliders" class="w-4 h-4"></i> Módulo White Label & Revenda
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-sans text-xs">
+                        <div>
+                            <label class="block text-slate-400 font-mono mb-1">Nome da Agência:</label>
+                            <input type="text" id="input-nome-empresa" value="Medius Core Enterprise" oninput="atualizarWhiteLabel()" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white font-mono focus:border-cyan-400 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-mono mb-1">Cor do Neon (Matriz):</label>
+                            <select id="select-cor-neon" onchange="atualizarWhiteLabel()" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white font-mono outline-none">
+                                <option value="#00d2ff">Ciano Cyber (Padrão)</option>
+                                <option value="#00ffaa">Ciano Esmeraldado (Sinal Verde)</option>
+                                <option value="#818cf8">Índigo Camaleão</option>
+                                <option value="#ff0055">Alerta Vermelho Neon</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mod-ajuda" class="cyber-card dash-module hidden">
+                <div>
+                    <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+                        <i data-lucide="help-circle" class="w-4 h-4"></i> Central de Ajuda Gênesis
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-sans text-xs">
+                        <div class="bg-black/40 p-4 rounded border border-slate-800">
+                            <h4 class="font-mono mb-2 font-semibold" style="color: var(--accent-color)">Kill Switch Remoto</h4>
+                            <p class="text-slate-400">Opera via remote-config.json injetando Tela 403 para inadimplentes.</p>
+                        </div>
+                        <div class="bg-black/40 p-4 rounded border border-slate-800">
+                            <h4 class="font-mono mb-2 font-semibold" style="color: var(--accent-color)">Auto-Cura de DOM</h4>
+                            <p class="text-slate-400">Validação SHA-256 contínua contra tampering de frontend.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Inicializa ícones Lucide
+        lucide.createIcons();
+
+        // GLOBALS
+        let chartTrafego;
+        let chartSaude;
+        let chartHistorico;
+        let corAtual = '#00d2ff';
+        let menuAberto = true;
+        let dadosClientesCache = {}; 
+
+        // ==========================================
+        // MOTOR DE BOOT QUÁDRUPLO
+        // ==========================================
+        function iniciarBoot() {
+            const bootScreen = document.getElementById('bootScreen');
+            const progressFill = document.getElementById('bootProgressFill');
+            const bootCounter = document.getElementById('bootCounter');
+            const bootStatus = document.getElementById('bootStatus');
+
+            const mensagensFase1 = [
+                "Iniciando núcleos neurais...", 
+                "Calibrando processamento UI..."
+            ];
+            const mensagensFase2 = [
+                "Iniciando Varredura SecOps...", 
+                "Validando heurística de rede..."
+            ];
+            const mensagensFase3 = [
+                "Sincronizando Malha de Contratos...", 
+                "Conectando ao banco de dados remoto..."
+            ];
+            const mensagensFase4 = [
+                "Armando Escudos Defensivos...", 
+                "Desbloqueando Cockpit Central..."
+            ];
+
+            let progresso = 0;
+            let faseAtual = 1;
+            
+            const intervaloBoot = setInterval(() => {
+                progresso += Math.floor(Math.random() * 8) + 5;
+                
+                if (progresso >= 100) {
+                    if (faseAtual < 4) {
+                        progresso = 0;
+                        faseAtual++;
+                        
+                        progressFill.style.transition = 'none';
+                        progressFill.style.width = '0%';
+                        
+                        if(faseAtual === 2) {
+                            bootStatus.textContent = "Reboot Fase 2: Segurança...";
+                        }
+                        if(faseAtual === 3) {
+                            bootStatus.textContent = "Reboot Fase 3: Sincronização...";
+                        }
+                        if(faseAtual === 4) {
+                            bootStatus.textContent = "Reboot Fase 4: Interface Final...";
+                        }
+                        
+                        setTimeout(() => { 
+                            progressFill.style.transition = 'width 0.1s linear'; 
+                        }, 50);
+
+                    } else {
+                        progresso = 100;
+                        clearInterval(intervaloBoot);
+                        bootStatus.textContent = "Sistema 100% Operacional.";
+                        progressFill.style.width = '100%';
+                        bootCounter.textContent = '100%';
+
+                        setTimeout(() => {
+                            bootScreen.classList.add('fade-out');
+                            setTimeout(() => { 
+                                bootScreen.style.display = 'none'; 
+                            }, 600); 
+                        }, 400);
+                    }
+                } else {
+                    progressFill.style.width = progresso + '%';
+                    bootCounter.textContent = progresso + '%';
+
+                    let msgs;
+                    if(faseAtual === 1) { msgs = mensagensFase1; }
+                    if(faseAtual === 2) { msgs = mensagensFase2; }
+                    if(faseAtual === 3) { msgs = mensagensFase3; }
+                    if(faseAtual === 4) { msgs = mensagensFase4; }
+
+                    if (progresso > 50) {
+                        bootStatus.textContent = msgs[1];
+                    } else if (progresso > 10) {
+                        bootStatus.textContent = msgs[0];
+                    }
+                }
+            }, 80);
+        }
+
+        // ==========================================
+        // SISTEMA DE NAVEGAÇÃO E GRÁFICOS
+        // ==========================================
+        function toggleSidebar() {
+            menuAberto = !menuAberto; 
+            document.getElementById('sidebar').classList.toggle('recolhido');
+        }
+
+        function mudarSecao(secao) {
+            document.querySelectorAll('.menu-item').forEach(el => {
+                el.classList.remove('ativo');
+            });
+            
+            document.getElementById('btn-' + secao).classList.add('ativo');
+            
+            document.querySelectorAll('.dash-module').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            if (['visao-geral', 'camaleao', 'secops'].includes(secao)) {
+                document.getElementById('mod-visao-geral').classList.remove('hidden');
+                
+                if (secao === 'visao-geral') {
+                    document.getElementById('mod-metricas').classList.remove('hidden');
+                    document.getElementById('mod-tabela').classList.remove('hidden');
+                    document.getElementById('mod-terminais').classList.remove('hidden');
+                    document.getElementById('card-coesao').classList.remove('hidden');
+                    document.getElementById('card-heuristica').classList.remove('hidden');
+                    document.getElementById('card-escudos').classList.remove('hidden');
+                    document.getElementById('card-licencas').classList.remove('hidden');
+                    document.getElementById('term-secops').classList.remove('hidden');
+                    document.getElementById('term-camaleao').classList.remove('hidden');
+                } else if (secao === 'camaleao') {
+                    document.getElementById('mod-tabela').classList.add('hidden');
+                    document.getElementById('card-heuristica').classList.add('hidden');
+                    document.getElementById('card-escudos').classList.add('hidden');
+                    document.getElementById('card-licencas').classList.add('hidden');
+                    document.getElementById('term-secops').classList.add('hidden');
+                } else if (secao === 'secops') {
+                    document.getElementById('card-coesao').classList.add('hidden');
+                    document.getElementById('term-camaleao').classList.add('hidden');
+                }
+            } 
+            else if (secao === 'monitoramento') {
+                document.getElementById('mod-monitoramento').classList.remove('hidden');
+                window.dispatchEvent(new Event('resize')); 
+            }
+            else if (secao === 'whitelabel') {
+                document.getElementById('mod-whitelabel').classList.remove('hidden');
+            }
+            else if (secao === 'ajuda') {
+                document.getElementById('mod-ajuda').classList.remove('hidden');
+            }
+        }
+
+        function initCharts() {
+            let seriesData = Array.from({length: 20}, () => Math.floor(Math.random() * 70) + 20);
+
+            const optionsTrafego = {
+                series: [
+                    { 
+                        name: 'RPS', 
+                        data: seriesData 
+                    }
+                ],
+                chart: { 
+                    type: 'area', 
+                    height: 250, 
+                    toolbar: { 
+                        show: false 
+                    }, 
+                    animations: { 
+                        enabled: true, 
+                        dynamicAnimation: { 
+                            speed: 1000 
+                        } 
+                    } 
+                },
+                colors: [corAtual], 
+                fill: { 
+                    type: 'gradient', 
+                    gradient: { 
+                        shadeIntensity: 1, 
+                        opacityFrom: 0.4, 
+                        opacityTo: 0.05 
+                    } 
+                },
+                dataLabels: { 
+                    enabled: false 
+                }, 
+                stroke: { 
+                    curve: 'smooth', 
+                    width: 2 
+                },
+                xaxis: { 
+                    labels: { 
+                        show: false 
+                    }, 
+                    axisBorder: { 
+                        show: false 
+                    }, 
+                    axisTicks: { 
+                        show: false 
+                    } 
+                },
+                yaxis: { 
+                    labels: { 
+                        style: { 
+                            colors: '#94a3b8', 
+                            fontFamily: 'monospace' 
+                        } 
+                    } 
+                },
+                grid: { 
+                    borderColor: 'rgba(255,255,255,0.05)', 
+                    strokeDashArray: 4 
+                }
+            };
+            chartTrafego = new ApexCharts(document.querySelector("#chart-trafego"), optionsTrafego);
+            chartTrafego.render();
+
+            const optionsSaude = {
+                series: [100], 
+                chart: { 
+                    type: 'radialBar', 
+                    height: 250 
+                }, 
+                colors: [corAtual],
+                plotOptions: { 
+                    radialBar: { 
+                        hollow: { 
+                            size: '60%' 
+                        }, 
+                        track: { 
+                            background: 'rgba(255,255,255,0.05)' 
+                        }, 
+                        dataLabels: { 
+                            value: { 
+                                color: '#fff', 
+                                fontSize: '24px', 
+                                formatter: function(val) { 
+                                    return val + "%" 
+                                } 
+                            } 
+                        } 
+                    } 
+                }
+            };
+            chartSaude = new ApexCharts(document.querySelector("#chart-saude"), optionsSaude);
+            chartSaude.render();
+
+            const optionsHistorico = {
+                series: [
+                    { 
+                        name: 'Bloqueios', 
+                        data: [44, 55, 41, 67, 22, 43, 21, 33, 45, 31, 87, 65, 35] 
+                    }
+                ],
+                chart: { 
+                    type: 'bar', 
+                    height: 250, 
+                    toolbar: { 
+                        show: false 
+                    } 
+                }, 
+                colors: [corAtual],
+                plotOptions: { 
+                    bar: { 
+                        borderRadius: 2, 
+                        columnWidth: '40%' 
+                    } 
+                }, 
+                dataLabels: { 
+                    enabled: false 
+                },
+                xaxis: { 
+                    categories: ['10:00','10:05','10:10','10:15','10:20','10:25','10:30','10:35','10:40','10:45','10:50','10:55','11:00'], 
+                    labels: { 
+                        style: { 
+                            colors: '#94a3b8' 
+                        } 
+                    } 
+                },
+                yaxis: { 
+                    labels: { 
+                        style: { 
+                            colors: '#94a3b8' 
+                        } 
+                    } 
+                }, 
+                grid: { 
+                    borderColor: 'rgba(255,255,255,0.05)', 
+                    strokeDashArray: 4 
+                }
+            };
+            chartHistorico = new ApexCharts(document.querySelector("#chart-historico"), optionsHistorico);
+            chartHistorico.render();
+
+            setInterval(() => { 
+                seriesData.shift(); 
+                seriesData.push(Math.floor(Math.random() * 70) + 20); 
+                chartTrafego.updateSeries([{ data: seriesData }]); 
+            }, 2000);
+        }
+
+        function atualizarWhiteLabel() {
+            const nomeEmpresa = document.getElementById('input-nome-empresa').value;
+            corAtual = document.getElementById('select-cor-neon').value;
+            
+            document.getElementById('label-empresa-ativa').innerHTML = `Operando com <span class="text-white font-semibold">${nomeEmpresa}</span>`;
+            document.documentElement.style.setProperty('--accent-color', corAtual);
+            
+            let r = parseInt(corAtual.slice(1,3), 16);
+            let g = parseInt(corAtual.slice(3,5), 16);
+            let b = parseInt(corAtual.slice(5,7), 16);
+            
+            document.documentElement.style.setProperty('--accent-glow', `rgba(${r},${g},${b},0.4)`);
+            document.documentElement.style.setProperty('--accent-glow-strong', `rgba(${r},${g},${b},0.8)`);
+            document.documentElement.style.setProperty('--accent-glow-inset', `rgba(${r},${g},${b},0.2)`);
+            
+            document.getElementById('pdf-titulo').style.borderBottom = `2px solid ${corAtual}`;
+            
+            if(chartTrafego) {
+                chartTrafego.updateOptions({ colors: [corAtual] });
+            }
+            if(chartSaude) {
+                chartSaude.updateOptions({ colors: [corAtual] });
+            }
+            if(chartHistorico) {
+                chartHistorico.updateOptions({ colors: [corAtual] });
+            }
+        }
+
+        let bloqueiosHeuristicos = 1428;
+        
+        function simularAtaqueReal() {
+            const termSecOps = document.getElementById('term-secops');
+            const cardHeuristica = document.getElementById('card-heuristica');
+            const eqAlerta = document.getElementById('eq-alerta');
+            const logBox = document.getElementById('log-secops');
+
+            termSecOps.classList.add('alerta-critico'); 
+            cardHeuristica.classList.add('alerta-critico'); 
+            eqAlerta.classList.remove('hidden');
+            
+            bloqueiosHeuristicos++;
+            document.getElementById('dado-sanitizacao').innerText = bloqueiosHeuristicos.toLocaleString('pt-BR');
+            
+            const novoLog = document.createElement('div'); 
+            novoLog.className = "border-l-2 border-red-500 pl-3 bg-red-500/10 p-2 mb-2 animate-pulse text-white"; 
+            novoLog.innerHTML = `<span class="text-red-400 font-bold">[TAMPERING]</span> Alerta SecOps Acionado. Injeção Bloqueada.`; 
+            logBox.prepend(novoLog);
+            
+            setTimeout(() => { 
+                termSecOps.classList.remove('alerta-critico'); 
+                cardHeuristica.classList.remove('alerta-critico'); 
+                eqAlerta.classList.add('hidden'); 
+                novoLog.classList.remove('animate-pulse', 'text-white'); 
+                novoLog.classList.add('text-slate-400'); 
+            }, 4000);
+        }
+
+        // ==========================================
+        // DADOS E CONEXÃO COM A MALHA JSON
+        // ==========================================
+        async function carregarMalha() {
+            try {
+                const res = await fetch('../upgrade/remote-config.json');
+                const data = await res.json();
+                dadosClientesCache = data.clients; 
+                renderizarTabelas();
+            } catch (e) {
+                console.error("Erro malha: Simulando base local.");
+                dadosClientesCache = {
+                    "estudio-marcelao-01": { 
+                        "status": true, 
+                        "expires_at": "2026-12-31" 
+                    },
+                    "cliente-inadimplente-02": { 
+                        "status": false, 
+                        "expires_at": "2026-12-31" 
+                    },
+                    "cliente-expirado-03": { 
+                        "status": true, 
+                        "expires_at": "2024-12-31" 
+                    }
+                };
+                renderizarTabelas();
+            }
+        }
+
+        function renderizarTabelas() {
+            const tbodyUI = document.getElementById('tabela-clientes');
+            const tbodyPDF = document.getElementById('pdf-tabela-body');
+            
+            tbodyUI.innerHTML = '';
+            tbodyPDF.innerHTML = '';
+            
+            let ativos = 0; 
+            let vencidos = 0;
+
+            Object.keys(dadosClientesCache).forEach(clientId => {
+                const client = dadosClientesCache[clientId];
+                const estaVencido = new Date() > new Date(client.expires_at);
+                const blockAtivo = client.status === false;
+                const dataFormatada = new Date(client.expires_at).toLocaleDateString('pt-BR');
+                
+                if (!blockAtivo && !estaVencido) {
+                    ativos++;
+                }
+                if (estaVencido || blockAtivo) {
+                    vencidos++;
+                }
+
+                // Tabela da Interface (Neon)
+                tbodyUI.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition relative z-10">
+                        <td class="py-2 text-white font-mono">${clientId}</td>
+                        <td class="py-2">
+                            <span class="px-2 py-1 text-[10px] border rounded ${blockAtivo ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'}">
+                                ${blockAtivo ? 'Bloqueado' : 'Blindado'}
+                            </span>
+                        </td>
+                        <td class="py-2">
+                            <span class="px-2 py-1 text-[10px] border rounded bg-indigo-500/10 text-indigo-300 border-indigo-500/30">Sincronizado</span>
+                        </td>
+                        <td class="py-2 ${estaVencido ? 'text-red-400' : 'text-slate-300'}">
+                            ${dataFormatada}
+                        </td>
+                    </tr>
+                `;
+
+                // Tabela do PDF (Modo Documento)
+                tbodyPDF.innerHTML += `
+                    <tr>
+                        <td>
+                            <strong>${clientId}</strong>
+                        </td>
+                        <td style="color: ${blockAtivo ? '#ef4444' : '#10b981'}; font-weight: bold;">
+                            ${blockAtivo ? 'Revogado' : 'Permitido'}
+                        </td>
+                        <td style="color: ${estaVencido ? '#ef4444' : '#334155'};">
+                            ${dataFormatada}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            document.getElementById('count-ativos').innerText = ativos; 
+            document.getElementById('pdf-ativos-val').innerText = ativos; 
+            
+            document.getElementById('count-vencidos').innerText = vencidos;
+            document.getElementById('pdf-vencidos-val').innerText = vencidos;
+        }
+
+        // ==========================================
+        // MOTOR DE RELATÓRIO FORENSE (DOCUMENTO LIMPO)
+        // ==========================================
+        function gerarRelatorioLimpo() {
+            const nomeEmpresa = document.getElementById('input-nome-empresa').value.toUpperCase();
+            document.getElementById('pdf-titulo').innerHTML = `AUDITORIA // ${nomeEmpresa}`;
+            document.getElementById('pdf-data').innerText = new Date().toLocaleString('pt-BR');
+            document.getElementById('pdf-sanitizacao-val').innerText = bloqueiosHeuristicos;
+
+            const divLimpa = document.getElementById('relatorio-pdf-clean');
+            divLimpa.style.display = 'block';
+
+            const loader = document.createElement('div');
+            loader.style.position = 'fixed';
+            loader.style.top = '0'; 
+            loader.style.left = '0';
+            loader.style.width = '100vw'; 
+            loader.style.height = '100vh';
+            loader.style.backgroundColor = 'var(--bg-base)';
+            loader.style.zIndex = '999999'; 
+            loader.style.display = 'flex'; 
+            loader.style.flexDirection = 'column';
+            loader.style.alignItems = 'center'; 
+            loader.style.justifyContent = 'center';
+            loader.innerHTML = `
+                <div style="font-family: monospace; color: var(--accent-color); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 3px; animation: pulseFade 1s infinite alternate;">
+                    Compilando Relatório Forense...
+                </div>
+                <div style="margin-top: 15px; width: 250px; height: 2px; background: rgba(255,255,255,0.05); overflow: hidden; border-radius: 2px;">
+                    <div style="width: 50%; height: 100%; background: var(--accent-color); box-shadow: 0 0 10px var(--accent-color); animation: loaderSlide 1s infinite linear;"></div>
+                </div>
+                <style>
+                    @keyframes loaderSlide { 
+                        0% { transform: translateX(-100%); } 
+                        100% { transform: translateX(200%); } 
+                    }
+                    @keyframes pulseFade { 
+                        0% { opacity: 0.5; } 
+                        100% { opacity: 1; } 
+                    }
+                </style>
+            `;
+            document.body.appendChild(loader);
+
+            setTimeout(() => {
+                html2pdf().set({ 
+                    margin: 0.5, 
+                    filename: `Auditoria_Medius_${new Date().getTime()}.pdf`, 
+                    jsPDF: { 
+                        unit: 'in', 
+                        format: 'a4', 
+                        orientation: 'portrait' 
+                    } 
+                }).from(divLimpa).save().then(() => {
+                    divLimpa.style.display = 'none';
+                    document.body.removeChild(loader);
+                });
+            }, 600);
+        }
+
+        // ==========================================
+        // EVENTO DE START
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            iniciarBoot();    
+            initCharts();     
+            carregarMalha();  
+        });
+
+    </script>
+</body>
+</html>
