@@ -302,6 +302,67 @@
             100% { height: 16px; } 
         }
 
+        /* SISTEMA DE TOOLTIPS (O ÍCONE "i") */
+        .tooltip { 
+            position: relative; 
+            display: inline-block; 
+            margin-left: 6px; 
+            cursor: help; 
+        }
+
+        .info-icon { 
+            background: transparent; 
+            color: var(--accent-color); 
+            border: 1px solid var(--accent-color); 
+            border-radius: 50%; 
+            width: 14px; 
+            height: 14px; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 9px; 
+            font-family: Arial, sans-serif; 
+            font-weight: bold; 
+            box-shadow: 0 0 6px var(--accent-glow); 
+            transition: all 0.2s ease; 
+        }
+
+        .info-icon:hover { 
+            background: var(--accent-color); 
+            color: var(--bg-base); 
+            box-shadow: 0 0 15px var(--accent-color); 
+        }
+
+        .tooltip .tooltip-text { 
+            visibility: hidden; 
+            width: 220px; 
+            background-color: #030610; 
+            color: #f8fafc; 
+            text-align: left; 
+            border-radius: 6px; 
+            padding: 10px; 
+            position: absolute; 
+            bottom: 140%; 
+            left: 50%; 
+            margin-left: -110px; 
+            opacity: 0; 
+            transition: opacity 0.3s; 
+            font-family: sans-serif; 
+            font-size: 0.7rem; 
+            font-weight: normal;
+            line-height: 1.4;
+            border: 1px solid var(--accent-color); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.9), 0 0 15px var(--accent-glow); 
+            z-index: 100; 
+            pointer-events: none; 
+            text-transform: none;
+        }
+
+        .tooltip:hover .tooltip-text { 
+            visibility: visible; 
+            opacity: 1; 
+        }
+
         /* ABAS DE SITES */
         .tab-site-btn {
             background-color: #050a14;
@@ -435,7 +496,7 @@
         <h2 class="text-xl font-bold text-white mb-4">Acesso ao Sistema Suspenso</h2>
         <p class="text-slate-400 max-w-md mb-8 text-sm">
             A licença deste nó foi pausada pelo Sistema de Governança <strong>Medius Core SDK</strong>.
-            Entre em contacto com a administração para restabelecer a sincronia do contrato.
+            Entre em contato com a administração para restabelecer a sincronia do contrato.
         </p>
         <button onclick="alternarKillSwitch(false)" class="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-600 text-xs font-mono transition">
             [Ambiente de Teste] Restaurar Acesso
@@ -637,10 +698,9 @@
                             <div>
                                 <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
                                     COESÃO DOM
-                                    <div class="eq-container">
-                                        <div class="eq-bar"></div>
-                                        <div class="eq-bar"></div>
-                                        <div class="eq-bar"></div>
+                                    <div class="tooltip">
+                                        <span class="info-icon">i</span>
+                                        <span class="tooltip-text">Integridade estrutural da malha HTML.</span>
                                     </div>
                                 </div>
                                 <div class="text-2xl font-bold font-mono text-white">100.00%</div>
@@ -651,10 +711,9 @@
                             <div>
                                 <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
                                     SANITIZAÇÃO
-                                    <div class="eq-container">
-                                        <div class="eq-bar"></div>
-                                        <div class="eq-bar"></div>
-                                        <div class="eq-bar"></div>
+                                    <div class="tooltip">
+                                        <span class="info-icon">i</span>
+                                        <span class="tooltip-text">Ameaças e anomalias bloqueadas pelo Firewall SecOps.</span>
                                     </div>
                                 </div>
                                 <div class="text-2xl font-bold font-mono text-white" id="dado-sanitizacao">1,428</div>
@@ -663,14 +722,26 @@
                         
                         <div class="cyber-card">
                             <div>
-                                <div class="text-[11px] text-slate-400 font-mono neon-divider">NÓS ATIVOS</div>
+                                <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
+                                    NÓS ATIVOS
+                                    <div class="tooltip">
+                                        <span class="info-icon">i</span>
+                                        <span class="tooltip-text">Clientes sob blindagem contínua.</span>
+                                    </div>
+                                </div>
                                 <div class="text-2xl font-bold text-white font-mono" id="count-ativos">3</div>
                             </div>
                         </div>
                         
                         <div class="cyber-card">
                             <div>
-                                <div class="text-[11px] text-slate-400 font-mono neon-divider">INADIMPLENTES</div>
+                                <div class="text-[11px] text-slate-400 font-mono neon-divider flex justify-between items-center">
+                                    INADIMPLENTES
+                                    <div class="tooltip">
+                                        <span class="info-icon">i</span>
+                                        <span class="tooltip-text">Acessos revogados via Kill Switch remoto.</span>
+                                    </div>
+                                </div>
                                 <div class="text-2xl font-bold text-amber-400 font-mono" id="count-vencidos">1</div>
                             </div>
                         </div>
@@ -680,7 +751,7 @@
                         <div>
                             <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
                                 <span>Malha Geral de Contratos & Ativos</span>
-                                <span class="text-xs text-slate-400">4 Clientes Registados</span>
+                                <span class="text-xs text-slate-400">4 Clientes Registrados</span>
                             </h3>
                             <table class="w-full text-left font-sans text-xs">
                                 <thead>
@@ -855,26 +926,50 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                         <div class="cyber-card p-4">
-                            <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Uptime Mensal</div>
+                            <div class="text-[11px] text-slate-400 font-mono uppercase mb-2 flex justify-between items-center">
+                                <span>Uptime Mensal</span>
+                                <div class="tooltip">
+                                    <span class="info-icon">i</span>
+                                    <span class="tooltip-text" style="bottom: 130%; left: 50%; margin-left: -110px;">Garantia de disponibilidade e tempo online do domínio monitorado.</span>
+                                </div>
+                            </div>
                             <div class="text-2xl font-bold text-white font-mono" id="client-card-uptime">99.98%</div>
                         </div>
 
                         <div class="cyber-card p-4">
-                            <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Requisições (24h)</div>
+                            <div class="text-[11px] text-slate-400 font-mono uppercase mb-2 flex justify-between items-center">
+                                <span>Requisições (24h)</span>
+                                <div class="tooltip">
+                                    <span class="info-icon">i</span>
+                                    <span class="tooltip-text" style="bottom: 130%; left: 50%; margin-left: -110px;">Volume de tráfego de usuários processado com segurança pela rede Medius.</span>
+                                </div>
+                            </div>
                             <div class="text-2xl font-bold text-white font-mono" id="client-card-req">24,850</div>
                         </div>
 
                         <div class="cyber-card p-4" style="box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.1);">
                             <div class="text-[11px] text-slate-400 font-mono uppercase mb-2 flex justify-between items-center">
-                                Estabilidade Visual
-                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span>Estabilidade Visual</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    <div class="tooltip">
+                                        <span class="info-icon">i</span>
+                                        <span class="tooltip-text" style="bottom: 130%; left: 50%; margin-left: -110px;">Monitoramento contínuo contra desfiguração de tela (Defacement) e adulteração de código.</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="text-2xl font-bold text-white font-mono">100.00%</div>
                             <div class="text-[9px] text-emerald-400 mt-1 uppercase font-sans">Assinatura SHA-256 Íntegra</div>
                         </div>
 
                         <div class="cyber-card p-4">
-                            <div class="text-[11px] text-slate-400 font-mono uppercase mb-2">Bloqueios SecOps</div>
+                            <div class="text-[11px] text-slate-400 font-mono uppercase mb-2 flex justify-between items-center">
+                                <span>Bloqueios SecOps</span>
+                                <div class="tooltip">
+                                    <span class="info-icon">i</span>
+                                    <span class="tooltip-text" style="bottom: 130%; left: 50%; margin-left: -110px;">Tentativas de intrusão, bots e requisições maliciosas interceptadas pelo Firewall.</span>
+                                </div>
+                            </div>
                             <div class="text-2xl font-bold text-white font-mono">14</div>
                             <div class="text-[9px] text-amber-400 mt-1 uppercase font-sans">Ameaças Neutralizadas</div>
                         </div>
@@ -885,7 +980,7 @@
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="text-sm font-semibold text-white flex items-center gap-2 font-mono">
                                     <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-400"></i>
-                                    Tráfego em Tempo Real (RPS)
+                                    Tráfego e Interações no Domínio Selecionado
                                 </h3>
                                 <span class="text-xs font-mono text-slate-500">Taxa: 2.5s</span>
                             </div>
@@ -1493,7 +1588,6 @@
         }
 
         function initClienteCharts() {
-            // Chart 1: Tráfego (Área)
             if (!chartTrafegoCliente) {
                 const optTrafego = {
                     series: [{ name: 'Acessos/min', data: seriesClienteData }],
@@ -1509,12 +1603,11 @@
                 chartTrafegoCliente.render();
             }
 
-            // Chart 2: Coesão Visual (Radial Verde)
             if (!chartCoesaoCliente) {
                 const optCoesao = {
                     series: [100],
                     chart: { type: 'radialBar', height: 240 },
-                    colors: ['#34d399'], // Emerald color for visual stability
+                    colors: ['#34d399'], 
                     plotOptions: {
                         radialBar: {
                             hollow: { size: '65%' },
