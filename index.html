@@ -568,13 +568,13 @@
                     <button onclick="mudarSecaoAdmin('visao-geral')" id="btn-adm-visao-geral" class="menu-item ativo w-full">
                         <div>
                             <i data-lucide="layout-dashboard" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
-                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Visão Geral</span>
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Controle da Malha (Geral)</span>
                         </div>
                     </button>
-                    <button onclick="mudarSecaoAdmin('tme')" id="btn-adm-tme" class="menu-item w-full">
+                    <button onclick="mudarSecaoAdmin('gestao-nos')" id="btn-adm-gestao-nos" class="menu-item w-full hidden">
                         <div>
-                            <i data-lucide="activity" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
-                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">TME // Monitoramento</span>
+                            <i data-lucide="folder-key" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Sala de Inspeção (Ativa)</span>
                         </div>
                     </button>
                     <button onclick="mudarSecaoAdmin('camaleao')" id="btn-adm-camaleao" class="menu-item w-full">
@@ -583,22 +583,10 @@
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Motor Camaleão</span>
                         </div>
                     </button>
-                    <button onclick="mudarSecaoAdmin('secops')" id="btn-adm-secops" class="menu-item w-full">
-                        <div>
-                            <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
-                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Muralha SecOps</span>
-                        </div>
-                    </button>
                     <button onclick="mudarSecaoAdmin('whitelabel')" id="btn-adm-whitelabel" class="menu-item w-full">
                         <div>
                             <i data-lucide="sliders" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Módulo White Label</span>
-                        </div>
-                    </button>
-                    <button onclick="mudarSecaoAdmin('auditoria-master')" id="btn-adm-auditoria-master" class="menu-item w-full">
-                        <div>
-                            <i data-lucide="eye" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
-                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Auditoria Forense (Fotos)</span>
                         </div>
                     </button>
                 </nav>
@@ -629,48 +617,36 @@
 
             <div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
 
-                <div id="mod-tme" class="dash-module hidden">
-                    <div class="cyber-card mb-6 p-5">
+                <div id="mod-gestao-nos" class="dash-module hidden space-y-6">
+                    <div class="cyber-card mb-2 p-5 border-l-4 border-cyan-500 shadow-[0_0_25px_rgba(0,210,255,0.1)]">
                         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                             <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded bg-blue-600/10 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
-                                    <i data-lucide="crosshair" class="w-6 h-6 text-blue-400" style="filter: drop-shadow(0 0 5px rgba(59,130,246,0.5));"></i>
+                                <div class="w-12 h-12 rounded bg-cyan-600/10 border border-cyan-500/40 flex items-center justify-center flex-shrink-0 animate-pulse">
+                                    <i data-lucide="folder-key" class="w-6 h-6 text-cyan-400" style="filter: drop-shadow(0 0 5px rgba(0,210,255,0.5));"></i>
                                 </div>
                                 <div>
                                     <div class="flex items-center gap-3">
-                                        <h2 class="text-lg font-bold text-white font-mono" id="tme-client-name">Marcelão Digital & Entertainment</h2>
-                                        <span id="tme-client-status" class="px-2 py-0.5 text-[10px] border rounded font-sans tracking-wider bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                                            SINCRONIZADO
-                                        </span>
+                                        <h2 class="text-lg font-bold text-white font-mono uppercase tracking-wide">SALA DE INSPEÇÃO: <span id="sala-client-name" class="text-cyan-400">---</span></h2>
+                                        <span id="tme-client-status" class="px-2 py-0.5 text-[10px] border rounded font-sans tracking-wider bg-emerald-500/10 text-emerald-400 border-emerald-500/30">ATIVO</span>
                                     </div>
                                     <p class="text-xs text-slate-400 font-mono mt-1">
-                                        Site Ativo: <span id="tme-active-site-display" class="font-bold text-cyan-400">marcelaodigital.com.br</span> 
+                                        Nó ID: <span id="sala-client-id" class="font-bold text-white">---</span> 
                                         <span class="mx-2 text-slate-600">|</span> 
-                                        Ping: <span id="tme-client-ping" class="text-blue-400">22ms</span>
+                                        Alvo Ativo: <span id="tme-active-site-display" class="font-bold text-slate-300">---</span> 
                                         <span class="mx-2 text-slate-600">|</span> 
-                                        SHA-256: <span id="tme-client-sha" class="text-indigo-400">Válida (99.98%)</span>
+                                        SHA-256: <span id="tme-client-sha" class="text-indigo-400">---</span>
                                     </p>
                                 </div>
                             </div>
-
                             <div class="flex flex-wrap items-center gap-3 bg-[#030610] p-2.5 rounded-lg border border-slate-800 w-full lg:w-auto">
                                 <div class="flex flex-col">
-                                    <label class="text-[9px] text-slate-500 font-mono uppercase tracking-wider">1. Selecionar Cliente</label>
-                                    <select id="tme-select-client" onchange="aoTrocarClienteTME(this.value)" class="bg-transparent text-slate-200 text-xs font-mono outline-none py-1 cursor-pointer">
-                                        <option value="estudio-marcelao-01" selected>Marcelão Digital (#estudio-01)</option>
-                                        <option value="balada-prime-02">Balada Prime (#prime-02)</option>
-                                        <option value="lounge-vip-03">Lounge VIP (#lounge-03)</option>
-                                        <option value="cliente-inadimplente-04">Studio Alpha (#bloqueado-04)</option>
-                                    </select>
+                                    <label class="text-[9px] text-slate-500 font-mono uppercase tracking-wider">Selecionar Domínio</label>
+                                    <select id="tme-select-site" onchange="aoTrocarSiteTME(this.value)" class="bg-transparent text-cyan-300 text-xs font-mono outline-none py-1 cursor-pointer"></select>
                                 </div>
-
                                 <div class="w-px h-8 bg-slate-800 hidden sm:block"></div>
-
-                                <div class="flex flex-col">
-                                    <label class="text-[9px] text-slate-500 font-mono uppercase tracking-wider">2. Selecionar Site / Nó</label>
-                                    <select id="tme-select-site" onchange="aoTrocarSiteTME(this.value)" class="bg-transparent text-cyan-300 text-xs font-mono outline-none py-1 cursor-pointer">
-                                    </select>
-                                </div>
+                                <button onclick="gerarRelatorioLimpo()" class="flex items-center gap-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 px-3 py-1.5 rounded border border-cyan-500/40 text-xs font-mono font-bold transition">
+                                    <i data-lucide="file-down" class="w-3.5 h-3.5"></i> Exportar PDF da Sala
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -679,24 +655,42 @@
                         <div class="cyber-card col-span-1 md:col-span-8">
                             <div>
                                 <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
-                                    <span class="flex items-center gap-2">
-                                        <i data-lucide="activity" class="w-4 h-4"></i> Tráfego em Tempo Real do Site (RPS)
-                                    </span>
+                                    <span class="flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4"></i> Time de Monitoramento (TME) - Tráfego</span>
                                     <span class="text-[10px] text-slate-400 font-mono uppercase">Taxa: 2000ms</span>
                                 </h3>
                                 <div id="chart-trafego-admin" style="min-height: 250px;"></div>
                             </div>
                         </div>
-                        
-                        <div class="cyber-card col-span-1 md:col-span-4">
-                            <div class="h-full flex flex-col">
+                        <div class="col-span-1 md:col-span-4 flex flex-col gap-6">
+                            <div class="cyber-card flex-1 flex flex-col">
                                 <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
                                     <i data-lucide="crosshair" class="w-4 h-4"></i> Índice de Integridade
                                 </h3>
-                                <div class="flex-1 flex flex-col items-center justify-center pb-6">
+                                <div class="flex-1 flex flex-col items-center justify-center pb-2">
                                     <div id="chart-saude-admin"></div>
-                                    <p class="text-xs text-slate-400 font-mono mt-2" id="tme-health-desc">Nó Operacional e Blindado</p>
+                                    <p class="text-xs text-slate-400 font-mono" id="tme-health-desc">Nó Operacional e Blindado</p>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="cyber-card font-mono text-xs">
+                            <div>
+                                <div class="neon-divider flex items-center gap-2">
+                                    <i data-lucide="shield-alert" class="w-4 h-4 text-red-500"></i>
+                                    <span class="text-white font-bold uppercase">Muralha SecOps (Logs Isolados)</span>
+                                </div>
+                                <div class="h-48 overflow-y-auto space-y-2 text-slate-400" id="log-secops"></div>
+                            </div>
+                        </div>
+                        <div class="cyber-card">
+                            <div>
+                                <div class="neon-divider flex items-center gap-2">
+                                    <i data-lucide="eye" class="w-4 h-4 text-cyan-400"></i>
+                                    <span class="text-white font-bold uppercase font-mono text-xs">Caixa de Auditoria Forense</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 h-48 overflow-y-auto pr-2" id="grid-auditoria-sala"></div>
                             </div>
                         </div>
                     </div>
@@ -858,21 +852,7 @@
                     </div>
                 </div>
 
-                <div id="mod-auditoria-master" class="dash-module hidden space-y-6">
-                    <div class="cyber-card">
-                        <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
-                            <i data-lucide="eye" class="w-4 h-4"></i> Registros Oculares Secretos (SecOps)
-                        </h3>
-                        <p class="text-xs text-slate-400 mb-4 font-mono">Histórico de acessos com captura biométrica invisível. Apenas Nível Master.</p>
-                        
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="grid-auditoria-fotos">
-                            <!-- Fotos injetadas via JS aparecerão aqui -->
-                            <div class="text-slate-600 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-full text-center">
-                                Aguardando novos acessos para captura...
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Módulo Auditoria Removido (Centralizado na Sala do Cliente) -->
 
             </div>
         </main>
@@ -1581,9 +1561,9 @@
                             </span>
                         </td>
                         <td class="py-2.5 font-mono text-slate-300">${c.expires_at}</td>
-                        <td class="py-2.5 text-right font-mono">
-                            <button onclick="selecionarClienteTMEPelaTabela('${key}')" class="text-cyan-400 hover:text-white underline">
-                                TME
+                        <td class="py-2.5 text-right font-mono flex justify-end">
+                            <button onclick="abrirSalaDoCliente('${key}')" class="text-cyan-400 hover:text-white bg-cyan-500/10 px-3 py-1.5 rounded border border-cyan-500/30 transition flex items-center gap-1 shadow-[0_0_5px_rgba(0,210,255,0.2)]">
+                                <i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Inspecionar Sala
                             </button>
                         </td>
                     </tr>
@@ -1609,15 +1589,58 @@
 
             if (secao === 'visao-geral') {
                 document.getElementById('mod-visao-geral').classList.remove('hidden');
-            } else if (secao === 'tme') {
-                document.getElementById('mod-tme').classList.remove('hidden');
+                document.getElementById('btn-adm-gestao-nos').classList.add('hidden'); // Oculta a aba da sala se voltar pro geral
+            } else if (secao === 'gestao-nos') {
+                document.getElementById('mod-gestao-nos').classList.remove('hidden');
                 setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
             } else if (secao === 'whitelabel') {
                 document.getElementById('mod-whitelabel').classList.remove('hidden');
-            } else if (secao === 'auditoria-master') {
-                document.getElementById('mod-auditoria-master').classList.remove('hidden');
-                renderizarAuditoriaMaster();
+            } else if (secao === 'camaleao') {
+                alert("Módulo Camaleão Ativo via Atalho (UI Inject liberada)");
             }
+        }
+
+        function abrirSalaDoCliente(clientId) {
+            const btnSala = document.getElementById('btn-adm-gestao-nos');
+            btnSala.classList.remove('hidden');
+            
+            tmeClienteKey = clientId;
+            const cliente = databaseClientes[clientId];
+            
+            document.getElementById('sala-client-name').innerText = cliente.nome;
+            document.getElementById('sala-client-id').innerText = '#' + clientId;
+            
+            const siteSelect = document.getElementById('tme-select-site');
+            siteSelect.innerHTML = '';
+            cliente.sites.forEach((site, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.text = site.dominio;
+                siteSelect.appendChild(opt);
+            });
+            
+            mudarSecaoAdmin('gestao-nos');
+            aoTrocarSiteTME(0); // Força render do TME
+            renderizarAuditoriaMaster(); // Renderiza a caixa do cliente específico
+        }
+
+        // Sobrescrevemos renderizarAuditoriaMaster para focar na "Sala" aberta
+        function renderizarAuditoriaMaster() {
+            const grid = document.getElementById('grid-auditoria-sala');
+            if (!grid) return;
+            
+            const logsCliente = logsAuditoria.clientes[tmeClienteKey] || [];
+            if (logsCliente.length === 0) {
+                grid.innerHTML = `<div class="text-slate-600 text-[10px] font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-full text-center">Nenhum registro biométrico nesta caixa.</div>`;
+                return;
+            }
+            
+            let html = '';
+            logsCliente.forEach((log, index) => {
+                html += gerarCardLogHTML(log, tmeClienteKey, 'cliente', index);
+            });
+            grid.innerHTML = html;
+            lucide.createIcons();
         }
 
         function toggleSidebarAdmin() {
