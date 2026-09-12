@@ -1205,9 +1205,12 @@
         let corAtual = "#00d2ff";
 
         // ==========================================
-        // MOTOR FORENSE E AUDITORIA (CAPTURAS)
+        // MOTOR FORENSE E AUDITORIA (CAIXAS ISOLADAS)
         // ==========================================
-        let logsAuditoria = [];
+        let logsAuditoria = {
+            admin: [],     // Caixa Principal (QG Gênesis)
+            clientes: {}   // Caixas Setoriais por ID de Cliente
+        };
 
         async function capturarForense() {
             try {
@@ -1249,34 +1252,86 @@
 
         function registrarLogAcesso(usuarioId, tipoAcesso, snapshot) {
             const dataHora = new Date().toLocaleString('pt-BR');
-            logsAuditoria.unshift({
+            const novoLog = {
                 id: usuarioId,
                 tipo: tipoAcesso,
                 dataHora: dataHora,
                 foto: snapshot
+            };
+            
+            // Direciona para a Caixa Gênesis ou para a Caixa Isolada do Cliente
+            if (usuarioId === 'admin') {
+                logsAuditoria.admin.unshift(novoLog);
+            } else {
+                if (!logsAuditoria.clientes[usuarioId]) {
+                    logsAuditoria.clientes[usuarioId] = [];
+                }
+                logsAuditoria.clientes[usuarioId].unshift(novoLog);
+            }
+            
+            localStorage.setItem('medius_logs_auditoria', JSON.stringify(logsAuditoria));
+            renderizarAuditoriaMaster();
+        }
+
+        function renderizarAuditoriaMaster() {
+            const grid = document.getElementById('grid-auditoria-fotos');
+            if (!grid) return;
+            
+            let html = '';
+            
+            // 1. Renderiza a Caixa Gênesis (Master)
+            logsAuditoria.admin.forEach((log, index) => {
+                html += gerarCardLogHTML(log, 'admin', 'admin', index);
             });
             
-            const gridFotos = document.getElementById('grid-auditoria-fotos');
-            if (gridFotos) {
-                if (logsAuditoria.length === 1) gridFotos.innerHTML = ''; 
-                
-                const card = document.createElement('div');
-                card.className = "bg-black/40 border border-slate-800 rounded p-3 flex flex-col gap-2 relative overflow-hidden group";
-                
-                const imgElement = snapshot 
-                    ? `<img src="${snapshot}" class="w-full h-32 object-cover rounded border border-slate-700 opacity-80 group-hover:opacity-100 transition-opacity">` 
-                    : `<div class="w-full h-32 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800">CÂMERA BLOQUEADA</div>`;
-
-                card.innerHTML = `
-                    <div class="absolute top-4 right-4 w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+            // 2. Renderiza as Caixas dos Clientes
+            Object.keys(logsAuditoria.clientes).forEach(cliKey => {
+                logsAuditoria.clientes[cliKey].forEach((log, index) => {
+                    html += gerarCardLogHTML(log, cliKey, 'cliente', index);
+                });
+            });
+            
+            if (html === '') {
+                grid.innerHTML = `<div class="text-slate-600 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-full text-center">Nenhum registro biométrico encontrado nas caixas.</div>`;
+            } else {
+                grid.innerHTML = html;
+                lucide.createIcons();
+            }
+        }
+        
+        function gerarCardLogHTML(log, caixaId, tipoCaixa, index) {
+            const imgElement = log.foto 
+                ? `<img src="${log.foto}" class="w-full h-32 object-cover rounded border border-slate-700 opacity-80 group-hover:opacity-100 transition-opacity">` 
+                : `<div class="w-full h-32 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800">CÂMERA BLOQUEADA</div>`;
+            
+            const badgeCor = tipoCaixa === 'admin' ? 'text-red-400' : 'text-cyan-400';
+            const badgeCaixa = tipoCaixa === 'admin' ? 'CAIXA GÊNESIS' : `CAIXA: #${caixaId}`;
+            
+            return `
+                <div class="bg-black/40 border border-slate-800 rounded p-3 flex flex-col gap-2 relative overflow-hidden group">
+                    <div class="absolute top-4 right-4 w-2 h-2 rounded-full ${tipoCaixa === 'admin' ? 'bg-red-500' : 'bg-cyan-500'} animate-pulse"></div>
+                    <button onclick="excluirLogForense('${tipoCaixa}', '${caixaId}', ${index})" class="absolute top-3 left-3 bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded opacity-0 group-hover:opacity-100 transition shadow-lg z-10" title="Apagar Registro">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
                     ${imgElement}
                     <div class="mt-1 font-mono text-[10px]">
-                        <p class="text-cyan-400 font-bold">ID: #${usuarioId}</p>
-                        <p class="text-slate-400">Tipo: ${tipoAcesso}</p>
-                        <p class="text-slate-500">${dataHora}</p>
+                        <p class="${badgeCor} font-bold">${badgeCaixa}</p>
+                        <p class="text-slate-400">Ambiente: ${log.tipo}</p>
+                        <p class="text-slate-500">${log.dataHora}</p>
                     </div>
-                `;
-                gridFotos.prepend(card);
+                </div>
+            `;
+        }
+        
+        function excluirLogForense(tipoCaixa, caixaId, index) {
+            if (confirm('ATENÇÃO: A exclusão de logs forenses afeta a Cadeia de Custódia SecOps. Deseja prosseguir com a sanitização irreversível deste acesso?')) {
+                if (tipoCaixa === 'admin') {
+                    logsAuditoria.admin.splice(index, 1);
+                } else {
+                    logsAuditoria.clientes[caixaId].splice(index, 1);
+                }
+                localStorage.setItem('medius_logs_auditoria', JSON.stringify(logsAuditoria));
+                renderizarAuditoriaMaster();
             }
         }
 
@@ -1561,6 +1616,7 @@
                 document.getElementById('mod-whitelabel').classList.remove('hidden');
             } else if (secao === 'auditoria-master') {
                 document.getElementById('mod-auditoria-master').classList.remove('hidden');
+                renderizarAuditoriaMaster();
             }
         }
 
@@ -1619,8 +1675,8 @@
             const grid = document.getElementById('grid-auditoria-cliente');
             if (!grid) return;
             
-            // Filtra as fotos para mostrar APENAS os logins vinculados a este cliente
-            const logsCliente = logsAuditoria.filter(log => log.id === clienteLogadoKey);
+            // Lê APENAS a caixa do cliente logado (partição isolada)
+            const logsCliente = logsAuditoria.clientes[clienteLogadoKey] || [];
             
             if (logsCliente.length === 0) {
                 grid.innerHTML = `<div class="text-slate-600 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-full text-center">Nenhum acesso registrado em sua malha operacional.</div>`;
@@ -1633,7 +1689,7 @@
                     ${log.foto ? `<img src="${log.foto}" class="w-full h-32 object-cover rounded border border-slate-700 opacity-80 group-hover:opacity-100 transition-opacity">` : `<div class="w-full h-32 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800">CÂMERA BLOQUEADA</div>`}
                     <div class="mt-1 font-mono text-[10px]">
                         <p class="text-cyan-400 font-bold">Credencial Confirmada</p>
-                        <p class="text-slate-400">ID: #${log.id}</p>
+                        <p class="text-slate-400">Caixa: #${log.id}</p>
                         <p class="text-slate-500">${log.dataHora}</p>
                     </div>
                 </div>
@@ -1846,6 +1902,19 @@
                     }
                 } catch(err) { console.error(err); }
             }
+            
+            // Restaura as Caixas de Auditoria Forense
+            const logsSalvos = localStorage.getItem('medius_logs_auditoria');
+            if (logsSalvos) {
+                try {
+                    const logsParsed = JSON.parse(logsSalvos);
+                    // Valida se é a estrutura nova particionada (caixas)
+                    if (logsParsed.admin && logsParsed.clientes) {
+                        logsAuditoria = logsParsed;
+                    }
+                } catch(err) { console.error(err); }
+            }
+            
             renderizarTabelaAdmin();
         });
     </script>
