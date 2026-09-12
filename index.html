@@ -1845,16 +1845,26 @@
                 logBox.prepend(novoLog);
             }
 
-          // 2. Dispara Webhook Externo (Telegram Bot se configurado)
-          const botToken = document.getElementById('input-telegram-token')?.value.trim();
-          const chatId = document.getElementById('input-telegram-chatid')?.value.trim();
+          // 2. Persiste as credenciais no localStorage automaticamente (Fase 3)
+          const inputToken = document.getElementById('input-telegram-token');
+          const inputChat = document.getElementById('input-telegram-chatid');
+
+          if (inputToken && inputToken.value.trim()) {
+              localStorage.setItem('medius_secops_token', inputToken.value.trim());
+          }
+          if (inputChat && inputChat.value.trim()) {
+              localStorage.setItem('medius_secops_chatid', inputChat.value.trim());
+          }
+
+          const botToken = localStorage.getItem('medius_secops_token');
+          const chatId = localStorage.getItem('medius_secops_chatid');
 
           if (botToken && chatId) {
               const mensagem = `🚨 *ALERTA SECOPS // MEDIUS CORE* 🚨\n\n⚠️ *Ameaça:* ${tipoAmeaca}\n📌 *Detalhes:* ${detalhes}\n🕒 *Horário:* ${timestamp}\n🛡️ *Status:* Neutralizado pela Malha.`;
               
               try {
                   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                  await fetch(url, {
+                  const response = await fetch(url, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -1863,6 +1873,17 @@
                           parse_mode: 'Markdown'
                       })
                   });
+
+                  if (response.ok) {
+                      // Fase 4: Feedback visual de rastreabilidade no terminal SecOps
+                      const logBoxFeedback = document.getElementById('log-secops');
+                      if (logBoxFeedback) {
+                          const logWeb = document.createElement('div');
+                          logWeb.className = "border-l-2 border-cyan-400 pl-3 bg-cyan-500/10 p-2 mb-2 text-cyan-300";
+                          logWeb.innerHTML = `[WEBHOOK DISPARADO] Alerta crítico enviado para o canal tático via Telegram com sucesso.`;
+                          logBoxFeedback.prepend(logWeb);
+                      }
+                  }
               } catch (err) {
                   console.error("Falha no disparo do webhook SecOps:", err);
               }
