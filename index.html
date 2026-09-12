@@ -620,6 +620,12 @@
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Módulo White Label</span>
                         </div>
                     </button>
+                    <button onclick="mudarSecaoAdmin('telemetria')" id="btn-adm-telemetria" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="bug" class="w-5 h-5 flex-shrink-0 text-amber-400"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Telemetria de Erros</span>
+                        </div>
+                    </button>
                 </nav>
             </div>
             
@@ -947,6 +953,19 @@
                                 <!-- Preenchido pelo JS -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- MÓDULO DE TELEMETRIA -->
+                <div id="mod-telemetria" class="dash-module hidden space-y-6">
+                    <div class="cyber-card">
+                        <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
+                            <span class="flex items-center gap-2"><i data-lucide="bug" class="w-4 h-4 text-amber-400"></i> Radar de Exceções & Bugs Frontend</span>
+                            <button onclick="simularErroTelemetria()" class="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded text-[10px] uppercase font-bold hover:bg-amber-500/30 transition">Forçar Erro de Teste</button>
+                        </h3>
+                        <div class="bg-black/50 p-4 rounded border border-slate-800 font-mono text-xs max-h-96 overflow-y-auto space-y-3" id="log-telemetria-container">
+                            <!-- Preenchido por JS -->
+                        </div>
                     </div>
                 </div>
 
@@ -2179,6 +2198,9 @@
                 setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
             } else if (secao === 'whitelabel') {
                 document.getElementById('mod-whitelabel').classList.remove('hidden');
+            } else if (secao === 'telemetria') {
+                document.getElementById('mod-telemetria').classList.remove('hidden');
+                renderizarTelemetriaAdmin();
             } else if (secao === 'camaleao') {
                 alert("Módulo Camaleão Ativo via Atalho (UI Inject liberada)");
             }
@@ -2566,6 +2588,76 @@
             }).from(elemento).save().then(() => {
                 elemento.style.display = 'none';
             });
+        }
+
+        // ==========================================
+        // MOTOR DE TELEMETRIA (CAPTURA DE BUGS JS)
+        // ==========================================
+        let logsTelemetriaJS = JSON.parse(localStorage.getItem('medius_telemetria_logs') || '[]');
+
+        function capturarErroTelemetria(mensagem, source, lineno, colno, tipo = 'ERROR') {
+            const timestamp = new Date().toLocaleString('pt-BR');
+            const origem = clienteLogadoKey || 'Gênesis Master (Global)';
+            
+            const erroMap = {
+                id: 'ERR-' + Math.floor(Math.random() * 9000 + 1000),
+                timestamp: timestamp,
+                origem: origem,
+                mensagem: mensagem,
+                local: `${source || 'Desconhecido'} (Linha: ${lineno || 'N/A'}, Col: ${colno || 'N/A'})`,
+                tipo: tipo
+            };
+
+            logsTelemetriaJS.unshift(erroMap);
+            if(logsTelemetriaJS.length > 50) logsTelemetriaJS.pop(); // Limite de 50 erros no buffer
+            localStorage.setItem('medius_telemetria_logs', JSON.stringify(logsTelemetriaJS));
+
+            if (perfilLogado === 'admin' && !document.getElementById('mod-telemetria').classList.contains('hidden')) {
+                renderizarTelemetriaAdmin();
+            }
+        }
+
+        // Escuta de Erros Globais do Navegador
+        window.addEventListener('error', function(e) {
+            capturarErroTelemetria(e.message, e.filename, e.lineno, e.colno, 'CRITICAL');
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            capturarErroTelemetria(e.reason?.message || "Rejeição de Promessa Não Tratada", "API/Async", null, null, 'PROMISE_FAIL');
+        });
+
+        function simularErroTelemetria() {
+            try {
+                // Forçando um erro clássico de JS para acionar o gatilho
+                const elementoInexistente = null;
+                elementoInexistente.classList.add('bug');
+            } catch (err) {
+                capturarErroTelemetria(err.message, "script_simulado.js", 104, 12, 'RUNTIME_EXCEPTION');
+                alert("Erro simulado injetado no Radar!");
+            }
+        }
+
+        function renderizarTelemetriaAdmin() {
+            const container = document.getElementById('log-telemetria-container');
+            if (!container) return;
+
+            if (logsTelemetriaJS.length === 0) {
+                container.innerHTML = '<div class="text-center text-emerald-400 p-4 font-bold border border-emerald-500/30 bg-emerald-500/10 rounded">Nenhum erro de código detectado. Malha 100% íntegra.</div>';
+                return;
+            }
+
+            container.innerHTML = logsTelemetriaJS.map(log => {
+                const corTema = log.tipo === 'CRITICAL' ? 'red' : (log.tipo === 'PROMISE_FAIL' ? 'orange' : 'amber');
+                return `
+                    <div class="border-l-2 border-${corTema}-500 bg-black/60 p-3 rounded">
+                        <div class="flex justify-between mb-1">
+                            <span class="font-bold text-${corTema}-400">[${log.id}] ${log.tipo}</span>
+                            <span class="text-slate-500 text-[10px]">${log.timestamp}</span>
+                        </div>
+                        <p class="text-white font-sans text-sm mb-1">${log.mensagem}</p>
+                        <p class="text-slate-400 text-[10px]">Origem: <span class="text-cyan-300">#${log.origem}</span> | Script: ${log.local}</p>
+                    </div>
+                `;
+            }).join('');
         }
 
         function cadastrarNovoCliente(e) {
