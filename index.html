@@ -821,11 +821,20 @@
                                     <option value="#ff0055">Vermelho Neon</option>
                                 </select>
                             </div>
-                            <div class="md:col-span-2 pt-2 border-t border-slate-800">
-                                <label class="block text-cyan-400 mb-1 font-bold">⚡ Webhook Telegram Bot (Token & Chat ID):</label>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    <input type="text" id="input-telegram-token" placeholder="Bot Token (ex: 123456:ABC-DEF...)" class="bg-[#030610] border border-slate-700 rounded p-2 text-white">
-                                    <input type="text" id="input-telegram-chatid" placeholder="Chat ID (ex: 987654321)" class="bg-[#030610] border border-slate-700 rounded p-2 text-white">
+                            <div class="md:col-span-2 pt-4 mt-2 border-t border-slate-800 space-y-4">
+                                <div>
+                                    <label class="block text-cyan-400 mb-1 font-bold flex items-center gap-2"><i data-lucide="send" class="w-4 h-4"></i> Webhook Telegram Bot:</label>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <input type="text" id="input-telegram-token" placeholder="Bot Token (ex: 123456:ABC...)" class="bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                                        <input type="text" id="input-telegram-chatid" placeholder="Chat ID (ex: 987654321)" class="bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-emerald-400 mb-1 font-bold flex items-center gap-2"><i data-lucide="message-circle" class="w-4 h-4"></i> API WhatsApp (Evolution/Z-API):</label>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <input type="text" id="input-wa-url" placeholder="URL da API (ex: https://api.wa.com/send)" class="bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-emerald-400">
+                                        <input type="text" id="input-wa-numero" placeholder="Número Destino (ex: 5511999999999)" class="bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-emerald-400">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1831,74 +1840,86 @@
         }
 
         // ==========================================
-        // ANOMALIA E ALERTA SECOPS (WEBHOOK)
+        // ANOMALIA E ALERTA SECOPS (WEBHOOKS TEL/WA)
         // ==========================================
         async function dispararAlertaSecOps(tipoAmeaca, detalhes) {
             const timestamp = new Date().toLocaleString('pt-BR');
             
-          // 1. Registra no terminal visual da Sala/Admin
+            // 1. Registra no terminal visual do Gênesis
             const logBox = document.getElementById('log-secops');
             if (logBox) {
                 const novoLog = document.createElement('div');
-                novoLog.className = "border-l-2 border-red-500 pl-3 bg-red-500/10 p-2 mb-2 animate-pulse text-white";
+                novoLog.className = "border-l-2 border-red-500 pl-3 bg-red-500/10 p-2 mb-2 animate-pulse text-white font-mono text-xs";
                 novoLog.innerHTML = `<span class="text-red-400 font-bold">[${tipoAmeaca}]</span> [${timestamp}] ${detalhes}`;
                 logBox.prepend(novoLog);
             }
 
-          // 2. Persiste as credenciais no localStorage automaticamente (Fase 3)
-          const inputToken = document.getElementById('input-telegram-token');
-          const inputChat = document.getElementById('input-telegram-chatid');
+            // 2. Captura credenciais da interface
+            const inTgToken = document.getElementById('input-telegram-token')?.value.trim();
+            const inTgChat = document.getElementById('input-telegram-chatid')?.value.trim();
+            const inWaUrl = document.getElementById('input-wa-url')?.value.trim();
+            const inWaNum = document.getElementById('input-wa-numero')?.value.trim();
 
-          if (inputToken && inputToken.value.trim()) {
-              localStorage.setItem('medius_secops_token', inputToken.value.trim());
-          }
-          if (inputChat && inputChat.value.trim()) {
-              localStorage.setItem('medius_secops_chatid', inputChat.value.trim());
-          }
+            // Persiste no LocalStorage
+            if (inTgToken) localStorage.setItem('medius_tg_token', inTgToken);
+            if (inTgChat) localStorage.setItem('medius_tg_chat', inTgChat);
+            if (inWaUrl) localStorage.setItem('medius_wa_url', inWaUrl);
+            if (inWaNum) localStorage.setItem('medius_wa_num', inWaNum);
 
-          const botToken = localStorage.getItem('medius_secops_token');
-          const chatId = localStorage.getItem('medius_secops_chatid');
+            const tgToken = localStorage.getItem('medius_tg_token');
+            const tgChat = localStorage.getItem('medius_tg_chat');
+            const waUrl = localStorage.getItem('medius_wa_url');
+            const waNum = localStorage.getItem('medius_wa_num');
 
-          if (botToken && chatId) {
-              const mensagem = `🚨 *ALERTA SECOPS // MEDIUS CORE* 🚨\n\n⚠️ *Ameaça:* ${tipoAmeaca}\n📌 *Detalhes:* ${detalhes}\n🕒 *Horário:* ${timestamp}\n🛡️ *Status:* Neutralizado pela Malha.`;
-              
-              try {
-                  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                  const response = await fetch(url, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                          chat_id: chatId,
-                          text: mensagem,
-                          parse_mode: 'Markdown'
-                      })
-                  });
+            const msgTg = `🚨 *ALERTA SECOPS // MEDIUS CORE* 🚨\n\n⚠️ *Ameaça:* ${tipoAmeaca}\n📌 *Detalhes:* ${detalhes}\n🕒 *Horário:* ${timestamp}\n🛡️ *Status:* Neutralizado pela Malha.`;
+            const msgWa = `🚨 *ALERTA SECOPS // MEDIUS CORE* 🚨\n\n⚠️ *Ameaça:* ${tipoAmeaca}\n📌 *Detalhes:* ${detalhes}\n🕒 *Horário:* ${timestamp}`;
 
-                  if (response.ok) {
-                      // Fase 4: Feedback visual de rastreabilidade no terminal SecOps
-                      const logBoxFeedback = document.getElementById('log-secops');
-                      if (logBoxFeedback) {
-                          const logWeb = document.createElement('div');
-                          logWeb.className = "border-l-2 border-cyan-400 pl-3 bg-cyan-500/10 p-2 mb-2 text-cyan-300";
-                          logWeb.innerHTML = `[WEBHOOK DISPARADO] Alerta crítico enviado para o canal tático via Telegram com sucesso.`;
-                          logBoxFeedback.prepend(logWeb);
-                      }
-                  }
-              } catch (err) {
-                  console.error("Falha no disparo do webhook SecOps:", err);
-              }
-          }
+            // 3. Disparo TELEGRAM
+            if (tgToken && tgChat) {
+                try {
+                    fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: tgChat, text: msgTg, parse_mode: 'Markdown' })
+                    }).then(r => {
+                        if(r.ok) adicionarFeedbackTerminal("Telegram", "text-cyan-400", "border-cyan-400", "bg-cyan-500/10");
+                    });
+                } catch (e) { console.error("Erro Telegram:", e); }
+            }
+
+            // 4. Disparo WHATSAPP
+            if (waUrl && waNum) {
+                try {
+                    fetch(waUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ number: waNum, text: msgWa })
+                    }).then(r => {
+                        if(r.ok) adicionarFeedbackTerminal("WhatsApp", "text-emerald-400", "border-emerald-400", "bg-emerald-500/10");
+                    });
+                } catch (e) { console.error("Erro WhatsApp:", e); }
+            }
+        }
+
+        function adicionarFeedbackTerminal(canal, corTexto, corBorda, corBg) {
+            const logBoxFeedback = document.getElementById('log-secops');
+            if (logBoxFeedback) {
+                const logWeb = document.createElement('div');
+                logWeb.className = `border-l-2 ${corBorda} pl-3 ${corBg} p-2 mb-2 ${corTexto} font-mono text-xs`;
+                logWeb.innerHTML = `[ALERTA ENVIADO] Notificação SecOps entregue via API ${canal}.`;
+                logBoxFeedback.prepend(logWeb);
+            }
         }
 
         function simularAtaqueReal() {
-            const term = document.querySelector('#mod-gestao-nos .cyber-card');
-            if (term) term.classList.add('alerta-critico');
+            const termCard = document.querySelector('#mod-gestao-nos .cyber-card') || document.getElementById('term-secops');
+            if (termCard) termCard.classList.add('alerta-critico');
 
-            // Dispara o alerta padronizado com Webhook
-            dispararAlertaSecOps("TAMPERING CRÍTICO", "Tentativa de quebra de DOM e injeção de payload não autorizada interceptada no nó ativo.");
+            const nomeNo = typeof tmeClienteKey !== 'undefined' ? tmeClienteKey : 'Gênesis Master';
+            dispararAlertaSecOps("TAMPERING CRÍTICO", `Tentativa de quebra de DOM e injeção de payload interceptada no nó [#${nomeNo}].`);
 
             setTimeout(() => {
-                if (term) term.classList.remove('alerta-critico');
+                if (termCard) termCard.classList.remove('alerta-critico');
             }, 3500);
         }
 
@@ -1976,6 +1997,17 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
+            
+            // Restaura as credenciais de Webhook na UI
+            const tgToken = localStorage.getItem('medius_tg_token');
+            const tgChat = localStorage.getItem('medius_tg_chat');
+            const waUrl = localStorage.getItem('medius_wa_url');
+            const waNum = localStorage.getItem('medius_wa_num');
+            if (tgToken) document.getElementById('input-telegram-token').value = tgToken;
+            if (tgChat) document.getElementById('input-telegram-chatid').value = tgChat;
+            if (waUrl) document.getElementById('input-wa-url').value = waUrl;
+            if (waNum) document.getElementById('input-wa-numero').value = waNum;
+
             // Carrega clientes salvos anteriormente se houverem
             const salvo = localStorage.getItem('medius_database_clientes');
             if (salvo) {
