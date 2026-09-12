@@ -626,6 +626,12 @@
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Controle da Malha (Geral)</span>
                         </div>
                     </button>
+                    <button onclick="mudarSecaoAdmin('visao-geral');" class="menu-item w-full" title="Ir para o Terminal de Varredura Tática">
+                        <div>
+                            <i data-lucide="crosshair" class="w-5 h-5 flex-shrink-0 text-cyan-400"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-cyan-300 font-bold">Terminal de Varredura Tática</span>
+                        </div>
+                    </button>
                     <button onclick="mudarSecaoAdmin('gestao-nos')" id="btn-adm-gestao-nos" class="menu-item w-full hidden">
                         <div>
                             <i data-lucide="folder-key" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
@@ -836,13 +842,12 @@
                     <div class="cyber-card">
                         <div>
                             <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
-                                <span>Malha Geral de Contratos & Ativos</span>
-                                <span class="text-xs text-slate-400">4 Clientes Registrados</span>
+                                <span>Terminal de Varredura Tática (Widgets Vivos)</span>
+                                <span class="text-xs text-cyan-400 animate-pulse">● Telemetria Leve Ativa</span>
                             </h3>
-                            <!-- NOVO GRID DE WIDGETS VIVOS -->
-                        <div id="grid-clientes-admin" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
-                            <!-- Widgets injetados via JS -->
-                        </div>
+                            <div id="grid-clientes-admin" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
+                                <!-- Injetado dinamicamente via JS -->
+                            </div>
                         </div>
                     </div>
 
@@ -2030,7 +2035,8 @@
 
         function renderizarTabelaAdmin() {
             const grid = document.getElementById('grid-clientes-admin');
-            if (grid) grid.innerHTML = '';
+            if (!grid) return;
+            grid.innerHTML = '';
             
             let ativos = 0, vencidos = 0;
 
@@ -2041,51 +2047,46 @@
                 const dominios = c.sites.map(s => s.dominio).join(', ');
                 const statusColor = c.ativo ? 'text-emerald-400' : 'text-red-500';
                 const pulseColor = c.ativo ? 'bg-emerald-500' : 'bg-red-500';
-                
-                // RPM Base para o nó
                 const reqSimulada = Math.floor(Math.random() * (c.sites[0].trafegoMax - c.sites[0].trafegoMin + 1)) + c.sites[0].trafegoMin;
 
-                if (grid) {
-                    grid.innerHTML += `
-                        <div class="widget-vivo">
-                            <div class="widget-scanline"></div>
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <h4 class="text-white font-bold font-mono text-sm uppercase tracking-wide truncate max-w-[160px]" title="${c.nome}">${c.nome}</h4>
-                                    <span class="text-slate-500 font-mono text-[10px]">#${key}</span>
-                                </div>
-                                <div class="flex items-center gap-1.5 bg-black/50 px-2 py-1 rounded border border-slate-800">
-                                    <span class="w-1.5 h-1.5 rounded-full ${pulseColor} animate-ping"></span>
-                                    <span class="${statusColor} text-[9px] font-bold tracking-wider">${c.ativo ? 'ONLINE' : 'OFFLINE'}</span>
-                                </div>
+                grid.innerHTML += `
+                    <div class="cyber-card p-4 relative overflow-hidden group">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="text-white font-bold font-mono text-sm uppercase tracking-wide truncate max-w-[150px]" title="${c.nome}">${c.nome}</h4>
+                                <span class="text-slate-500 font-mono text-[10px]">#${key}</span>
                             </div>
-                            
-                            <div class="space-y-2 mb-4">
-                                <div class="flex justify-between text-[10px] font-mono border-b border-slate-800 pb-1">
-                                    <span class="text-slate-400">RPS (Tráfego):</span>
-                                    <span class="text-cyan-400 font-bold telemetria-rps" data-min="${c.sites[0].trafegoMin}" data-max="${c.sites[0].trafegoMax}">${reqSimulada} req/s</span>
-                                </div>
-                                <div class="flex justify-between text-[10px] font-mono border-b border-slate-800 pb-1">
-                                    <span class="text-slate-400">Domínios:</span>
-                                    <span class="text-slate-300 truncate max-w-[100px]" title="${dominios}">${c.sites.length} ativo(s)</span>
-                                </div>
-                                <div class="flex justify-between text-[10px] font-mono border-b border-slate-800 pb-1">
-                                    <span class="text-slate-400">SLA Expires:</span>
-                                    <span class="text-slate-300">${c.expires_at}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="flex gap-2 pt-2 border-t border-slate-800/50">
-                                <button onclick="abrirSalaDoCliente('${key}')" class="flex-1 text-cyan-400 hover:text-white bg-cyan-500/10 py-1.5 rounded border border-cyan-500/30 transition flex items-center justify-center gap-1.5 shadow-[0_0_5px_rgba(0,210,255,0.1)] text-[10px] uppercase font-bold" title="Terminal de Varredura Tática">
-                                    <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> Inspecionar
-                                </button>
-                                <button onclick="simularWebhookPagamento('${key}')" class="text-emerald-400 hover:text-white bg-emerald-500/10 px-3 py-1.5 rounded border border-emerald-500/30 transition shadow-[0_0_5px_rgba(16,185,129,0.1)]" title="Pagar Fatura / Renovar">
-                                    <i data-lucide="dollar-sign" class="w-3 h-3"></i>
-                                </button>
+                            <div class="flex items-center gap-1.5 bg-black/50 px-2 py-0.5 rounded border border-slate-800">
+                                <span class="w-1.5 h-1.5 rounded-full ${pulseColor} animate-ping"></span>
+                                <span class="${statusColor} text-[9px] font-bold tracking-wider">${c.ativo ? 'ONLINE' : 'OFFLINE'}</span>
                             </div>
                         </div>
-                    `;
-                }
+                        
+                        <div class="space-y-1.5 mb-4 font-mono text-[11px]">
+                            <div class="flex justify-between border-b border-slate-800/80 pb-1">
+                                <span class="text-slate-400">RPS Atual:</span>
+                                <span class="text-cyan-400 font-bold telemetria-rps" data-min="${c.sites[0].trafegoMin}" data-max="${c.sites[0].trafegoMax}">${reqSimulada} req/s</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800/80 pb-1">
+                                <span class="text-slate-400">Domínios:</span>
+                                <span class="text-slate-300 truncate max-w-[120px]" title="${dominios}">${c.sites.length} vinculado(s)</span>
+                            </div>
+                            <div class="flex justify-between pb-1">
+                                <span class="text-slate-400">Expiração:</span>
+                                <span class="text-slate-300">${c.expires_at}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2 pt-2 border-t border-slate-800">
+                            <button onclick="abrirSalaDoCliente('${key}')" class="flex-1 text-cyan-400 hover:text-white bg-cyan-500/10 py-2 rounded border border-cyan-500/30 transition flex items-center justify-center gap-1.5 text-[10px] uppercase font-mono font-bold shadow-[0_0_8px_rgba(0,210,255,0.15)]" title="Inspecionar Sala">
+                                <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> Inspecionar Sala
+                            </button>
+                            <button onclick="simularWebhookPagamento('${key}')" class="text-emerald-400 hover:text-white bg-emerald-500/10 px-3 py-2 rounded border border-emerald-500/30 transition shadow-[0_0_8px_rgba(16,185,129,0.15)]" title="Simular Pagamento / Renovar">
+                                <i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
             });
 
             document.getElementById('count-ativos').innerText = ativos;
