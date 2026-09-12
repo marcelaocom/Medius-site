@@ -473,6 +473,36 @@
             font-weight: bold;
             color: #334155;
         }
+
+        /* WIDGETS VIVOS (NOVO TERMINAL DE VARREDURA) */
+        .widget-vivo {
+            background: linear-gradient(180deg, rgba(5,11,20,0.9) 0%, rgba(3,6,16,0.95) 100%);
+            border: 1px solid rgba(0, 210, 255, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .widget-vivo:hover {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 20px var(--accent-glow-inset);
+            transform: translateY(-2px);
+        }
+        .widget-scanline {
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: var(--accent-color);
+            opacity: 0.5;
+            box-shadow: 0 0 10px var(--accent-color);
+            animation: scanline 3s linear infinite;
+        }
+        @keyframes scanline {
+            0% { top: -5%; opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { top: 105%; opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -809,20 +839,10 @@
                                 <span>Malha Geral de Contratos & Ativos</span>
                                 <span class="text-xs text-slate-400">4 Clientes Registrados</span>
                             </h3>
-                            <table class="w-full text-left font-sans text-xs">
-                                <thead>
-                                    <tr class="text-slate-400 font-mono uppercase border-b border-slate-800 pb-2">
-                                        <th class="py-2">Cliente / ID</th>
-                                        <th class="py-2">Sites Cobertos</th>
-                                        <th class="py-2">Faturamento</th>
-                                        <th class="py-2">Status</th>
-                                        <th class="py-2">Expiração</th>
-                                        <th class="py-2 text-right">Ação Tática</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabela-clientes-admin" class="divide-y divide-slate-800/60">
-                                </tbody>
-                            </table>
+                            <!-- NOVO GRID DE WIDGETS VIVOS -->
+                        <div id="grid-clientes-admin" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
+                            <!-- Widgets injetados via JS -->
+                        </div>
                         </div>
                     </div>
 
@@ -2009,8 +2029,9 @@
         }
 
         function renderizarTabelaAdmin() {
-            const tbody = document.getElementById('tabela-clientes-admin');
-            tbody.innerHTML = '';
+            const grid = document.getElementById('grid-clientes-admin');
+            if (grid) grid.innerHTML = '';
+            
             let ativos = 0, vencidos = 0;
 
             Object.keys(databaseClientes).forEach(key => {
@@ -2018,37 +2039,58 @@
                 if (c.ativo) ativos++; else vencidos++;
 
                 const dominios = c.sites.map(s => s.dominio).join(', ');
+                const statusColor = c.ativo ? 'text-emerald-400' : 'text-red-500';
+                const pulseColor = c.ativo ? 'bg-emerald-500' : 'bg-red-500';
+                
+                // RPM Base para o nó
+                const reqSimulada = Math.floor(Math.random() * (c.sites[0].trafegoMax - c.sites[0].trafegoMin + 1)) + c.sites[0].trafegoMin;
 
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-800/40 transition">
-                        <td class="py-2.5 font-mono text-white font-medium">
-                            ${c.nome} <br><span class="text-slate-500 text-[10px]">#${key}</span>
-                        </td>
-                        <td class="py-2.5 text-slate-300 font-mono text-[11px] max-w-xs truncate" title="${dominios}">${dominios}</td>
-                        <td class="py-2.5 font-mono text-[10px]">
-                            <span class="text-slate-300">${c.faturamento ? c.faturamento.valorMensal : 'R$ 0,00'}</span><br>
-                            <span class="${c.faturamento && c.faturamento.statusPagamento === 'PAGO' ? 'text-emerald-400' : 'text-red-400 font-bold'}">${c.faturamento ? c.faturamento.statusPagamento : 'N/A'}</span>
-                        </td>
-                        <td class="py-2.5">
-                            <span class="px-2 py-0.5 text-[10px] border rounded ${c.ativo ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}">
-                                ${c.status}
-                            </span>
-                        </td>
-                        <td class="py-2.5 font-mono text-slate-300 text-[11px]">${c.expires_at}</td>
-                        <td class="py-2.5 text-right font-mono flex justify-end gap-1">
-                            <button onclick="abrirSalaDoCliente('${key}')" class="text-cyan-400 hover:text-white bg-cyan-500/10 px-2 py-1.5 rounded border border-cyan-500/30 transition flex items-center gap-1 shadow-[0_0_5px_rgba(0,210,255,0.2)]" title="Inspecionar Sala">
-                                <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
-                            </button>
-                            <button onclick="simularWebhookPagamento('${key}')" class="text-emerald-400 hover:text-white bg-emerald-500/10 px-2 py-1.5 rounded border border-emerald-500/30 transition shadow-[0_0_5px_rgba(16,185,129,0.2)]" title="Simular Pagamento da Fatura API">
-                                <i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                if (grid) {
+                    grid.innerHTML += `
+                        <div class="widget-vivo">
+                            <div class="widget-scanline"></div>
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h4 class="text-white font-bold font-mono text-sm uppercase tracking-wide truncate max-w-[160px]" title="${c.nome}">${c.nome}</h4>
+                                    <span class="text-slate-500 font-mono text-[10px]">#${key}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 bg-black/50 px-2 py-1 rounded border border-slate-800">
+                                    <span class="w-1.5 h-1.5 rounded-full ${pulseColor} animate-ping"></span>
+                                    <span class="${statusColor} text-[9px] font-bold tracking-wider">${c.ativo ? 'ONLINE' : 'OFFLINE'}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2 mb-4">
+                                <div class="flex justify-between text-[10px] font-mono border-b border-slate-800 pb-1">
+                                    <span class="text-slate-400">RPS (Tráfego):</span>
+                                    <span class="text-cyan-400 font-bold telemetria-rps" data-min="${c.sites[0].trafegoMin}" data-max="${c.sites[0].trafegoMax}">${reqSimulada} req/s</span>
+                                </div>
+                                <div class="flex justify-between text-[10px] font-mono border-b border-slate-800 pb-1">
+                                    <span class="text-slate-400">Domínios:</span>
+                                    <span class="text-slate-300 truncate max-w-[100px]" title="${dominios}">${c.sites.length} ativo(s)</span>
+                                </div>
+                                <div class="flex justify-between text-[10px] font-mono border-b border-slate-800 pb-1">
+                                    <span class="text-slate-400">SLA Expires:</span>
+                                    <span class="text-slate-300">${c.expires_at}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-2 pt-2 border-t border-slate-800/50">
+                                <button onclick="abrirSalaDoCliente('${key}')" class="flex-1 text-cyan-400 hover:text-white bg-cyan-500/10 py-1.5 rounded border border-cyan-500/30 transition flex items-center justify-center gap-1.5 shadow-[0_0_5px_rgba(0,210,255,0.1)] text-[10px] uppercase font-bold" title="Terminal de Varredura Tática">
+                                    <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> Inspecionar
+                                </button>
+                                <button onclick="simularWebhookPagamento('${key}')" class="text-emerald-400 hover:text-white bg-emerald-500/10 px-3 py-1.5 rounded border border-emerald-500/30 transition shadow-[0_0_5px_rgba(16,185,129,0.1)]" title="Pagar Fatura / Renovar">
+                                    <i data-lucide="dollar-sign" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
             });
 
             document.getElementById('count-ativos').innerText = ativos;
             document.getElementById('count-vencidos').innerText = vencidos;
+            lucide.createIcons();
         }
 
         // ==========================================
@@ -2907,6 +2949,18 @@
             
             // Roda o motor de inadimplência no background
             motorInadimplenciaAutomatica();
+
+            // Loop Global de Telemetria Leve (Mantém Widgets Vivos)
+            setInterval(() => {
+                if (perfilLogado === 'admin' && !document.getElementById('mod-visao-geral').classList.contains('hidden')) {
+                    document.querySelectorAll('.telemetria-rps').forEach(el => {
+                        const min = parseInt(el.getAttribute('data-min'));
+                        const max = parseInt(el.getAttribute('data-max'));
+                        const val = Math.floor(Math.random() * (max - min + 1)) + min;
+                        el.innerText = val + " req/s";
+                    });
+                }
+            }, 2500);
 
             // Restaura as Caixas de Auditoria Forense
             const logsSalvos = localStorage.getItem('medius_logs_auditoria');
