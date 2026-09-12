@@ -602,6 +602,12 @@
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Sala de Inspeção (Ativa)</span>
                         </div>
                     </button>
+                    <button onclick="mudarSecaoAdmin('sessoes')" id="btn-adm-sessoes" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="radar" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Radar de Sessões</span>
+                        </div>
+                    </button>
                     <button onclick="mudarSecaoAdmin('camaleao')" id="btn-adm-camaleao" class="menu-item w-full">
                         <div>
                             <i data-lucide="palette" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
@@ -907,7 +913,28 @@
                     </div>
                 </div>
 
-                <!-- Módulo Auditoria Removido (Centralizado na Sala do Cliente) -->
+                <div id="mod-sessoes" class="dash-module hidden space-y-6">
+                    <div class="cyber-card">
+                        <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
+                            <span class="flex items-center gap-2"><i data-lucide="radar" class="w-4 h-4"></i> Radar de Conexões Ativas (Kill Switch)</span>
+                            <span class="text-xs text-slate-400 bg-slate-900 px-2 py-1 rounded" id="contador-sessoes">0 Conectados</span>
+                        </h3>
+                        <table class="w-full text-left font-sans text-xs">
+                            <thead>
+                                <tr class="text-slate-400 font-mono uppercase border-b border-slate-800 pb-2">
+                                    <th class="py-2">Nó / Usuário</th>
+                                    <th class="py-2">IP Rastreado</th>
+                                    <th class="py-2">Dispositivo / OS</th>
+                                    <th class="py-2">Acesso Inicial</th>
+                                    <th class="py-2 text-right">Ação Tática</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-sessoes-admin" class="divide-y divide-slate-800/60 font-mono">
+                                <!-- Preenchido pelo JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
             </div>
         </main>
@@ -1530,6 +1557,90 @@
         }
 
         // ==========================================
+        // MOTOR DE SESSÕES & FINGERPRINTING
+        // ==========================================
+        function obterInfoDispositivo() {
+            const ua = navigator.userAgent;
+            let os = "Desconhecido";
+            if (ua.indexOf("Win") !== -1) os = "Windows";
+            if (ua.indexOf("Mac") !== -1) os = "MacOS";
+            if (ua.indexOf("Linux") !== -1) os = "Linux";
+            if (ua.indexOf("Android") !== -1) os = "Android";
+            if (ua.indexOf("like Mac") !== -1) os = "iOS";
+            
+            let browser = "Navegador";
+            if (ua.indexOf("Chrome") !== -1) browser = "Chrome";
+            else if (ua.indexOf("Firefox") !== -1) browser = "Firefox";
+            else if (ua.indexOf("Safari") !== -1) browser = "Safari";
+            
+            return `${browser} / ${os}`;
+        }
+
+        function gerarIPFalso() {
+            return `${Math.floor(Math.random()*200)+50}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
+        }
+
+        function registrarSessaoRadar(usuarioId) {
+            let sessoes = JSON.parse(localStorage.getItem('medius_sessoes_ativas') || '[]');
+            
+            const idUnico = 'sess_' + Math.random().toString(36).substr(2, 9);
+            const novaSessao = {
+                idSessao: idUnico,
+                usuario: usuarioId,
+                ip: gerarIPFalso(), // Simulação de captação de IP para o roleplay
+                dispositivo: obterInfoDispositivo(),
+                entrada: new Date().toLocaleTimeString('pt-BR')
+            };
+            
+            // Limpa sessão anterior do mesmo usuário para evitar clones visuais
+            sessoes = sessoes.filter(s => s.usuario !== usuarioId);
+            sessoes.unshift(novaSessao);
+            
+            localStorage.setItem('medius_sessoes_ativas', JSON.stringify(sessoes));
+            localStorage.setItem('medius_minha_sessao', idUnico); // A chave de vida deste usuário
+        }
+
+        function renderizarSessoesAtivas() {
+            const tbody = document.getElementById('tabela-sessoes-admin');
+            const contador = document.getElementById('contador-sessoes');
+            if (!tbody) return;
+
+            let sessoes = JSON.parse(localStorage.getItem('medius_sessoes_ativas') || '[]');
+            
+            if (sessoes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-500">O radar não detectou nenhuma conexão ativa.</td></tr>`;
+                contador.innerText = "0 Conectados";
+                return;
+            }
+
+            contador.innerText = `${sessoes.length} Conectado(s)`;
+            tbody.innerHTML = sessoes.map(s => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="py-2.5 text-white font-bold">${s.usuario === 'admin' ? '<span class="text-red-400">Gênesis Master</span>' : s.usuario}</td>
+                    <td class="py-2.5 text-emerald-400 text-[11px]"><i data-lucide="map-pin" class="w-3 h-3 inline"></i> ${s.ip}</td>
+                    <td class="py-2.5 text-slate-400">${s.dispositivo}</td>
+                    <td class="py-2.5 text-slate-500">${s.entrada}</td>
+                    <td class="py-2.5 text-right flex justify-end">
+                        ${s.usuario !== 'admin' ? `<button onclick="derrubarSessaoRemota('${s.idSessao}', '${s.usuario}')" class="text-red-400 hover:text-white bg-red-500/10 px-3 py-1.5 rounded border border-red-500/30 transition flex items-center gap-1 shadow-[0_0_5px_rgba(239,68,68,0.2)]"><i data-lucide="power" class="w-3 h-3"></i> Abater Nó</button>` : '<span class="text-slate-600 text-[10px] uppercase font-bold border border-slate-800 px-2 py-1 rounded">Intocável</span>'}
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function derrubarSessaoRemota(idSessao, nomeNo) {
+            if(confirm(`COMANDO TÁTICO: Acionar o Kill Switch e derrubar a conexão de [${nomeNo}] imediatamente?`)) {
+                let sessoes = JSON.parse(localStorage.getItem('medius_sessoes_ativas') || '[]');
+                sessoes = sessoes.filter(s => s.idSessao !== idSessao);
+                localStorage.setItem('medius_sessoes_ativas', JSON.stringify(sessoes));
+                renderizarSessoesAtivas();
+                
+                // Opcional: Registra no painel SecOps
+                dispararAlertaSecOps("KILL SWITCH (ABATE)", `O nó remoto [${nomeNo}] foi desconectado à força pelo Comandante.`);
+            }
+        }
+
+        // ==========================================
         // LOGIN E LOGOUT
         // ==========================================
         async function iniciarLoginRapido(e, tipo, clientId = null) {
@@ -1602,6 +1713,9 @@
         function executarAutenticacaoFinal(tipo, clientId) {
             perfilLogado = tipo;
             clienteLogadoKey = clientId;
+
+            // Aciona o radar de rastreio de sessão
+            registrarSessaoRadar(tipo === 'admin' ? 'admin' : (clientId || 'estudio-marcelao-01'));
 
             document.getElementById('portal-login').classList.add('hidden');
 
@@ -1849,7 +1963,11 @@
 
             if (secao === 'visao-geral') {
                 document.getElementById('mod-visao-geral').classList.remove('hidden');
-                document.getElementById('btn-adm-gestao-nos').classList.add('hidden'); // Oculta a aba da sala se voltar pro geral
+                document.getElementById('btn-adm-gestao-nos').classList.add('hidden'); 
+            } else if (secao === 'sessoes') {
+                document.getElementById('mod-sessoes').classList.remove('hidden');
+                document.getElementById('btn-adm-gestao-nos').classList.add('hidden');
+                renderizarSessoesAtivas(); // Atualiza a tabela na hora
             } else if (secao === 'gestao-nos') {
                 document.getElementById('mod-gestao-nos').classList.remove('hidden');
                 setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
