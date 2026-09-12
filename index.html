@@ -595,6 +595,12 @@
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Módulo White Label</span>
                         </div>
                     </button>
+                    <button onclick="mudarSecaoAdmin('auditoria-master')" id="btn-adm-auditoria-master" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="eye" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Auditoria Forense (Fotos)</span>
+                        </div>
+                    </button>
                 </nav>
             </div>
             
@@ -848,9 +854,26 @@
                                     <i data-lucide="user-plus" class="w-4 h-4"></i> Registrar Novo Nó na Malha
                                 </button>
                             </div>
-                        </form>
+                       </form>
                     </div>
                 </div>
+
+                <div id="mod-auditoria-master" class="dash-module hidden space-y-6">
+                    <div class="cyber-card">
+                        <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+                            <i data-lucide="eye" class="w-4 h-4"></i> Registros Oculares Secretos (SecOps)
+                        </h3>
+                        <p class="text-xs text-slate-400 mb-4 font-mono">Histórico de acessos com captura biométrica invisível. Apenas Nível Master.</p>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="grid-auditoria-fotos">
+                            <!-- Fotos injetadas via JS aparecerão aqui -->
+                            <div class="text-slate-600 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-full text-center">
+                                Aguardando novos acessos para captura...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -1190,7 +1213,29 @@
                 dataHora: dataHora,
                 foto: snapshot
             });
-            console.log(`[AUDITORIA SECRETA] Acesso registrado: ${usuarioId} às ${dataHora}`);
+            
+            const gridFotos = document.getElementById('grid-auditoria-fotos');
+            if (gridFotos) {
+                if (logsAuditoria.length === 1) gridFotos.innerHTML = ''; 
+                
+                const card = document.createElement('div');
+                card.className = "bg-black/40 border border-slate-800 rounded p-3 flex flex-col gap-2 relative overflow-hidden group";
+                
+                const imgElement = snapshot 
+                    ? `<img src="${snapshot}" class="w-full h-32 object-cover rounded border border-slate-700 opacity-80 group-hover:opacity-100 transition-opacity">` 
+                    : `<div class="w-full h-32 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800">CÂMERA BLOQUEADA</div>`;
+
+                card.innerHTML = `
+                    <div class="absolute top-4 right-4 w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                    ${imgElement}
+                    <div class="mt-1 font-mono text-[10px]">
+                        <p class="text-cyan-400 font-bold">ID: #${usuarioId}</p>
+                        <p class="text-slate-400">Tipo: ${tipoAcesso}</p>
+                        <p class="text-slate-500">${dataHora}</p>
+                    </div>
+                `;
+                gridFotos.prepend(card);
+            }
         }
 
         // ==========================================
@@ -1452,6 +1497,8 @@
                 setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
             } else if (secao === 'whitelabel') {
                 document.getElementById('mod-whitelabel').classList.remove('hidden');
+            } else if (secao === 'auditoria-master') {
+                document.getElementById('mod-auditoria-master').classList.remove('hidden');
             }
         }
 
