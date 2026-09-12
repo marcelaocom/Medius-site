@@ -626,6 +626,12 @@
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Telemetria de Erros</span>
                         </div>
                     </button>
+                    <button onclick="mudarSecaoAdmin('operadores')" id="btn-adm-operadores" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="users-2" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Gestão de Equipe (RBAC)</span>
+                        </div>
+                    </button>
                 </nav>
             </div>
             
@@ -965,6 +971,52 @@
                         </h3>
                         <div class="bg-black/50 p-4 rounded border border-slate-800 font-mono text-xs max-h-96 overflow-y-auto space-y-3" id="log-telemetria-container">
                             <!-- Preenchido por JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MÓDULO DE GESTÃO DE OPERADORES (RBAC) -->
+                <div id="mod-operadores" class="dash-module hidden space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="cyber-card md:col-span-1">
+                            <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);"><i data-lucide="user-plus" class="w-4 h-4"></i> Credenciar Operador</h3>
+                            <form onsubmit="cadastrarOperador(event)" class="space-y-4 font-mono text-xs">
+                                <div>
+                                    <label class="block text-slate-400 mb-1">ID de Login (Token):</label>
+                                    <input type="text" id="op-id" required placeholder="ex: op-joao" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 mb-1">Nome Completo:</label>
+                                    <input type="text" id="op-nome" required placeholder="João Silva" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 mb-1">Nível de Acesso (RBAC):</label>
+                                    <select id="op-nivel" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                                        <option value="SUPORTE">Suporte (Apenas Chamados)</option>
+                                        <option value="SECOPS">SecOps (Radar, Logs e Sessões)</option>
+                                        <option value="GERENTE">Gerente (Faturamento e Nós)</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="w-full py-2.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold border border-cyan-500/40 transition">
+                                    Gerar Crachá Digital
+                                </button>
+                            </form>
+                        </div>
+                        <div class="cyber-card md:col-span-2">
+                            <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);"><i data-lucide="shield" class="w-4 h-4"></i> Equipe QG Master Ativa</h3>
+                            <table class="w-full text-left font-sans text-xs">
+                                <thead>
+                                    <tr class="text-slate-400 font-mono uppercase border-b border-slate-800 pb-2">
+                                        <th class="py-2">Operador / ID</th>
+                                        <th class="py-2">Privilégio</th>
+                                        <th class="py-2">Status</th>
+                                        <th class="py-2 text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-operadores" class="divide-y divide-slate-800/60 font-mono">
+                                    <!-- Preenchido JS -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -1803,7 +1855,10 @@
             const user = document.getElementById('login-user').value.trim().toLowerCase();
             const snapshot = await capturarForense();
             
-            const isAdmin = user === 'admin';
+            const isRoot = user === 'admin';
+            const isOperador = databaseOperadores[user] !== undefined;
+            const isAdmin = isRoot || isOperador;
+
             const identificador = user !== '' ? user : 'estudio-marcelao-01'; // Fallback
             await registrarLogAcesso(identificador, (isAdmin ? 'QG Master' : 'Nó Cliente'), snapshot);
 
@@ -1812,6 +1867,8 @@
             lucide.createIcons();
 
             if (isAdmin) {
+                const role = isRoot ? 'SUPER' : databaseOperadores[user].nivel;
+                aplicarRegrasRBAC(role);
                 autenticarComo('admin');
             } else if (databaseClientes[user]) {
                 autenticarComo('cliente', user);
@@ -2201,6 +2258,9 @@
             } else if (secao === 'telemetria') {
                 document.getElementById('mod-telemetria').classList.remove('hidden');
                 renderizarTelemetriaAdmin();
+            } else if (secao === 'operadores') {
+                document.getElementById('mod-operadores').classList.remove('hidden');
+                renderizarTabelaOperadores();
             } else if (secao === 'camaleao') {
                 alert("Módulo Camaleão Ativo via Atalho (UI Inject liberada)");
             }
@@ -2658,6 +2718,76 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // ==========================================
+        // MOTOR DE OPERADORES & RBAC
+        // ==========================================
+        let databaseOperadores = JSON.parse(localStorage.getItem('medius_operadores') || '{}');
+
+        function cadastrarOperador(e) {
+            e.preventDefault();
+            const id = document.getElementById('op-id').value.trim().toLowerCase();
+            const nome = document.getElementById('op-nome').value.trim();
+            const nivel = document.getElementById('op-nivel').value;
+
+            if (id === 'admin') return alert("IDs reservados ao núcleo Gênesis não podem ser reescritos.");
+
+            databaseOperadores[id] = { nome, nivel, ativo: true, data: new Date().toLocaleDateString('pt-BR') };
+            localStorage.setItem('medius_operadores', JSON.stringify(databaseOperadores));
+            
+            e.target.reset();
+            renderizarTabelaOperadores();
+            alert(`Crachá gerado! O operador ${id} agora pode logar no sistema com o nível ${nivel}.`);
+        }
+
+        function renderizarTabelaOperadores() {
+            const tbody = document.getElementById('tabela-operadores');
+            if (!tbody) return;
+
+            tbody.innerHTML = Object.keys(databaseOperadores).map(key => {
+                const op = databaseOperadores[key];
+                const corBadge = op.nivel === 'SECOPS' ? 'text-indigo-400 border-indigo-500/30 bg-indigo-500/10' : 
+                                 (op.nivel === 'GERENTE' ? 'text-amber-400 border-amber-500/30 bg-amber-500/10' : 'text-blue-400 border-blue-500/30 bg-blue-500/10');
+                return `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="py-2 text-white font-bold">${op.nome}<br><span class="text-[10px] text-slate-500">#${key}</span></td>
+                        <td class="py-2"><span class="px-2 py-0.5 text-[9px] border rounded ${corBadge}">${op.nivel}</span></td>
+                        <td class="py-2 text-emerald-400 text-xs">Ativo</td>
+                        <td class="py-2 text-right"><button onclick="revogarOperador('${key}')" class="text-red-400 hover:text-white bg-red-500/10 px-2 py-1 rounded border border-red-500/30 transition text-[10px]">Revogar</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function revogarOperador(key) {
+            if (confirm(`Revogar permanentemente o acesso do operador #${key}?`)) {
+                delete databaseOperadores[key];
+                localStorage.setItem('medius_operadores', JSON.stringify(databaseOperadores));
+                renderizarTabelaOperadores();
+            }
+        }
+
+        function aplicarRegrasRBAC(role) {
+            // Restaura tudo primeiro
+            document.querySelectorAll('#sidebar-admin .menu-item').forEach(el => el.style.display = 'flex');
+            document.getElementById('label-empresa-ativa').innerHTML = `Operando sob <span class="text-white font-semibold">Credencial ${role}</span>`;
+
+            if (role === 'SUPER') return; // Root vê tudo
+
+            if (role === 'SECOPS') {
+                document.getElementById('btn-adm-whitelabel').style.display = 'none';
+                document.getElementById('btn-adm-operadores').style.display = 'none';
+            } else if (role === 'SUPORTE') {
+                document.getElementById('btn-adm-whitelabel').style.display = 'none';
+                document.getElementById('btn-adm-operadores').style.display = 'none';
+                document.getElementById('btn-adm-sessoes').style.display = 'none';
+                document.getElementById('btn-adm-camaleao').style.display = 'none';
+                document.getElementById('btn-adm-telemetria').style.display = 'none';
+            } else if (role === 'GERENTE') {
+                document.getElementById('btn-adm-camaleao').style.display = 'none';
+                document.getElementById('btn-adm-telemetria').style.display = 'none';
+            }
         }
 
         function cadastrarNovoCliente(e) {
