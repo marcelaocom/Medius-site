@@ -806,7 +806,7 @@
 
                 <div id="mod-whitelabel" class="cyber-card dash-module hidden space-y-6">
                     <div>
-                        <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Personalização White Label</h3>
+                        <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Personalização White Label & Canal de Alertas (SecOps)</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
                             <div>
                                 <label class="block text-slate-400 mb-1">Nome da Agência:</label>
@@ -820,6 +820,13 @@
                                     <option value="#818cf8">Índigo Camaleão</option>
                                     <option value="#ff0055">Vermelho Neon</option>
                                 </select>
+                            </div>
+                            <div class="md:col-span-2 pt-2 border-t border-slate-800">
+                                <label class="block text-cyan-400 mb-1 font-bold">⚡ Webhook Telegram Bot (Token & Chat ID):</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <input type="text" id="input-telegram-token" placeholder="Bot Token (ex: 123456:ABC-DEF...)" class="bg-[#030610] border border-slate-700 rounded p-2 text-white">
+                                    <input type="text" id="input-telegram-chatid" placeholder="Chat ID (ex: 987654321)" class="bg-[#030610] border border-slate-700 rounded p-2 text-white">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1824,21 +1831,54 @@
         }
 
         // ==========================================
-        // ANOMALIA E PDF
+        // ANOMALIA E ALERTA SECOPS (WEBHOOK)
         // ==========================================
-        function simularAtaqueReal() {
-            const term = document.getElementById('term-secops');
-            if (term) term.classList.add('alerta-critico');
-
+        async function dispararAlertaSecOps(tipoAmeaca, detalhes) {
+            const timestamp = new Date().toLocaleString('pt-BR');
+            
+          // 1. Registra no terminal visual da Sala/Admin
             const logBox = document.getElementById('log-secops');
             if (logBox) {
-                const timestamp = new Date().toLocaleTimeString('pt-BR');
                 const novoLog = document.createElement('div');
                 novoLog.className = "border-l-2 border-red-500 pl-3 bg-red-500/10 p-2 mb-2 animate-pulse text-white";
-                novoLog.innerHTML = `<span class="text-red-400 font-bold">[TAMPERING]</span> [${timestamp}] Tentativa de quebra de DOM neutralizada no nó ativo.`;
+                novoLog.innerHTML = `<span class="text-red-400 font-bold">[${tipoAmeaca}]</span> [${timestamp}] ${detalhes}`;
                 logBox.prepend(novoLog);
-                setTimeout(() => term.classList.remove('alerta-critico'), 3500);
             }
+
+          // 2. Dispara Webhook Externo (Telegram Bot se configurado)
+          const botToken = document.getElementById('input-telegram-token')?.value.trim();
+          const chatId = document.getElementById('input-telegram-chatid')?.value.trim();
+
+          if (botToken && chatId) {
+              const mensagem = `🚨 *ALERTA SECOPS // MEDIUS CORE* 🚨\n\n⚠️ *Ameaça:* ${tipoAmeaca}\n📌 *Detalhes:* ${detalhes}\n🕒 *Horário:* ${timestamp}\n🛡️ *Status:* Neutralizado pela Malha.`;
+              
+              try {
+                  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+                  await fetch(url, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                          chat_id: chatId,
+                          text: mensagem,
+                          parse_mode: 'Markdown'
+                      })
+                  });
+              } catch (err) {
+                  console.error("Falha no disparo do webhook SecOps:", err);
+              }
+          }
+        }
+
+        function simularAtaqueReal() {
+            const term = document.querySelector('#mod-gestao-nos .cyber-card');
+            if (term) term.classList.add('alerta-critico');
+
+            // Dispara o alerta padronizado com Webhook
+            dispararAlertaSecOps("TAMPERING CRÍTICO", "Tentativa de quebra de DOM e injeção de payload não autorizada interceptada no nó ativo.");
+
+            setTimeout(() => {
+                if (term) term.classList.remove('alerta-critico');
+            }, 3500);
         }
 
         function atualizarWhiteLabel() {
