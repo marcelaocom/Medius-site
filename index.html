@@ -507,6 +507,31 @@
         </button>
     </div>
 
+    <!-- MODAL DE VERIFICAÇÃO 2FA (TOTP) -->
+    <div id="modal-2fa" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
+        <div class="cyber-card max-w-sm w-full p-6 text-center space-y-4">
+            <div class="w-12 h-12 mx-auto rounded-full bg-cyan-500/10 border border-cyan-500/40 flex items-center justify-center animate-pulse">
+                <i data-lucide="shield-alert" class="w-6 h-6 text-cyan-400"></i>
+            </div>
+            <h3 class="text-white font-bold font-mono text-base">VERIFICAÇÃO 2FA (TOTP)</h3>
+            <p class="text-xs text-slate-400 font-sans">
+                Insira o código de 6 dígitos gerado pelo seu aplicativo autenticador (Google Authenticator / Authy) para liberar o acesso ao nó.
+            </p>
+            <div>
+                <input type="text" id="input-codigo-2fa" maxlength="6" placeholder="000 000" class="w-full bg-[#030610] border border-cyan-500/60 rounded p-3 text-center text-xl tracking-[0.5em] text-cyan-300 font-mono outline-none focus:box-shadow-[0_0_15px_rgba(0,210,255,0.4)]">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="cancelarVerificacao2FA()" class="flex-1 py-2.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs transition">
+                    Cancelar
+                </button>
+                <button onclick="confirmarAutenticacao2FA()" class="flex-1 py-2.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold font-mono text-xs border border-cyan-500/40 transition">
+                    Verificar Acesso
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA DE LOGIN PRINCIPAL -->
     <div id="portal-login" class="flex flex-col items-center justify-center min-h-screen p-6 relative z-10">
         <div class="cyber-card max-w-md w-full p-8">
             <div class="text-center mb-8">
@@ -821,7 +846,21 @@
                                     <option value="#ff0055">Vermelho Neon</option>
                                 </select>
                             </div>
-                            <div class="md:col-span-2 pt-4 mt-2 border-t border-slate-800 space-y-4">
+                            <div class="md:col-span-2 pt-4 mt-2 border-t border-slate-800 space-y-3 bg-black/30 p-4 rounded border border-slate-800">
+                                <h4 class="text-indigo-400 font-bold flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4"></i> Autenticação Multifator (2FA - TOTP):</h4>
+                                <p class="text-[11px] text-slate-400">Proteja o acesso administrativo gerando uma semente secreta compatível com Google Authenticator ou Authy.</p>
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <button type="button" onclick="gerarAtivar2FAAdmin()" class="px-4 py-2 rounded bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-mono transition">
+                                        Gerar / Ativar 2FA para Admin
+                                    </button>
+                                    <span id="status-2fa-label" class="text-[11px] text-slate-400 font-mono">Status: Verificando...</span>
+                                </div>
+                                <div id="container-qr-2fa" class="hidden mt-2 p-3 bg-[#030610] rounded border border-indigo-500/30 text-xs font-mono space-y-2">
+                                    <p class="text-amber-400 font-bold">⚠️ Semente Secreta gerada! Copie o código abaixo para o seu aplicativo autenticador:</p>
+                                    <div class="p-2 bg-black rounded text-cyan-300 select-all font-mono tracking-wider text-sm" id="txt-secreta-2fa">---</div>
+                                    <p class="text-[10px] text-slate-500">Insira este código manualmente no seu aplicativo (ex: Google Authenticator -> Inserir chave de configuração).</p>
+                                </div>
+                            </div>
                                 <div>
                                     <label class="block text-cyan-400 mb-1 font-bold flex items-center gap-2"><i data-lucide="send" class="w-4 h-4"></i> Webhook Telegram Bot:</label>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1201,8 +1240,140 @@
         let corAtual = "#00d2ff";
 
         // ==========================================
-        // MOTOR FORENSE E AUDITORIA (CAIXAS ISOLADAS)
+        // MOTOR 2FA / TOTP (AUTENTICAÇÃO MULTIFATOR)
         // ==========================================
+        function gerarChaveSecreta32() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let secret = '';
+            for (let i = 0; i < 16; i++) {
+                secret += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return secret;
+        }
+
+        // Conversor Base32 para ArrayBuffer (necessário para o HMAC do navegador)
+        function base32ToBuffer(base32) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let bits = '';
+            let val = '';
+            for (let i = 0; i < base32.length; i++) {
+                const valChar = chars.indexOf(base32.charAt(i).toUpperCase());
+                if (valChar === -1) continue;
+                bits += valChar.toString(2).padStart(5, '0');
+            }
+            const arr = [];
+            for (let i = 0; i + 8 <= bits.length; i += 8) {
+                arr.push(parseInt(bits.substr(i, 8), 2));
+            }
+            return new Uint8Array(arr);
+        }
+
+        async function validarCodigoTOTP(secretBase32, codigoDigitado) {
+            if (!secretBase32 || codigoDigitado.length !== 6) return false;
+            
+            const epoch = Math.floor(Date.now() / 1000);
+            const timeStep = 30;
+            const counter = Math.floor(epoch / timeStep);
+            
+            // Valida a janela atual e a anterior (tolerância de clock de 30s)
+            for (let i = -1; i <= 1; i++) {
+                const checkCounter = counter + i;
+                const computedCode = await calcularHMACSHA1TOTP(secretBase32, checkCounter);
+                if (computedCode === codigoDigitado) return true;
+            }
+            return false;
+        }
+
+        async function calcularHMACSHA1TOTP(secretBase32, counter) {
+            try {
+                const keyBuffer = base32ToBuffer(secretBase32);
+                
+                // Prepara o contador em Big-Endian 8 bytes (Uint8Array)
+                const msgBuffer = new ArrayBuffer(8);
+                const view = new DataView(msgBuffer);
+                view.setUint32(4, counter, false); // Big-endian
+
+                const cryptoKey = await crypto.subtle.importKey(
+                    "raw",
+                    keyBuffer,
+                    { name: "HMAC", hash: { name: "SHA-1" } },
+                    false,
+                    ["sign"]
+                );
+
+                const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgBuffer);
+                const hmacArray = new Uint8Array(signature);
+
+                // Dynamic truncation (RFC 4226)
+                const offset = hmacArray[hmacArray.length - 1] & 0x0f;
+                const binary = 
+                    ((hmacArray[offset] & 0x7f) << 24) |
+                    ((hmacArray[offset + 1] & 0xff) << 16) |
+                    ((hmacArray[offset + 2] & 0xff) << 8) |
+                    (hmacArray[offset + 3] & 0xff);
+
+                const otp = binary % 1000000;
+                return otp.toString().padStart(6, '0');
+            } catch (err) {
+                console.error("Erro no cálculo TOTP:", err);
+                return null;
+            }
+        }
+        // ==========================================
+        // MOTOR 2FA / TOTP (AUTENTICAÇÃO MULTIFATOR)
+        // ==========================================
+        function gerarChaveSecreta32() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let secret = '';
+            for (let i = 0; i < 16; i++) {
+                secret += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return secret;
+        }
+
+        function base32ToBuffer(base32) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let bits = '';
+            for (let i = 0; i < base32.length; i++) {
+                const valChar = chars.indexOf(base32.charAt(i).toUpperCase());
+                if (valChar === -1) continue;
+                bits += valChar.toString(2).padStart(5, '0');
+            }
+            const arr = [];
+            for (let i = 0; i + 8 <= bits.length; i += 8) {
+                arr.push(parseInt(bits.substr(i, 8), 2));
+            }
+            return new Uint8Array(arr);
+        }
+
+        async function validarCodigoTOTP(secretBase32, codigoDigitado) {
+            if (!secretBase32 || codigoDigitado.length !== 6) return false;
+            const epoch = Math.floor(Date.now() / 1000);
+            const counter = Math.floor(epoch / 30);
+            for (let i = -1; i <= 1; i++) {
+                const computedCode = await calcularHMACSHA1TOTP(secretBase32, counter + i);
+                if (computedCode === codigoDigitado) return true;
+            }
+            return false;
+        }
+
+        async function calcularHMACSHA1TOTP(secretBase32, counter) {
+            try {
+                const keyBuffer = base32ToBuffer(secretBase32);
+                const msgBuffer = new ArrayBuffer(8);
+                const view = new DataView(msgBuffer);
+                view.setUint32(4, counter, false);
+                const cryptoKey = await crypto.subtle.importKey("raw", keyBuffer, { name: "HMAC", hash: { name: "SHA-1" } }, false, ["sign"]);
+                const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgBuffer);
+                const hmacArray = new Uint8Array(signature);
+                const offset = hmacArray[hmacArray.length - 1] & 0x0f;
+                const binary = ((hmacArray[offset] & 0x7f) << 24) | ((hmacArray[offset + 1] & 0xff) << 16) | ((hmacArray[offset + 2] & 0xff) << 8) | (hmacArray[offset + 3] & 0xff);
+                return (binary % 1000000).toString().padStart(6, '0');
+            } catch (err) {
+                return null;
+            }
+        }
+
         let logsAuditoria = {
             admin: [],     // Caixa Principal (QG Gênesis)
             clientes: {}   // Caixas Setoriais por ID de Cliente
@@ -1382,7 +1553,53 @@
             autenticarComo(tipo, clientId);
         }
 
+        // Variáveis temporárias para o fluxo de 2FA pendente
+        let pendingAuthTipo = null;
+        let pendingAuthClientId = null;
+
         function autenticarComo(tipo, clientId = null) {
+            // Verifica se o 2FA está configurado/ativado para este perfil
+            const chave2FAKey = tipo === 'admin' ? 'medius_2fa_secret_admin' : `medius_2fa_secret_${clientId || 'estudio-marcelao-01'}`;
+            const secretSalvo = localStorage.getItem(chave2FAKey);
+
+            if (secretSalvo) {
+                // Se tem 2FA configurado, intercepta e abre o modal exigindo o token
+                pendingAuthTipo = tipo;
+                pendingAuthClientId = clientId;
+                document.getElementById('modal-2fa').classList.remove('hidden');
+                document.getElementById('input-codigo-2fa').value = '';
+                document.getElementById('input-codigo-2fa').focus();
+                lucide.createIcons();
+                return;
+            }
+
+            // Caso contrário, prossegue normalmente com o login
+            executarAutenticacaoFinal(tipo, clientId);
+        }
+
+        async function confirmarAutenticacao2FA() {
+            const codigo = document.getElementById('input-codigo-2fa').value.trim();
+            const chave2FAKey = pendingAuthTipo === 'admin' ? 'medius_2fa_secret_admin' : `medius_2fa_secret_${pendingAuthClientId || 'estudio-marcelao-01'}`;
+            const secretSalvo = localStorage.getItem(chave2FAKey);
+
+            const valido = await validarCodigoTOTP(secretSalvo, codigo);
+
+            if (valido) {
+                document.getElementById('modal-2fa').classList.add('hidden');
+                executarAutenticacaoFinal(pendingAuthTipo, pendingAuthClientId);
+            } else {
+                alert("Erro SecOps: Código TOTP inválido ou expirado! Verifique o aplicativo autenticador.");
+                document.getElementById('input-codigo-2fa').value = '';
+            }
+        }
+
+        function cancelarVerificacao2FA() {
+            document.getElementById('modal-2fa').classList.add('hidden');
+            pendingAuthTipo = null;
+            pendingAuthClientId = null;
+        }
+
+        function executarAutenticacaoFinal(tipo, clientId) {
             perfilLogado = tipo;
             clienteLogadoKey = clientId;
 
@@ -2063,6 +2280,32 @@
             }
             
             renderizarTabelaAdmin();
+        });
+
+        // ==========================================
+        // GERADOR E ATIVADOR DO 2FA NA INTERFACE
+        // ==========================================
+        function gerarAtivar2FAAdmin() {
+            let secret = localStorage.getItem('medius_2fa_secret_admin');
+            if (!secret) {
+                secret = gerarChaveSecreta32();
+                localStorage.setItem('medius_2fa_secret_admin', secret);
+            }
+            document.getElementById('txt-secreta-2fa').innerText = secret;
+            document.getElementById('container-qr-2fa').classList.remove('hidden');
+            document.getElementById('status-2fa-label').innerHTML = `<span class="text-emerald-400 font-bold">ATIVO (Protegido por TOTP)</span>`;
+            alert("Semente 2FA gerada com sucesso! Copie o código exibido e adicione ao seu aplicativo (Google Authenticator ou Authy).");
+        }
+
+        // Checagem visual no boot para marcar o 2FA como ativo no Módulo White Label
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const s2fa = localStorage.getItem('medius_2fa_secret_admin');
+                const lbl = document.getElementById('status-2fa-label');
+                if (lbl && s2fa) {
+                    lbl.innerHTML = `<span class="text-emerald-400 font-bold">ATIVO (Protegido por TOTP)</span>`;
+                }
+            }, 500);
         });
     </script>
 </body>
