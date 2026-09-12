@@ -793,9 +793,10 @@
                                     <tr class="text-slate-400 font-mono uppercase border-b border-slate-800 pb-2">
                                         <th class="py-2">Cliente / ID</th>
                                         <th class="py-2">Sites Cobertos</th>
+                                        <th class="py-2">Faturamento</th>
                                         <th class="py-2">Status</th>
                                         <th class="py-2">Expiração</th>
-                                        <th class="py-2 text-right">Ação</th>
+                                        <th class="py-2 text-right">Ação Tática</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabela-clientes-admin" class="divide-y divide-slate-800/60">
@@ -1929,15 +1930,22 @@
                             ${c.nome} <br><span class="text-slate-500 text-[10px]">#${key}</span>
                         </td>
                         <td class="py-2.5 text-slate-300 font-mono text-[11px] max-w-xs truncate" title="${dominios}">${dominios}</td>
+                        <td class="py-2.5 font-mono text-[10px]">
+                            <span class="text-slate-300">${c.faturamento ? c.faturamento.valorMensal : 'R$ 0,00'}</span><br>
+                            <span class="${c.faturamento && c.faturamento.statusPagamento === 'PAGO' ? 'text-emerald-400' : 'text-red-400 font-bold'}">${c.faturamento ? c.faturamento.statusPagamento : 'N/A'}</span>
+                        </td>
                         <td class="py-2.5">
                             <span class="px-2 py-0.5 text-[10px] border rounded ${c.ativo ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}">
                                 ${c.status}
                             </span>
                         </td>
-                        <td class="py-2.5 font-mono text-slate-300">${c.expires_at}</td>
-                        <td class="py-2.5 text-right font-mono flex justify-end">
-                            <button onclick="abrirSalaDoCliente('${key}')" class="text-cyan-400 hover:text-white bg-cyan-500/10 px-3 py-1.5 rounded border border-cyan-500/30 transition flex items-center gap-1 shadow-[0_0_5px_rgba(0,210,255,0.2)]">
-                                <i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Inspecionar Sala
+                        <td class="py-2.5 font-mono text-slate-300 text-[11px]">${c.expires_at}</td>
+                        <td class="py-2.5 text-right font-mono flex justify-end gap-1">
+                            <button onclick="abrirSalaDoCliente('${key}')" class="text-cyan-400 hover:text-white bg-cyan-500/10 px-2 py-1.5 rounded border border-cyan-500/30 transition flex items-center gap-1 shadow-[0_0_5px_rgba(0,210,255,0.2)]" title="Inspecionar Sala">
+                                <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="simularWebhookPagamento('${key}')" class="text-emerald-400 hover:text-white bg-emerald-500/10 px-2 py-1.5 rounded border border-emerald-500/30 transition shadow-[0_0_5px_rgba(16,185,129,0.2)]" title="Simular Pagamento da Fatura API">
+                                <i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i>
                             </button>
                         </td>
                     </tr>
@@ -1946,6 +1954,52 @@
 
             document.getElementById('count-ativos').innerText = ativos;
             document.getElementById('count-vencidos').innerText = vencidos;
+        }
+
+        // ==========================================
+        // MOTOR DE FATURAMENTO E INADIMPLÊNCIA AUTOMÁTICA
+        // ==========================================
+        function simularWebhookPagamento(clientId) {
+            const cli = databaseClientes[clientId];
+            if(!cli) return;
+
+            cli.ativo = true;
+            cli.status = "SINCRONIZADO";
+            cli.statusClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+            
+            if(!cli.faturamento) cli.faturamento = { valorMensal: "R$ 1.500,00" };
+            cli.faturamento.statusPagamento = "PAGO";
+            
+            // Adiciona +30 dias na licença (Renovação Automática)
+            let dataExp = new Date();
+            dataExp.setDate(dataExp.getDate() + 30);
+            cli.expires_at = dataExp.toISOString().split('T')[0];
+
+            localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
+            renderizarTabelaAdmin();
+            alert(`[WEBHOOK FINANCEIRO] Fatura de #${clientId} quitada via Gateway.\nO nó foi reativado e a licença renovada até ${cli.expires_at}.`);
+        }
+
+        function motorInadimplenciaAutomatica() {
+            let houveMudanca = false;
+            const hojeStr = new Date().toISOString().split('T')[0];
+
+            Object.keys(databaseClientes).forEach(key => {
+                const cli = databaseClientes[key];
+                // Se a licença expirou e ainda consta como ativo, ativa o Kill Switch financeiro
+                if (cli.expires_at < hojeStr && cli.ativo) {
+                    cli.ativo = false;
+                    cli.status = "BLOQUEADO (FINANCEIRO)";
+                    cli.statusClass = "bg-red-500/10 text-red-400 border-red-500/30";
+                    if(cli.faturamento) cli.faturamento.statusPagamento = "VENCIDO";
+                    houveMudanca = true;
+                }
+            });
+
+            if (houveMudanca) {
+                localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
+                if (perfilLogado === 'admin') renderizarTabelaAdmin();
+            }
         }
 
         function selecionarClienteTMEPelaTabela(key) {
@@ -2336,6 +2390,10 @@
                 statusClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
                 expires_at: expires || "2026-12-31",
                 ativo: true,
+                faturamento: {
+                    valorMensal: "R$ 1.500,00",
+                    statusPagamento: "PAGO"
+                },
                 sites: [
                     {
                         dominio: dominio,
@@ -2385,6 +2443,9 @@
                 } catch(err) { console.error(err); }
             }
             
+            // Roda o motor de inadimplência no background
+            motorInadimplenciaAutomatica();
+
             // Restaura as Caixas de Auditoria Forense
             const logsSalvos = localStorage.getItem('medius_logs_auditoria');
             if (logsSalvos) {
