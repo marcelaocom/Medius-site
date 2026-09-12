@@ -640,8 +640,11 @@
                     <button onclick="simularAtaqueReal()" class="text-[10px] uppercase font-mono text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-500 px-3 py-1.5 rounded transition">
                         Simular Anomalia SecOps
                     </button>
-                    <button onclick="gerarRelatorioLimpo()" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded border border-slate-600 text-xs font-mono font-bold transition">
+                    <button onclick="gerarRelatorioLimpo()" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded border border-slate-600 text-xs font-mono font-bold transition" title="Exportar Relatório Simples">
                         <i data-lucide="file-down" class="w-3.5 h-3.5"></i> PDF
+                    </button>
+                    <button onclick="gerarRelatorioLote()" class="flex items-center gap-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 px-3 py-1.5 rounded border border-indigo-500/40 text-xs font-mono font-bold transition shadow-[0_0_8px_rgba(99,102,241,0.2)]" title="Exportar Dossiê da Malha Completa">
+                        <i data-lucide="layers" class="w-3.5 h-3.5"></i> Dossiê em Lote
                     </button>
                 </div>
             </header>
@@ -1259,6 +1262,27 @@
             <tr><td>Bloqueios Heurísticos</td><td id="pdf-sanitizacao-val">--</td></tr>
             <tr><td>Nós Ativos</td><td id="pdf-ativos-val">--</td></tr>
             <tr><td>Inadimplentes</td><td id="pdf-vencidos-val">--</td></tr>
+        </table>
+    </div>
+
+    <div id="relatorio-pdf-batch" style="position: absolute; left: -9999px; top: 0; width: 1050px; background: #ffffff; color: #000000; padding: 40px; font-family: Arial, Helvetica, sans-serif; box-sizing: border-box; z-index: -999;">
+        <h1 style="color: #0f172a; font-size: 24px; border-bottom: 2px solid #6366f1; padding-bottom: 10px; margin-bottom: 20px; text-transform: uppercase;">DOSSIÊ EXECUTIVO - MALHA MEDIUS CORE</h1>
+        <p style="font-size: 12px; color: #475569; margin-bottom: 4px;"><strong>Data da Emissão:</strong> <span id="pdf-batch-data"></span></p>
+        <p style="font-size: 12px; color: #475569; margin-bottom: 20px;"><strong>Nós Operacionais Ativos:</strong> <span id="pdf-batch-ativos"></span></p>
+        
+        <h2 style="font-size: 16px; color: #1e293b; margin-top: 10px; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">QUADRO GERAL DE CONTRATOS</h2>
+        <table class="pdf-table">
+            <thead>
+                <tr>
+                    <th>CLIENTE / NÓ</th>
+                    <th>STATUS SEC-OPS</th>
+                    <th>VENCIMENTO DA LICENÇA</th>
+                    <th>FINANCEIRO</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-batch-tbody">
+                <!-- Linhas injetadas via JS -->
+            </tbody>
         </table>
     </div>
 
@@ -2497,6 +2521,48 @@
                 margin: 0.5,
                 filename: `Relatorio_Medius_${new Date().getTime()}.pdf`,
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            }).from(elemento).save().then(() => {
+                elemento.style.display = 'none';
+            });
+        }
+
+        // ==========================================
+        // MOTOR DE EXPORTAÇÃO EM LOTE (BATCH PDF)
+        // ==========================================
+        function gerarRelatorioLote() {
+            document.getElementById('pdf-batch-data').innerText = new Date().toLocaleString('pt-BR');
+            const tbody = document.getElementById('pdf-batch-tbody');
+            tbody.innerHTML = '';
+            
+            let ativos = 0;
+
+            Object.keys(databaseClientes).forEach(key => {
+                const c = databaseClientes[key];
+                if (c.ativo) ativos++;
+
+                const statusPagamento = c.faturamento ? c.faturamento.statusPagamento : 'N/A';
+                const corPagamento = statusPagamento === 'PAGO' ? '#10b981' : '#ef4444';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${c.nome}</strong><br><span style="color: #64748b; font-size: 10px;">#${key}</span></td>
+                        <td>${c.status}</td>
+                        <td>${c.expires_at}</td>
+                        <td style="color: ${corPagamento}; font-weight: bold;">${statusPagamento}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('pdf-batch-ativos').innerText = ativos;
+
+            const elemento = document.getElementById('relatorio-pdf-batch');
+            elemento.style.display = 'block';
+
+            // Exportando em formato Paisagem (landscape) e proporção maior
+            html2pdf().set({
+                margin: 0.5,
+                filename: `Dossie_Executivo_Malha_${new Date().getTime()}.pdf`,
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
             }).from(elemento).save().then(() => {
                 elemento.style.display = 'none';
             });
