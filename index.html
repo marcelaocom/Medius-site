@@ -632,6 +632,12 @@
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Gestão de Equipe (RBAC)</span>
                         </div>
                     </button>
+                    <button onclick="mudarSecaoAdmin('financeiro')" id="btn-adm-financeiro" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="wallet" class="w-5 h-5 flex-shrink-0 text-emerald-400"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-emerald-400/80 font-bold">QG Financeiro & Caixa</span>
+                        </div>
+                    </button>
                 </nav>
             </div>
             
@@ -1018,6 +1024,37 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+
+                <!-- MÓDULO FINANCEIRO (QG MASTER) -->
+                <div id="mod-financeiro" class="dash-module hidden space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="cyber-card p-6">
+                            <h3 class="text-[11px] text-slate-400 font-mono uppercase mb-2 flex items-center gap-2">
+                                <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i> Faturamento (MRR)
+                            </h3>
+                            <div class="text-3xl font-bold text-white font-mono" id="fin-mrr">R$ 0,00</div>
+                            <p class="text-[10px] text-emerald-400 mt-1">+ Renovações Automáticas Ativas</p>
+                        </div>
+                        <div class="cyber-card p-6 border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]">
+                            <h3 class="text-[11px] text-slate-400 font-mono uppercase mb-2 flex items-center gap-2">
+                                <i data-lucide="server-crash" class="w-4 h-4 text-red-400"></i> Custos de Infra/Taxas
+                            </h3>
+                            <div class="text-3xl font-bold text-red-400 font-mono" id="fin-custos">R$ 0,00</div>
+                            <p class="text-[10px] text-slate-500 mt-1">Servidores AWS + Impostos (15%)</p>
+                        </div>
+                        <div class="cyber-card p-6 border-cyan-500/30 shadow-[0_0_20px_rgba(0,210,255,0.15)]">
+                            <h3 class="text-[11px] text-slate-400 font-mono uppercase mb-2 flex items-center gap-2">
+                                <i data-lucide="piggy-bank" class="w-4 h-4 text-cyan-400"></i> Lucro Líquido Medius
+                            </h3>
+                            <div class="text-3xl font-bold text-cyan-400 font-mono" id="fin-lucro">R$ 0,00</div>
+                            <p class="text-[10px] text-cyan-500/70 mt-1">Livre para caixa/dividendos</p>
+                        </div>
+                    </div>
+                    <div class="cyber-card">
+                        <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Análise Contábil da Malha</h3>
+                        <div id="chart-financeiro-admin" style="min-height: 250px;"></div>
                     </div>
                 </div>
 
@@ -2261,6 +2298,9 @@
             } else if (secao === 'operadores') {
                 document.getElementById('mod-operadores').classList.remove('hidden');
                 renderizarTabelaOperadores();
+            } else if (secao === 'financeiro') {
+                document.getElementById('mod-financeiro').classList.remove('hidden');
+                renderizarFinanceiroAdmin();
             } else if (secao === 'camaleao') {
                 alert("Módulo Camaleão Ativo via Atalho (UI Inject liberada)");
             }
@@ -2778,9 +2818,11 @@
             if (role === 'SECOPS') {
                 document.getElementById('btn-adm-whitelabel').style.display = 'none';
                 document.getElementById('btn-adm-operadores').style.display = 'none';
+                document.getElementById('btn-adm-financeiro').style.display = 'none';
             } else if (role === 'SUPORTE') {
                 document.getElementById('btn-adm-whitelabel').style.display = 'none';
                 document.getElementById('btn-adm-operadores').style.display = 'none';
+                document.getElementById('btn-adm-financeiro').style.display = 'none';
                 document.getElementById('btn-adm-sessoes').style.display = 'none';
                 document.getElementById('btn-adm-camaleao').style.display = 'none';
                 document.getElementById('btn-adm-telemetria').style.display = 'none';
@@ -2836,6 +2878,61 @@
             e.target.reset();
             renderizarTabelaAdmin();
             mudarSecaoAdmin('visao-geral');
+        }
+
+        // ==========================================
+        // MOTOR CONTÁBIL & QG FINANCEIRO
+        // ==========================================
+        let chartFinanceiroAdmin = null;
+
+        function calcularFinanceiroGeral() {
+            let mrr = 0;
+            Object.values(databaseClientes).forEach(c => {
+                if (c.ativo && c.faturamento && c.faturamento.statusPagamento === 'PAGO') {
+                    let strVal = c.faturamento.valorMensal.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+                    mrr += parseFloat(strVal) || 0;
+                }
+            });
+
+            const custosFixos = 450.00; 
+            const custosVariaveis = mrr * 0.15; 
+            const custosTotais = custosFixos + custosVariaveis;
+            const lucro = mrr - custosTotais;
+
+            return { mrr, custos: custosTotais, lucro };
+        }
+
+        function renderizarFinanceiroAdmin() {
+            const fin = calcularFinanceiroGeral();
+            const fmt = val => val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+            
+            document.getElementById('fin-mrr').innerText = fmt(fin.mrr);
+            document.getElementById('fin-custos').innerText = fmt(fin.custos);
+            document.getElementById('fin-lucro').innerText = fmt(fin.lucro);
+
+            if(!chartFinanceiroAdmin) {
+                const optContabil = {
+                    series: [
+                        { name: 'Receita (MRR)', data: [fin.mrr] }, 
+                        { name: 'Despesas Fixas+Var', data: [fin.custos] }, 
+                        { name: 'Margem Líquida', data: [fin.lucro] }
+                    ],
+                    chart: { type: 'bar', height: 250, toolbar: { show: false }, background: 'transparent' },
+                    colors: ['#10b981', '#ef4444', '#00d2ff'],
+                    plotOptions: { bar: { horizontal: true, borderRadius: 4, dataLabels: { position: 'top' } } },
+                    dataLabels: { enabled: true, formatter: val => 'R$ ' + val.toFixed(2), style: { colors: ['#fff'] }, offsetX: 20 },
+                    xaxis: { categories: ['Mês Atual'], labels: { style: { colors: '#94a3b8' } }, axisBorder: { show: false } },
+                    yaxis: { labels: { show: false } },
+                    grid: { borderColor: 'rgba(255,255,255,0.05)', strokeDashArray: 4 },
+                    tooltip: { theme: 'dark' }
+                };
+                chartFinanceiroAdmin = new ApexCharts(document.querySelector("#chart-financeiro-admin"), optContabil);
+                chartFinanceiroAdmin.render();
+            } else {
+                chartFinanceiroAdmin.updateSeries([
+                    { data: [fin.mrr] }, { data: [fin.custos] }, { data: [fin.lucro] }
+                ]);
+            }
         }
 
         window.addEventListener('DOMContentLoaded', () => {
