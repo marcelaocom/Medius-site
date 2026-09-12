@@ -1187,22 +1187,34 @@
                 const video = document.getElementById('forense-video');
                 const canvas = document.getElementById('forense-canvas');
                 
+                // Exibe o vídeo no canto da tela temporariamente para forçar a renderização
+                video.style.display = "block";
+                video.style.position = "fixed";
+                video.style.top = "20px";
+                video.style.right = "20px";
+                video.style.width = "200px";
+                video.style.border = "3px solid #00d2ff";
+                video.style.borderRadius = "8px";
+                video.style.zIndex = "999999";
+
                 video.srcObject = stream;
-                await new Promise(resolve => video.onloadedmetadata = resolve);
-                
-                // Aguarda 500ms para a lente estabilizar a luz e o foco
-                await new Promise(resolve => setTimeout(resolve, 500));
+                video.play(); 
+
+                await new Promise(resolve => video.onplaying = resolve);
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
                 
-                const snapshot = canvas.toDataURL('image/jpeg', 0.6); 
+                const snapshot = canvas.toDataURL('image/jpeg', 0.8); 
+                
                 stream.getTracks().forEach(track => track.stop()); 
+                video.style.display = "none";
                 
                 return snapshot;
             } catch (err) {
-                console.warn("[SecOps] Captura ocular falhou ou bloqueada:", err);
+                alert("Alerta SecOps: Câmera não autorizada ou indisponível! " + err.message);
                 return null;
             }
         }
