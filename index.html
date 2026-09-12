@@ -1246,22 +1246,45 @@
             }
         }
 
-        function registrarLogAcesso(usuarioId, tipoAcesso, snapshot) {
+        // ==========================================
+        // MOTOR CRIPTOGRÁFICO (CADEIA SHA-256)
+        // ==========================================
+        async function gerarHashSHA256(conteudo) {
+            const msgBuffer = new TextEncoder().encode(conteudo);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function registrarLogAcesso(usuarioId, tipoAcesso, snapshot) {
             const dataHora = new Date().toLocaleString('pt-BR');
+            
+            // Identifica a caixa para pegar o Hash do último bloco (Elo da Corrente)
+            const caixaAlvo = usuarioId === 'admin' ? logsAuditoria.admin : (logsAuditoria.clientes[usuarioId] || []);
+            const indexBlock = caixaAlvo.length;
+            
+            // Se for o Bloco Gênesis (zero), o previousHash é preenchido com zeros.
+            const previousHash = indexBlock === 0 ? "0000000000000000000000000000000000000000000000000000000000000000" : caixaAlvo[0].hash;
+            
+            // Assina o conteúdo combinando os dados com a raiz do bloco anterior
+            const conteudoParaHash = `${indexBlock}|${usuarioId}|${tipoAcesso}|${dataHora}|${snapshot}|${previousHash}`;
+            const hashAtual = await gerarHashSHA256(conteudoParaHash);
+
             const novoLog = {
+                index: indexBlock,
                 id: usuarioId,
                 tipo: tipoAcesso,
                 dataHora: dataHora,
-                foto: snapshot
+                foto: snapshot,
+                previousHash: previousHash,
+                hash: hashAtual
             };
             
             // Direciona para a Caixa Gênesis ou para a Caixa Isolada do Cliente
             if (usuarioId === 'admin') {
                 logsAuditoria.admin.unshift(novoLog);
             } else {
-                if (!logsAuditoria.clientes[usuarioId]) {
-                    logsAuditoria.clientes[usuarioId] = [];
-                }
+                if (!logsAuditoria.clientes[usuarioId]) logsAuditoria.clientes[usuarioId] = [];
                 logsAuditoria.clientes[usuarioId].unshift(novoLog);
             }
             
@@ -1314,6 +1337,10 @@
                         <p class="${badgeCor} font-bold">${badgeCaixa}</p>
                         <p class="text-slate-400">Ambiente: ${log.tipo}</p>
                         <p class="text-slate-500">${log.dataHora}</p>
+                        <div class="mt-2 pt-1 border-t border-slate-700/50 flex items-center justify-between text-[8px]">
+                            <span class="text-slate-500 truncate mr-2" title="${log.hash}"><i data-lucide="link-2" class="w-3 h-3 inline"></i> ${log.hash ? log.hash.substring(0,16) + '...' : 'LEGADO'}</span>
+                            <span class="text-emerald-400 flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3 h-3"></i> Íntegro</span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1346,7 +1373,7 @@
             const identificador = tipo === 'admin' ? 'admin' : (clientId || 'estudio-marcelao-01');
             const tipoAcessoStr = tipo === 'admin' ? 'QG Master' : 'Nó Cliente';
             
-            registrarLogAcesso(identificador, tipoAcessoStr, snapshot);
+            await registrarLogAcesso(identificador, tipoAcessoStr, snapshot);
 
             btnLogin.innerHTML = textoOriginal;
             btnLogin.disabled = false;
@@ -1391,7 +1418,7 @@
             
             const isAdmin = user === 'admin';
             const identificador = user !== '' ? user : 'estudio-marcelao-01'; // Fallback
-            registrarLogAcesso(identificador, (isAdmin ? 'QG Master' : 'Nó Cliente'), snapshot);
+            await registrarLogAcesso(identificador, (isAdmin ? 'QG Master' : 'Nó Cliente'), snapshot);
 
             btnLogin.innerHTML = textoOriginal;
             btnLogin.disabled = false;
@@ -1730,6 +1757,10 @@
                         <p class="text-cyan-400 font-bold">Credencial Confirmada</p>
                         <p class="text-slate-400">Caixa: #${log.id}</p>
                         <p class="text-slate-500">${log.dataHora}</p>
+                        <div class="mt-2 pt-1 border-t border-slate-700/50 flex items-center justify-between text-[8px]">
+                            <span class="text-slate-500 truncate mr-2" title="${log.hash}"><i data-lucide="link-2" class="w-3 h-3 inline"></i> ${log.hash ? log.hash.substring(0,16) + '...' : 'LEGADO'}</span>
+                            <span class="text-emerald-400 flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3 h-3"></i> Validado</span>
+                        </div>
                     </div>
                 </div>
             `).join('');
