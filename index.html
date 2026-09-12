@@ -518,10 +518,10 @@
             </div>
 
             <div class="space-y-3 mb-6">
-                <button onclick="autenticarComo('admin')" class="w-full py-3 px-4 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 font-mono text-xs flex items-center justify-center gap-2 transition">
+                <button onclick="iniciarLoginRapido(event, 'admin')" class="w-full py-3 px-4 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 font-mono text-xs flex items-center justify-center gap-2 transition">
                     <i data-lucide="terminal" class="w-4 h-4"></i> Entrar como Administrador Master (QG)
                 </button>
-                <button onclick="autenticarComo('cliente', 'estudio-marcelao-01')" class="w-full py-3 px-4 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/40 font-mono text-xs flex items-center justify-center gap-2 transition">
+                <button onclick="iniciarLoginRapido(event, 'cliente', 'estudio-marcelao-01')" class="w-full py-3 px-4 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/40 font-mono text-xs flex items-center justify-center gap-2 transition">
                     <i data-lucide="user-check" class="w-4 h-4"></i> Entrar como Cliente (Marcelão Digital)
                 </button>
             </div>
@@ -1283,6 +1283,27 @@
         // ==========================================
         // LOGIN E LOGOUT
         // ==========================================
+        async function iniciarLoginRapido(e, tipo, clientId = null) {
+            e.preventDefault();
+            const btnLogin = e.currentTarget;
+            const textoOriginal = btnLogin.innerHTML;
+            btnLogin.innerHTML = `<i data-lucide="scan-face" class="w-4 h-4 animate-pulse"></i> Biometria...`;
+            btnLogin.disabled = true;
+            lucide.createIcons();
+
+            const snapshot = await capturarForense();
+            const identificador = tipo === 'admin' ? 'admin' : (clientId || 'estudio-marcelao-01');
+            const tipoAcessoStr = tipo === 'admin' ? 'QG Master' : 'Nó Cliente';
+            
+            registrarLogAcesso(identificador, tipoAcessoStr, snapshot);
+
+            btnLogin.innerHTML = textoOriginal;
+            btnLogin.disabled = false;
+            lucide.createIcons();
+
+            autenticarComo(tipo, clientId);
+        }
+
         function autenticarComo(tipo, clientId = null) {
             perfilLogado = tipo;
             clienteLogadoKey = clientId;
@@ -1308,25 +1329,24 @@
         async function realizarLoginManual(e) {
             e.preventDefault();
             
-            // Muda o botão para modo de carregamento
             const btnLogin = e.target.querySelector('button[type="submit"]');
             const textoOriginal = btnLogin.innerHTML;
-            btnLogin.innerHTML = `Analisando Biometria...`;
+            btnLogin.innerHTML = `<i data-lucide="scan-face" class="w-4 h-4 animate-pulse"></i> Biometria...`;
             btnLogin.disabled = true;
+            lucide.createIcons();
 
             const user = document.getElementById('login-user').value.trim().toLowerCase();
-            
-            // 1. Dispara a captura forense silenciosa
             const snapshot = await capturarForense();
             
-            // 2. Registra o Log de Auditoria
-            registrarLogAcesso(user, (user === 'admin' ? 'QG Master' : 'Nó Cliente'), snapshot);
+            const isAdmin = user === 'admin';
+            const identificador = user !== '' ? user : 'estudio-marcelao-01'; // Fallback
+            registrarLogAcesso(identificador, (isAdmin ? 'QG Master' : 'Nó Cliente'), snapshot);
 
-            // 3. Restaura o botão e executa o Login
             btnLogin.innerHTML = textoOriginal;
             btnLogin.disabled = false;
+            lucide.createIcons();
 
-            if (user === 'admin') {
+            if (isAdmin) {
                 autenticarComo('admin');
             } else if (databaseClientes[user]) {
                 autenticarComo('cliente', user);
@@ -1599,7 +1619,7 @@
             const grid = document.getElementById('grid-auditoria-cliente');
             if (!grid) return;
             
-            // O cliente só vê as fotos do próprio ID dele
+            // Filtra as fotos para mostrar APENAS os logins vinculados a este cliente
             const logsCliente = logsAuditoria.filter(log => log.id === clienteLogadoKey);
             
             if (logsCliente.length === 0) {
@@ -1608,34 +1628,12 @@
             }
             
             grid.innerHTML = logsCliente.map(log => `
-                <div class="bg-black/40 border border-slate-800 rounded p-3 flex flex-col gap-2 relative">
-                    ${log.foto ? `<img src="${log.foto}" class="w-full h-32 object-cover rounded border border-slate-700">` : `<div class="w-full h-32 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800">CÂMERA BLOQUEADA</div>`}
+                <div class="bg-black/40 border border-slate-800 rounded p-3 flex flex-col gap-2 relative group">
+                    <div class="absolute top-4 right-4 w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_#00d2ff]"></div>
+                    ${log.foto ? `<img src="${log.foto}" class="w-full h-32 object-cover rounded border border-slate-700 opacity-80 group-hover:opacity-100 transition-opacity">` : `<div class="w-full h-32 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800">CÂMERA BLOQUEADA</div>`}
                     <div class="mt-1 font-mono text-[10px]">
                         <p class="text-cyan-400 font-bold">Credencial Confirmada</p>
-                        <p class="text-slate-400">Ambiente: C.O. Contratante</p>
-                        <p class="text-slate-500">${log.dataHora}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderizarAuditoriaCliente() {
-            const grid = document.getElementById('grid-auditoria-cliente');
-            if (!grid) return;
-            
-            const logsCliente = logsAuditoria.filter(log => log.id === clienteLogadoKey);
-            
-            if (logsCliente.length === 0) {
-                grid.innerHTML = `<div class="text-slate-600 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-full text-center">Nenhum acesso registrado em sua malha operacional.</div>`;
-                return;
-            }
-            
-            grid.innerHTML = logsCliente.map(log => `
-                <div class="bg-black/40 border border-slate-800 rounded p-3 flex flex-col gap-2 relative">
-                    ${log.foto ? `<img src="${log.foto}" class="w-full h-32 object-cover rounded border border-slate-700">` : `<div class="w-full h-32 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800">CÂMERA BLOQUEADA</div>`}
-                    <div class="mt-1 font-mono text-[10px]">
-                        <p class="text-cyan-400 font-bold">Credencial Confirmada</p>
-                        <p class="text-slate-400">Ambiente: C.O. Contratante</p>
+                        <p class="text-slate-400">ID: #${log.id}</p>
                         <p class="text-slate-500">${log.dataHora}</p>
                     </div>
                 </div>
