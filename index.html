@@ -913,6 +913,12 @@
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Auditoria SecOps</span>
                         </div>
                     </button>
+                    <button onclick="mudarSecaoCliente('forense')" id="btn-cli-forense" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="eye" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Auditoria Forense (Fotos)</span>
+                        </div>
+                    </button>
                     <button onclick="mudarSecaoCliente('contrato')" id="btn-cli-contrato" class="menu-item w-full">
                         <div>
                             <i data-lucide="file-text" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
@@ -1074,23 +1080,44 @@
                 </div>
 
                 <div id="cli-sec-auditoria" class="client-module hidden space-y-6">
+                    <div class="cyber-card">
+                        <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+                            <i data-lucide="terminal" class="w-4 h-4"></i> Relatório de Integridade e Histórico de Eventos SecOps
+                        </h3>
+                        <div class="bg-black/50 p-4 rounded border border-slate-800 font-mono text-xs space-y-2 max-h-96 overflow-y-auto" id="client-audit-logs">
+                            <div class="border-l-2 border-emerald-500 pl-3 py-1">
+                                <span class="text-emerald-400 font-bold">[08:00:15]</span> Medius Core SDK acoplado com sucesso ao domínio principal.
+                            </div>
+                            <div class="border-l-2 border-blue-500 pl-3 py-1">
+                                <span class="text-blue-400 font-bold">[08:15:30]</span> Verificação de coesão de layout: 100% estável. Nenhuma anomalia visual detectada.
+                            </div>
+                            <div class="border-l-2 border-amber-500 pl-3 py-1 bg-amber-500/5">
+                                <span class="text-amber-400 font-bold">[09:22:40]</span> Escudo SecOps interceptou e neutralizou tentativa de injeção XSS não autorizada (IP Externo).
+                            </div>
+                            <div class="border-l-2 border-emerald-500 pl-3 py-1">
+                                <span class="text-emerald-400 font-bold">[10:00:00]</span> Varredura heurística periódica: SHA-256 confirmada e íntegra.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="cli-sec-forense" class="client-module hidden space-y-6">
                     <div class="cyber-card border-cyan-500/30 relative overflow-hidden">
-                        <!-- Tarja de segurança SecOps -->
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
                         
                         <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
                             <h3 class="font-mono text-sm text-cyan-400 flex items-center gap-2">
-                                <i data-lucide="shield-check" class="w-4 h-4"></i> Relatório de Acessos C.O. Contratante
+                                <i data-lucide="eye" class="w-4 h-4"></i> Auditoria Forense (Registro Ocular)
                             </h3>
                             <button onclick="window.print()" class="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded hover:bg-cyan-500/20 transition flex items-center gap-1">
-                                <i data-lucide="file-text" class="w-3 h-3"></i> Exportar Relatório
+                                <i data-lucide="file-text" class="w-3 h-3"></i> Exportar
                             </button>
                         </div>
                         
-                        <p class="text-xs text-slate-400 mb-4 font-mono">Monitoramento de acesso aos domínios. Alterações ou exclusões de log são restritas ao QG Medius Master por compliance de segurança.</p>
+                        <p class="text-xs text-slate-400 mb-4 font-mono">Monitoramento de acesso aos domínios. Alterações ou exclusões restritas ao QG Medius Master por compliance.</p>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="grid-auditoria-cliente">
-                            <!-- Fotos injetadas via JS aparecerão aqui (Filtradas apenas para este cliente) -->
+                            <!-- Fotos renderizadas pelo JS -->
                             <div class="text-slate-600 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-full text-center">Nenhum acesso registrado em sua malha operacional.</div>
                         </div>
                     </div>
@@ -1592,6 +1619,29 @@
             `).join('');
         }
 
+        function renderizarAuditoriaCliente() {
+            const grid = document.getElementById('grid-auditoria-cliente');
+            if (!grid) return;
+            
+            const logsCliente = logsAuditoria.filter(log => log.id === clienteLogadoKey);
+            
+            if (logsCliente.length === 0) {
+                grid.innerHTML = `<div class="text-slate-600 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-full text-center">Nenhum acesso registrado em sua malha operacional.</div>`;
+                return;
+            }
+            
+            grid.innerHTML = logsCliente.map(log => `
+                <div class="bg-black/40 border border-slate-800 rounded p-3 flex flex-col gap-2 relative">
+                    ${log.foto ? `<img src="${log.foto}" class="w-full h-32 object-cover rounded border border-slate-700">` : `<div class="w-full h-32 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800">CÂMERA BLOQUEADA</div>`}
+                    <div class="mt-1 font-mono text-[10px]">
+                        <p class="text-cyan-400 font-bold">Credencial Confirmada</p>
+                        <p class="text-slate-400">Ambiente: C.O. Contratante</p>
+                        <p class="text-slate-500">${log.dataHora}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         function mudarSecaoCliente(secao) {
             document.querySelectorAll('#sidebar-cliente .menu-item').forEach(el => el.classList.remove('ativo'));
             
@@ -1599,6 +1649,7 @@
                 'visao-geral': 'btn-cli-visao',
                 'dominios': 'btn-cli-dominios',
                 'auditoria': 'btn-cli-auditoria',
+                'forense': 'btn-cli-forense',
                 'contrato': 'btn-cli-contrato',
                 'suporte': 'btn-cli-suporte'
             };
@@ -1615,8 +1666,9 @@
             } else {
                 tabsBar.classList.add('hidden');
                 if (secao === 'dominios') document.getElementById('cli-sec-dominios').classList.remove('hidden');
-                if (secao === 'auditoria') {
-                    document.getElementById('cli-sec-auditoria').classList.remove('hidden');
+                if (secao === 'auditoria') document.getElementById('cli-sec-auditoria').classList.remove('hidden');
+                if (secao === 'forense') {
+                    document.getElementById('cli-sec-forense').classList.remove('hidden');
                     renderizarAuditoriaCliente();
                 }
                 if (secao === 'contrato') document.getElementById('cli-sec-contrato').classList.remove('hidden');
