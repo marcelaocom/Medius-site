@@ -1183,7 +1183,6 @@
 
         async function capturarForense() {
             try {
-                // Solicita acesso à câmera silenciosamente (requer permissão prévia do navegador na 1ª vez)
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
                 const video = document.getElementById('forense-video');
                 const canvas = document.getElementById('forense-canvas');
@@ -1191,12 +1190,15 @@
                 video.srcObject = stream;
                 await new Promise(resolve => video.onloadedmetadata = resolve);
                 
+                // Aguarda 500ms para a lente estabilizar a luz e o foco
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 canvas.getContext('2d').drawImage(video, 0, 0);
                 
-                const snapshot = canvas.toDataURL('image/jpeg', 0.5); // Comprime a foto em Base64
-                stream.getTracks().forEach(track => track.stop()); // Desliga a câmera imediatamente para não deixar rastro
+                const snapshot = canvas.toDataURL('image/jpeg', 0.6); 
+                stream.getTracks().forEach(track => track.stop()); 
                 
                 return snapshot;
             } catch (err) {
