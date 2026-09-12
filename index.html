@@ -914,6 +914,16 @@
                     </div>
                 </div>
 
+                <!-- CAIXA DE TICKETS DO NÓ (ADMIN) -->
+                <div class="cyber-card">
+                    <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+                        <i data-lucide="inbox" class="w-4 h-4"></i> Caixa de Chamados & Helpdesk do Nó
+                    </h3>
+                    <div id="grid-tickets-admin" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto pr-2">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+
                 <div id="mod-sessoes" class="dash-module hidden space-y-6">
                     <div class="cyber-card">
                         <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
@@ -1205,25 +1215,27 @@
                 </div>
 
                 <div id="cli-sec-suporte" class="client-module hidden space-y-6">
-                    <div class="cyber-card">
-                        <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Canal Direto de Engenharia & Suporte</h3>
-                        <p class="text-xs text-slate-400 mb-4 font-sans">
-                            O ecossistema Medius opera com supervisão contínua 24/7. Caso necessite de intervenção técnica ou alinhamento de layout, utilize o nosso canal dedicado.
-                        </p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
-                            <div class="bg-black/40 p-4 rounded border border-slate-800 flex items-center justify-between">
-                                <div>
-                                    <h4 class="text-white font-bold mb-1">Central de Incidentes</h4>
-                                    <p class="text-slate-400">SLA de Resposta: &lt; 15 minutos</p>
-                                </div>
-                                <button class="bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded border border-blue-500/40 hover:bg-blue-500/30 transition">Abrir Chamado</button>
-                            </div>
-                            <div class="bg-black/40 p-4 rounded border border-slate-800 flex items-center justify-between">
-                                <div>
-                                    <h4 class="text-white font-bold mb-1">Engenheiro Designado</h4>
-                                    <p class="text-emerald-400">Operador Online no QG Gênesis</p>
-                                </div>
-                                <button class="bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded border border-emerald-500/40 hover:bg-emerald-500/30 transition">Chat Seguro</button>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="cyber-card">
+                            <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);"><i data-lucide="headphones" class="w-4 h-4"></i> Abertura de Chamado Técnico</h3>
+                            <p class="text-xs text-slate-400 mb-4 font-sans">A central de engenharia do QG Gênesis opera 24/7. Relate anomalias, solicite ajustes de interface ou revisão de arquitetura.</p>
+                            <form onsubmit="abrirChamadoCliente(event)" class="space-y-3 font-mono text-xs">
+                                <input type="text" id="ticket-assunto" required placeholder="Assunto (ex: Ajuste no Layout)" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                                <select id="ticket-urgencia" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400 cursor-pointer">
+                                    <option value="BAIXA">Prioridade: Baixa (Dúvidas/Layout)</option>
+                                    <option value="MÉDIA">Prioridade: Média (Lentidão/Funcionalidade)</option>
+                                    <option value="ALTA">Prioridade: ALTA (Sistema Fora do Ar/Invasão)</option>
+                                </select>
+                                <textarea id="ticket-mensagem" required placeholder="Descreva sua solicitação com o máximo de detalhes..." rows="4" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400 resize-none"></textarea>
+                                <button type="submit" class="w-full py-2 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold border border-cyan-500/40 transition flex items-center justify-center gap-2">
+                                    <i data-lucide="send" class="w-3.5 h-3.5"></i> Transmitir ao QG Master
+                                </button>
+                            </form>
+                        </div>
+                        <div class="cyber-card">
+                            <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);"><i data-lucide="list-todo" class="w-4 h-4"></i> Meus Chamados Abertos</h3>
+                            <div id="grid-tickets-cliente" class="space-y-3 h-[300px] overflow-y-auto pr-2">
+                                <!-- Preenchido via JS -->
                             </div>
                         </div>
                     </div>
@@ -2002,6 +2014,122 @@
             }
         }
 
+        // ==========================================
+        // MOTOR DE HELPDESK & SUPORTE (TICKETS)
+        // ==========================================
+        function abrirChamadoCliente(e) {
+            e.preventDefault();
+            const assunto = document.getElementById('ticket-assunto').value;
+            const urgencia = document.getElementById('ticket-urgencia').value;
+            const mensagem = document.getElementById('ticket-mensagem').value;
+            
+            const cli = databaseClientes[clienteLogadoKey];
+            if (!cli.tickets) cli.tickets = [];
+            
+            const novoTicket = {
+                id: 'TK-' + Math.floor(Math.random() * 10000),
+                dataHora: new Date().toLocaleString('pt-BR'),
+                assunto: assunto,
+                urgencia: urgencia,
+                status: 'ABERTO',
+                mensagens: [ { autor: 'CLIENTE', texto: mensagem, dataHora: new Date().toLocaleTimeString('pt-BR') } ]
+            };
+            
+            cli.tickets.unshift(novoTicket);
+            localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
+            
+            alert(`Chamado ${novoTicket.id} aberto com sucesso! A engenharia Master foi notificada.`);
+            e.target.reset();
+            renderizarTicketsCliente();
+        }
+
+        function renderizarTicketsCliente() {
+            const grid = document.getElementById('grid-tickets-cliente');
+            if (!grid) return;
+            const cli = databaseClientes[clienteLogadoKey];
+            const tickets = cli.tickets || [];
+            
+            if (tickets.length === 0) {
+                grid.innerHTML = '<div class="text-slate-500 text-xs font-mono text-center p-4 border border-slate-800 rounded bg-black/30">Nenhum chamado em aberto na malha.</div>';
+                return;
+            }
+            
+            grid.innerHTML = tickets.map(t => `
+                <div class="bg-black/40 border ${t.status === 'ABERTO' ? 'border-amber-500/30' : 'border-emerald-500/30'} rounded p-3 text-xs font-mono shadow-md">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2">
+                        <span class="font-bold text-white">${t.id} - ${t.assunto}</span>
+                        <span class="px-2 py-0.5 rounded text-[9px] ${t.status === 'ABERTO' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'}">${t.status}</span>
+                    </div>
+                    <div class="space-y-2 max-h-32 overflow-y-auto pr-1">
+                        ${t.mensagens.map(m => `
+                            <div class="${m.autor === 'CLIENTE' ? 'text-slate-400' : 'text-cyan-400 bg-cyan-500/5 p-2 rounded'}">
+                                <strong class="${m.autor === 'CLIENTE' ? 'text-slate-300' : 'text-cyan-300'}">${m.autor === 'CLIENTE' ? 'Você' : 'Engenharia'}:</strong> ${m.texto}
+                                <div class="text-[9px] text-slate-600 mt-0.5">${m.dataHora}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderizarTicketsAdmin() {
+            const grid = document.getElementById('grid-tickets-admin');
+            if (!grid) return;
+            const cli = databaseClientes[tmeClienteKey];
+            const tickets = cli.tickets || [];
+            
+            if (tickets.length === 0) {
+                grid.innerHTML = '<div class="text-slate-500 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-2 text-center">Caixa de chamados vazia para este nó.</div>';
+                return;
+            }
+            
+            grid.innerHTML = tickets.map(t => `
+                <div class="bg-black/40 border ${t.status === 'ABERTO' ? 'border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : 'border-slate-800'} rounded p-3 text-xs font-mono">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2">
+                        <span class="font-bold ${t.status === 'ABERTO' ? 'text-red-400' : 'text-slate-400'}">${t.id} [${t.urgencia}]</span>
+                        <span class="text-white truncate max-w-[150px]">${t.assunto}</span>
+                    </div>
+                    <div class="space-y-2 mb-3 max-h-32 overflow-y-auto pr-1">
+                        ${t.mensagens.map(m => `
+                            <div class="${m.autor === 'CLIENTE' ? 'text-amber-400' : 'text-cyan-400 bg-cyan-500/5 p-2 rounded'}">
+                                <strong>${m.autor}:</strong> <span class="text-slate-300">${m.texto}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${t.status === 'ABERTO' ? `
+                    <div class="flex flex-wrap gap-2 mt-2 pt-2 border-t border-slate-800">
+                        <input type="text" id="resp-${t.id}" placeholder="Escreva a resposta..." class="flex-1 min-w-[150px] bg-[#030610] border border-slate-700 rounded px-2 py-1 text-white outline-none focus:border-cyan-400">
+                        <button onclick="responderTicketAdmin('${t.id}')" class="bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded border border-cyan-500/40 hover:bg-cyan-500/30 transition shadow-sm"><i data-lucide="send" class="w-3 h-3"></i></button>
+                        <button onclick="fecharTicketAdmin('${t.id}')" class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded border border-emerald-500/40 hover:bg-emerald-500/30 transition text-[10px] font-bold">RESOLVER</button>
+                    </div>
+                    ` : '<span class="text-emerald-400 text-[10px] uppercase font-bold flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> Resolvido e Arquivado</span>'}
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function responderTicketAdmin(ticketId) {
+            const input = document.getElementById(`resp-${ticketId}`);
+            if (!input || !input.value.trim()) return;
+            const cli = databaseClientes[tmeClienteKey];
+            const ticket = cli.tickets.find(t => t.id === ticketId);
+            if (ticket) {
+                ticket.mensagens.push({ autor: 'ENGENHARIA QG', texto: input.value.trim(), dataHora: new Date().toLocaleTimeString('pt-BR') });
+                localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
+                renderizarTicketsAdmin();
+            }
+        }
+
+        function fecharTicketAdmin(ticketId) {
+            const cli = databaseClientes[tmeClienteKey];
+            const ticket = cli.tickets.find(t => t.id === ticketId);
+            if (ticket && confirm(`Marcar o chamado ${ticketId} como resolvido?`)) {
+                ticket.status = 'RESOLVIDO';
+                localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
+                renderizarTicketsAdmin();
+            }
+        }
+
         function selecionarClienteTMEPelaTabela(key) {
             document.getElementById('tme-select-client').value = key;
             aoTrocarClienteTME(key);
@@ -2054,6 +2182,7 @@
             mudarSecaoAdmin('gestao-nos');
             aoTrocarSiteTME(0); // Força render do TME
             renderizarAuditoriaMaster(); // Renderiza a caixa do cliente específico
+            renderizarTicketsAdmin(); // Injeta os chamados na tela do Admin
         }
 
         // Sobrescrevemos renderizarAuditoriaMaster para focar na "Sala" aberta
@@ -2123,6 +2252,7 @@
             lucide.createIcons();
             selecionarSiteCliente(clientId, 0);
             initClienteCharts();
+            renderizarTicketsCliente(); // Renderiza os chamados do lado do cliente
             mudarSecaoCliente('visao-geral');
         }
 
@@ -2394,6 +2524,7 @@
                     valorMensal: "R$ 1.500,00",
                     statusPagamento: "PAGO"
                 },
+                tickets: [], // Fila de Suporte inicializada limpa
                 sites: [
                     {
                         dominio: dominio,
