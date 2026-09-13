@@ -746,9 +746,19 @@
                             <div>
                                 <div class="neon-divider flex items-center gap-2">
                                     <i data-lucide="eye" class="w-4 h-4 text-cyan-400"></i>
-                                    <span class="text-white font-bold uppercase font-mono text-xs">Caixa de Auditoria Forense</span>
+                                    <span class="text-white font-bold uppercase font-mono text-xs">Caixa de Auditoria Forense (Árvore Mensal / Diária)</span>
                                 </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 h-48 overflow-y-auto pr-2" id="grid-auditoria-sala"></div>
+                                <div class="flex flex-col md:flex-row gap-6 pt-2">
+                                    <div class="w-full md:w-1/2 max-h-[300px] overflow-y-auto pr-2" id="lista-auditoria-sala">
+                                        <!-- Árvore hierárquica injetada via JS -->
+                                    </div>
+                                    <div class="w-full md:w-1/2">
+                                        <div class="bg-[#030610] border border-slate-800 rounded p-4 h-full min-h-[250px] flex flex-col items-center justify-center text-center sticky top-0" id="visualizador-forense-sala">
+                                            <i data-lucide="scan-eye" class="w-10 h-10 text-slate-700 mb-2 animate-pulse"></i>
+                                            <p class="text-slate-500 font-mono text-[10px]">Selecione um registro na árvore ao lado para inspecionar a biometria forense do nó.</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1644,29 +1654,108 @@
         }
 
         function renderizarAuditoriaMaster() {
-            const grid = document.getElementById('grid-auditoria-fotos');
-            if (!grid) return;
+            const lista = document.getElementById('lista-auditoria-sala');
+            if (!lista) return;
             
-            let html = '';
+            const logsCliente = logsAuditoria.clientes[tmeClienteKey] || [];
             
-            // 1. Renderiza a Caixa Gênesis (Master)
-            logsAuditoria.admin.forEach((log, index) => {
-                html += gerarCardLogHTML(log, 'admin', 'admin', index);
-            });
-            
-            // 2. Renderiza as Caixas dos Clientes
-            Object.keys(logsAuditoria.clientes).forEach(cliKey => {
-                logsAuditoria.clientes[cliKey].forEach((log, index) => {
-                    html += gerarCardLogHTML(log, cliKey, 'cliente', index);
-                });
-            });
-            
-            if (html === '') {
-                grid.innerHTML = `<div class="text-slate-600 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-full text-center">Nenhum registro biométrico encontrado nas caixas.</div>`;
-            } else {
-                grid.innerHTML = html;
-                lucide.createIcons();
+            if (logsCliente.length === 0) {
+                lista.innerHTML = `<div class="text-slate-600 text-[10px] font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Nenhum registro biométrico nesta caixa.</div>`;
+                return;
             }
+            
+            // Agrupamento hierárquico: Mês/Ano > Dia
+            const grupos = {};
+            logsCliente.forEach((log, index) => {
+                const dataStr = log.dataHora.split(',')[0].trim();
+                const partes = dataStr.split('/');
+                const dia = partes.length >= 3 ? partes[0] : 'Extra';
+                const mesAno = partes.length >= 3 ? `${partes[1]}/${partes[2]}` : 'Lote Especial';
+                
+                if (!grupos[mesAno]) grupos[mesAno] = {};
+                if (!grupos[mesAno][dia]) grupos[mesAno][dia] = [];
+                
+                grupos[mesAno][dia].push({ ...log, idxVirtual: index });
+            });
+
+            let html = '';
+            for (const [mesAno, dias] of Object.entries(grupos)) {
+                html += `
+                <div class="mb-4">
+                    <div class="text-[10px] text-cyan-400 font-bold uppercase tracking-widest mb-2 border-b border-slate-800 pb-1 flex items-center gap-2">
+                        <i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Arquivo Mensal: ${mesAno}
+                    </div>
+                    <div class="space-y-3 pl-2">
+                `;
+                
+                for (const [dia, logs] of Object.entries(dias)) {
+                    html += `
+                        <div>
+                            <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                                <i data-lucide="calendar" class="w-3 h-3 text-indigo-400"></i> Dia ${dia}
+                            </div>
+                            <div class="space-y-1.5 pl-3 border-l border-slate-800">
+                    `;
+                    
+                    logs.forEach(log => {
+                        const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
+                        html += `
+                                <div onclick="abrirVisualizadorForenseAdmin(${log.idxVirtual})" class="bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition">
+                                            <i data-lucide="scan-face" class="w-3.5 h-3.5"></i>
+                                        </div>
+                                        <div class="font-mono text-[9px]">
+                                            <p class="text-slate-300 font-bold">Sessão #${log.index}</p>
+                                            <p class="text-slate-500">Hora: ${horaRegistro}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-emerald-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <i data-lucide="eye" class="w-3 h-3"></i>
+                                    </div>
+                                </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `</div></div>`;
+            }
+            lista.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function abrirVisualizadorForenseAdmin(idx) {
+            const visor = document.getElementById('visualizador-forense-sala');
+            const log = (logsAuditoria.clientes[tmeClienteKey] || [])[idx];
+            if (!log) return;
+
+            const imgElement = log.foto 
+                ? `<img src="${log.foto}" class="max-w-full max-h-44 object-cover rounded border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.15)] mb-3">` 
+                : `<div class="w-full h-40 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-3">CÂMERA BLOQUEADA</div>`;
+
+            visor.innerHTML = `
+                ${imgElement}
+                <div class="font-mono text-[9px] text-left w-full bg-black/60 p-2.5 rounded border border-slate-800 space-y-1.5">
+                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1">
+                        <span class="text-slate-500">Nó / Caixa:</span> 
+                        <span class="text-cyan-400 font-bold">#${tmeClienteKey}</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1">
+                        <span class="text-slate-500">Data de Entrada:</span> 
+                        <span class="text-slate-300">${log.dataHora}</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block mb-0.5">Hash de Cadeia (SHA-256):</span>
+                        <div class="text-[8px] text-emerald-400 break-all bg-emerald-500/10 p-1.5 rounded border border-emerald-500/20">${log.hash || 'Sessão Legada'}</div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
         }
         
         function gerarCardLogHTML(log, caixaId, tipoCaixa, index) {
@@ -2378,20 +2467,107 @@
 
         // Sobrescrevemos renderizarAuditoriaMaster para focar na "Sala" aberta
         function renderizarAuditoriaMaster() {
-            const grid = document.getElementById('grid-auditoria-sala');
-            if (!grid) return;
+            const lista = document.getElementById('lista-auditoria-sala');
+            if (!lista) return;
             
             const logsCliente = logsAuditoria.clientes[tmeClienteKey] || [];
+            
             if (logsCliente.length === 0) {
-                grid.innerHTML = `<div class="text-slate-600 text-[10px] font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-full text-center">Nenhum registro biométrico nesta caixa.</div>`;
+                lista.innerHTML = `<div class="text-slate-600 text-[10px] font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Nenhum registro biométrico nesta caixa.</div>`;
                 return;
             }
             
-            let html = '';
+            // Agrupamento hierárquico: Mês/Ano > Dia
+            const grupos = {};
             logsCliente.forEach((log, index) => {
-                html += gerarCardLogHTML(log, tmeClienteKey, 'cliente', index);
+                const dataStr = log.dataHora.split(',')[0].trim();
+                const partes = dataStr.split('/');
+                const dia = partes.length >= 3 ? partes[0] : 'Extra';
+                const mesAno = partes.length >= 3 ? `${partes[1]}/${partes[2]}` : 'Lote Especial';
+                
+                if (!grupos[mesAno]) grupos[mesAno] = {};
+                if (!grupos[mesAno][dia]) grupos[mesAno][dia] = [];
+                
+                grupos[mesAno][dia].push({ ...log, idxVirtual: index });
             });
-            grid.innerHTML = html;
+
+            let html = '';
+            for (const [mesAno, dias] of Object.entries(grupos)) {
+                html += `
+                <div class="mb-4">
+                    <div class="text-[10px] text-cyan-400 font-bold uppercase tracking-widest mb-2 border-b border-slate-800 pb-1 flex items-center gap-2">
+                        <i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Arquivo Mensal: ${mesAno}
+                    </div>
+                    <div class="space-y-3 pl-2">
+                `;
+                
+                for (const [dia, logs] of Object.entries(dias)) {
+                    html += `
+                        <div>
+                            <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                                <i data-lucide="calendar" class="w-3 h-3 text-indigo-400"></i> Dia ${dia}
+                            </div>
+                            <div class="space-y-1.5 pl-3 border-l border-slate-800">
+                    `;
+                    
+                    logs.forEach(log => {
+                        const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
+                        html += `
+                                <div onclick="abrirVisualizadorForenseAdmin(${log.idxVirtual})" class="bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition">
+                                            <i data-lucide="scan-face" class="w-3.5 h-3.5"></i>
+                                        </div>
+                                        <div class="font-mono text-[9px]">
+                                            <p class="text-slate-300 font-bold">Sessão #${log.index}</p>
+                                            <p class="text-slate-500">Hora: ${horaRegistro}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-emerald-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <i data-lucide="eye" class="w-3 h-3"></i>
+                                    </div>
+                                </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `</div></div>`;
+            }
+            lista.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function abrirVisualizadorForenseAdmin(idx) {
+            const visor = document.getElementById('visualizador-forense-sala');
+            const log = (logsAuditoria.clientes[tmeClienteKey] || [])[idx];
+            if (!log) return;
+
+            const imgElement = log.foto 
+                ? `<img src="${log.foto}" class="max-w-full max-h-44 object-cover rounded border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.15)] mb-3">` 
+                : `<div class="w-full h-40 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-3">CÂMERA BLOQUEADA</div>`;
+
+            visor.innerHTML = `
+                ${imgElement}
+                <div class="font-mono text-[9px] text-left w-full bg-black/60 p-2.5 rounded border border-slate-800 space-y-1.5">
+                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1">
+                        <span class="text-slate-500">Nó / Caixa:</span> 
+                        <span class="text-cyan-400 font-bold">#${tmeClienteKey}</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1">
+                        <span class="text-slate-500">Data de Entrada:</span> 
+                        <span class="text-slate-300">${log.dataHora}</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block mb-0.5">Hash de Cadeia (SHA-256):</span>
+                        <div class="text-[8px] text-emerald-400 break-all bg-emerald-500/10 p-1.5 rounded border border-emerald-500/20">${log.hash || 'Sessão Legada'}</div>
+                    </div>
+                </div>
+            `;
             lucide.createIcons();
         }
 
