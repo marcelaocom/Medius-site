@@ -596,6 +596,12 @@
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Controle da Malha (Geral)</span>
                         </div>
                     </button>
+                    <button onclick="mudarSecaoAdmin('malha-clientes')" id="btn-adm-malha-clientes" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="network" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Malha de Clientes</span>
+                        </div>
+                    </button>
                     <button onclick="mudarSecaoAdmin('gestao-nos')" id="btn-adm-gestao-nos" class="menu-item w-full hidden">
                         <div>
                             <i data-lucide="folder-key" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
@@ -748,7 +754,7 @@
                     </div>
                 </div>
 
-                <div id="mod-visao-geral" class="dash-module space-y-6">
+<div id="mod-visao-geral" class="dash-module space-y-6">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                         <div class="cyber-card">
                             <div>
@@ -803,16 +809,6 @@
                         </div>
                     </div>
 
-                    <div class="mt-8 mb-4">
-                        <h3 class="font-mono text-sm neon-divider flex items-center justify-between pb-2" style="color: var(--accent-color);">
-                            <span class="flex items-center gap-2 uppercase tracking-wide font-bold"><i data-lucide="layout-grid" class="w-4 h-4"></i> Área de Clientes (Malha Ativa)</span>
-                            <span class="text-[10px] text-slate-400 font-mono bg-slate-900 px-3 py-1 rounded border border-slate-800" id="contador-clientes-cards">0 Clientes Registrados</span>
-                        </h3>
-                        <div id="grid-clientes-admin" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
-                            <!-- Cards Inteligentes Injetados via JS -->
-                        </div>
-                    </div>
-
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div id="term-secops" class="cyber-card font-mono text-xs">
                             <div>
@@ -844,7 +840,18 @@
                     </div>
                 </div>
 
-                <!-- MÓDULO WHITE LABEL (AGORA ENCAPSULANDO TUDO CORRETAMENTE) -->
+                <!-- NOVO MÓDULO: MALHA DE CLIENTES -->
+                <div id="mod-malha-clientes" class="dash-module hidden space-y-6">
+                    <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
+                        <span><i data-lucide="network" class="w-4 h-4 inline mr-2"></i> Malha de Clientes Ativos</span>
+                        <span class="text-xs text-slate-400 bg-slate-900 px-2 py-1 rounded border border-slate-800" id="contador-clientes-cards">0 Clientes Registrados</span>
+                    </h3>
+                    <div id="grid-clientes-admin" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <!-- Cards renderizados via JS -->
+                    </div>
+                </div>
+
+                <!-- MÓDULO WHITE LABEL -->
                 <div id="mod-whitelabel" class="dash-module hidden space-y-6">
                     
                     <div class="cyber-card">
@@ -2317,6 +2324,10 @@
             if (secao === 'visao-geral') {
                 document.getElementById('mod-visao-geral').classList.remove('hidden');
                 document.getElementById('btn-adm-gestao-nos').classList.add('hidden'); 
+            } else if (secao === 'malha-clientes') {
+                document.getElementById('mod-malha-clientes').classList.remove('hidden');
+                document.getElementById('btn-adm-gestao-nos').classList.add('hidden');
+                renderizarTabelaAdmin(); 
             } else if (secao === 'sessoes') {
                 document.getElementById('mod-sessoes').classList.remove('hidden');
                 document.getElementById('btn-adm-gestao-nos').classList.add('hidden');
