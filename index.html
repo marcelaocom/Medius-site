@@ -2556,6 +2556,9 @@
             } else if (secao === 'financeiro') {
                 document.getElementById('mod-financeiro').classList.remove('hidden');
                 renderizarFinanceiroAdmin();
+            } else if (secao === 'auditoria-root') {
+                document.getElementById('mod-auditoria-root').classList.remove('hidden');
+                renderizarAuditoriaQGMaster();
             } else if (secao === 'camaleao') {
                 alert("Módulo Camaleão Ativo via Atalho (UI Inject liberada)");
             }
@@ -2870,6 +2873,7 @@
             const btnMap = {
                 'visao-geral': 'btn-cli-visao',
                 'dominios': 'btn-cli-dominios',
+                'equipe': 'btn-cli-equipe',
                 'auditoria': 'btn-cli-auditoria',
                 'forense': 'btn-cli-forense',
                 'contrato': 'btn-cli-contrato',
@@ -2888,6 +2892,10 @@
             } else {
                 tabsBar.classList.add('hidden');
                 if (secao === 'dominios') document.getElementById('cli-sec-dominios').classList.remove('hidden');
+                if (secao === 'equipe') {
+                    document.getElementById('cli-sec-equipe').classList.remove('hidden');
+                    if (typeof renderizarEquipeCliente === 'function') renderizarEquipeCliente();
+                }
                 if (secao === 'auditoria') document.getElementById('cli-sec-auditoria').classList.remove('hidden');
                 if (secao === 'forense') {
                     document.getElementById('cli-sec-forense').classList.remove('hidden');
