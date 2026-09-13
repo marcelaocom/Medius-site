@@ -2553,10 +2553,11 @@
                 document.getElementById('mod-operadores').classList.remove('hidden');
                 renderizarTabelaOperadores();
                 renderizarAuditoriaQGMaster(); // Carrega o cofre forense do Gênesis
-            } else if (secao === 'financeiro') {
-                document.getElementById('mod-financeiro').classList.remove('hidden');
-                renderizarFinanceiroAdmin();
-            } else if (secao === 'auditoria-root') {
+           } else if (secao === 'financeiro') {
+    const modFin = document.getElementById('mod-financeiro');
+    if (modFin) modFin.classList.remove('hidden');
+    if (typeof renderizarFinanceiroAdmin === 'function') renderizarFinanceiroAdmin();
+} else if (secao === 'auditoria-root') {
                 const j = prompt("⚠️ Informe a justificativa de Compliance:");
                 if (!j) return mudarSecaoAdmin('visao-geral');
                 document.getElementById('mod-auditoria-root').classList.remove('hidden');
