@@ -1657,6 +1657,7 @@
             const lista = document.getElementById('lista-auditoria-sala');
             if (!lista) return;
             
+            if (!tmeClienteKey) return; // Trava de segurança
             const logsCliente = logsAuditoria.clientes[tmeClienteKey] || [];
             
             if (logsCliente.length === 0) {
@@ -1700,7 +1701,7 @@
                     logs.forEach(log => {
                         const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
                         html += `
-                                <div onclick="abrirVisualizadorForenseAdmin(${log.idxVirtual})" class="bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
+                                <div onclick="abrirVisualizadorForenseAdmin('${tmeClienteKey}', ${log.idxVirtual})" class="bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
                                     <div class="flex items-center gap-2.5">
                                         <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition">
                                             <i data-lucide="scan-face" class="w-3.5 h-3.5"></i>
@@ -1726,13 +1727,19 @@
                 html += `</div></div>`;
             }
             lista.innerHTML = html;
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
         }
 
-        function abrirVisualizadorForenseAdmin(idx) {
+        // Função global blindada passando a chave explicitamente
+        window.abrirVisualizadorForenseAdmin = function(cliKey, idx) {
             const visor = document.getElementById('visualizador-forense-sala');
-            const log = (logsAuditoria.clientes[tmeClienteKey] || [])[idx];
-            if (!log) return;
+            if (!visor) return;
+            
+            const log = (logsAuditoria.clientes[cliKey] || [])[idx];
+            if (!log) {
+                visor.innerHTML = '<p class="text-red-400 text-xs font-mono">Erro SecOps: Registro não localizado na partição.</p>';
+                return;
+            }
 
             const imgElement = log.foto 
                 ? `<img src="${log.foto}" class="max-w-full max-h-44 object-cover rounded border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.15)] mb-3">` 
@@ -1743,7 +1750,7 @@
                 <div class="font-mono text-[9px] text-left w-full bg-black/60 p-2.5 rounded border border-slate-800 space-y-1.5">
                     <div class="flex justify-between items-center border-b border-slate-700/60 pb-1">
                         <span class="text-slate-500">Nó / Caixa:</span> 
-                        <span class="text-cyan-400 font-bold">#${tmeClienteKey}</span>
+                        <span class="text-cyan-400 font-bold">#${cliKey}</span>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-700/60 pb-1">
                         <span class="text-slate-500">Data de Entrada:</span> 
@@ -1755,8 +1762,8 @@
                     </div>
                 </div>
             `;
-            lucide.createIcons();
-        }
+            if(window.lucide) lucide.createIcons();
+        };
         
         function gerarCardLogHTML(log, caixaId, tipoCaixa, index) {
             const imgElement = log.foto 
@@ -2470,6 +2477,7 @@
             const lista = document.getElementById('lista-auditoria-sala');
             if (!lista) return;
             
+            if (!tmeClienteKey) return; // Trava de segurança
             const logsCliente = logsAuditoria.clientes[tmeClienteKey] || [];
             
             if (logsCliente.length === 0) {
@@ -2513,7 +2521,7 @@
                     logs.forEach(log => {
                         const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
                         html += `
-                                <div onclick="abrirVisualizadorForenseAdmin(${log.idxVirtual})" class="bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
+                                <div onclick="abrirVisualizadorForenseAdmin('${tmeClienteKey}', ${log.idxVirtual})" class="bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
                                     <div class="flex items-center gap-2.5">
                                         <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition">
                                             <i data-lucide="scan-face" class="w-3.5 h-3.5"></i>
@@ -2539,13 +2547,19 @@
                 html += `</div></div>`;
             }
             lista.innerHTML = html;
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
         }
 
-        function abrirVisualizadorForenseAdmin(idx) {
+        // Função global blindada passando a chave explicitamente
+        window.abrirVisualizadorForenseAdmin = function(cliKey, idx) {
             const visor = document.getElementById('visualizador-forense-sala');
-            const log = (logsAuditoria.clientes[tmeClienteKey] || [])[idx];
-            if (!log) return;
+            if (!visor) return;
+            
+            const log = (logsAuditoria.clientes[cliKey] || [])[idx];
+            if (!log) {
+                visor.innerHTML = '<p class="text-red-400 text-xs font-mono">Erro SecOps: Registro não localizado na partição.</p>';
+                return;
+            }
 
             const imgElement = log.foto 
                 ? `<img src="${log.foto}" class="max-w-full max-h-44 object-cover rounded border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.15)] mb-3">` 
@@ -2556,7 +2570,7 @@
                 <div class="font-mono text-[9px] text-left w-full bg-black/60 p-2.5 rounded border border-slate-800 space-y-1.5">
                     <div class="flex justify-between items-center border-b border-slate-700/60 pb-1">
                         <span class="text-slate-500">Nó / Caixa:</span> 
-                        <span class="text-cyan-400 font-bold">#${tmeClienteKey}</span>
+                        <span class="text-cyan-400 font-bold">#${cliKey}</span>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-700/60 pb-1">
                         <span class="text-slate-500">Data de Entrada:</span> 
@@ -2568,8 +2582,8 @@
                     </div>
                 </div>
             `;
-            lucide.createIcons();
-        }
+            if(window.lucide) lucide.createIcons();
+        };
 
         function toggleSidebarAdmin() {
             document.getElementById('sidebar-admin').classList.toggle('recolhido');
