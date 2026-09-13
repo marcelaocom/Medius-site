@@ -2557,6 +2557,8 @@
                 document.getElementById('mod-financeiro').classList.remove('hidden');
                 renderizarFinanceiroAdmin();
             } else if (secao === 'auditoria-root') {
+                const j = prompt("⚠️ Informe a justificativa de Compliance:");
+                if (!j) return mudarSecaoAdmin('visao-geral');
                 document.getElementById('mod-auditoria-root').classList.remove('hidden');
                 renderizarAuditoriaQGMaster();
             } else if (secao === 'camaleao') {
