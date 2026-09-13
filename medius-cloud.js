@@ -59,130 +59,227 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// MOTOR DE RELATÓRIOS OFICIAIS (PDF)
+// MOTOR DE RELATÓRIOS OFICIAIS (O CÉREBRO UNIVERSAL)
 // ==========================================
 window.gerarRelatorioOficial = function(painel, setor, clienteKey = null) {
-    // 1. Coleta de Metadados (O DNA do Relatório)
     const dataHora = new Date().toLocaleString('pt-BR');
     let nomeAlvo = "QG Gênesis Master";
     let dominiosAlvo = "Todos os nós ativos da malha";
-    let conteudoTabela = "";
+    let conteudoHTML = "";
 
-    // 2. Ajusta Metadados dinâmicos baseados no Supabase (databaseClientes)
+    // 1. DEDUÇÃO DO ALVO
     if (setor === 'Auditoria Forense - Root') {
         nomeAlvo = "QG Gênesis Master (Acesso Root)";
         dominiosAlvo = "Controle Central Administrativo";
-    } else if (clienteKey && typeof databaseClientes !== 'undefined' && databaseClientes[clienteKey]) {
-        // Geração via Painel ADM olhando um Cliente
+    } else if (clienteKey && databaseClientes[clienteKey]) {
         const c = databaseClientes[clienteKey];
         nomeAlvo = `${c.nome} (ID: #${clienteKey})`;
-        dominiosAlvo = c.sites && c.sites.length > 0 ? c.sites.map(s => s.dominio).join(', ') : 'Nenhum domínio registrado';
+        dominiosAlvo = c.sites ? c.sites.map(s => s.dominio).join(', ') : 'Nenhum domínio';
     } else if (painel === 'CLIENTE' && typeof clienteLogadoKey !== 'undefined') {
-        // Geração via Painel do Próprio Cliente
         const c = databaseClientes[clienteLogadoKey];
-        nomeAlvo = c ? `${c.nome} (ID: #${clienteLogadoKey})` : `Operação Cliente (ID: #${clienteLogadoKey})`;
-        dominiosAlvo = c && c.sites && c.sites.length > 0 ? c.sites.map(s => s.dominio).join(', ') : 'Nenhum domínio registrado';
+        nomeAlvo = c ? `${c.nome} (ID: #${clienteLogadoKey})` : `Operação Cliente`;
+        dominiosAlvo = c && c.sites ? c.sites.map(s => s.dominio).join(', ') : 'Nenhum domínio';
     }
 
-    // 3. Monta o conteúdo com base no Setor da Malha
-    if (setor === 'Auditoria Forense' || setor === 'Auditoria Forense - Root') {
+    // 2. CONSTRUÇÃO DO CONTEÚDO POR SETOR CIRÚRGICO
+    if (setor === 'Visão Geral' && painel === 'ADM') {
+        const clientesGerais = Object.keys(databaseClientes).map(k => ({ id: k, ...databaseClientes[k] }));
+        conteudoHTML = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+                        <th style="padding: 10px;">ID Cliente</th>
+                        <th style="padding: 10px;">Empresa</th>
+                        <th style="padding: 10px;">Status da Malha</th>
+                        <th style="padding: 10px;">Vencimento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${clientesGerais.map(c => `
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 10px; font-weight: bold; color: #0369a1;">#${c.id}</td>
+                            <td style="padding: 10px;">${c.nome}</td>
+                            <td style="padding: 10px; font-weight: bold; color: ${c.ativo ? '#15803d' : '#dc2626'};">${c.status}</td>
+                            <td style="padding: 10px;">${c.expires_at}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum cliente registrado.</td></tr>'}
+                </tbody>
+            </table>`;
+    } 
+    else if (setor === 'Malha de Clientes') {
+        const clientesGerais = Object.keys(databaseClientes).map(k => ({ id: k, ...databaseClientes[k] }));
+        conteudoHTML = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+                        <th style="padding: 10px;">Cliente / Nó</th>
+                        <th style="padding: 10px;">Domínio Principal</th>
+                        <th style="padding: 10px;">Status Financeiro</th>
+                        <th style="padding: 10px;">Mensalidade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${clientesGerais.map(c => `
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 10px; font-weight: bold;">${c.nome}</td>
+                            <td style="padding: 10px;">${c.sites && c.sites[0] ? c.sites[0].dominio : 'N/A'}</td>
+                            <td style="padding: 10px; font-weight: bold; color: ${c.faturamento && c.faturamento.statusPagamento === 'PAGO' ? '#10b981' : '#ef4444'};">${c.faturamento ? c.faturamento.statusPagamento : 'N/A'}</td>
+                            <td style="padding: 10px;">${c.faturamento ? c.faturamento.valorMensal : 'R$ 0,00'}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum cliente registrado.</td></tr>'}
+                </tbody>
+            </table>`;
+    }
+    else if (setor === 'Radar de Sessões') {
+        const sessoes = JSON.parse(localStorage.getItem('medius_sessoes_ativas') || '[]');
+        conteudoHTML = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+                        <th style="padding: 10px;">Usuário / Nó</th>
+                        <th style="padding: 10px;">IP Rastreado</th>
+                        <th style="padding: 10px;">Dispositivo (OS)</th>
+                        <th style="padding: 10px;">Entrada (Hora)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${sessoes.map(s => `
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 10px; font-weight: bold; color: #0369a1;">${s.usuario}</td>
+                            <td style="padding: 10px;">${s.ip}</td>
+                            <td style="padding: 10px;">${s.dispositivo}</td>
+                            <td style="padding: 10px;">${s.entrada}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhuma sessão ativa.</td></tr>'}
+                </tbody>
+            </table>`;
+    }
+    else if (setor === 'Telemetria de Erros') {
+        const erros = JSON.parse(localStorage.getItem('medius_telemetria_logs') || '[]');
+        conteudoHTML = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+                        <th style="padding: 10px;">Horário</th>
+                        <th style="padding: 10px;">Tipo</th>
+                        <th style="padding: 10px;">Nó de Origem</th>
+                        <th style="padding: 10px;">Mensagem de Falha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${erros.map(e => `
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 10px;">${e.timestamp}</td>
+                            <td style="padding: 10px; font-weight: bold; color: #dc2626;">${e.tipo}</td>
+                            <td style="padding: 10px;">#${e.origem}</td>
+                            <td style="padding: 10px;">${e.mensagem}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum log de erro detectado.</td></tr>'}
+                </tbody>
+            </table>`;
+    }
+    else if (setor === 'QG Financeiro') {
+        const fin = typeof calcularFinanceiroGeral === 'function' ? calcularFinanceiroGeral() : { mrr: 0, custos: 0, lucro: 0 };
+        const fmt = val => val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+        conteudoHTML = `
+            <div style="display: flex; gap: 20px; margin-top: 20px;">
+                <div style="flex: 1; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center; background: #f8fafc;">
+                    <span style="display: block; font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase;">Faturamento Total (MRR)</span>
+                    <span style="display: block; font-size: 24px; font-weight: bold; color: #10b981; margin-top: 10px;">${fmt(fin.mrr)}</span>
+                </div>
+                <div style="flex: 1; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center; background: #fef2f2;">
+                    <span style="display: block; font-size: 10px; font-weight: bold; color: #ef4444; text-transform: uppercase;">Custos de Operação (AWS/Taxas)</span>
+                    <span style="display: block; font-size: 24px; font-weight: bold; color: #ef4444; margin-top: 10px;">${fmt(fin.custos)}</span>
+                </div>
+                <div style="flex: 1; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center; background: #f0f9ff;">
+                    <span style="display: block; font-size: 10px; font-weight: bold; color: #0284c7; text-transform: uppercase;">Lucro Líquido Medius</span>
+                    <span style="display: block; font-size: 24px; font-weight: bold; color: #0284c7; margin-top: 10px;">${fmt(fin.lucro)}</span>
+                </div>
+            </div>`;
+    }
+    else if (setor === 'Visão Geral' && painel === 'CLIENTE') {
+        const c = databaseClientes[clienteLogadoKey];
+        const sites = c ? c.sites : [];
+        conteudoHTML = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+                        <th style="padding: 10px;">Domínio Blindado</th>
+                        <th style="padding: 10px;">Uptime (SLA)</th>
+                        <th style="padding: 10px;">Latência (Ping)</th>
+                        <th style="padding: 10px;">Status de Integridade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${sites.map(s => `
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 10px; font-weight: bold; color: #0369a1;">${s.dominio}</td>
+                            <td style="padding: 10px; font-weight: bold; color: #15803d;">${s.uptime}</td>
+                            <td style="padding: 10px;">${s.ping}</td>
+                            <td style="padding: 10px;">${s.descSaude}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum domínio vinculado.</td></tr>'}
+                </tbody>
+            </table>`;
+    }
+    else if (setor === 'Auditoria Forense' || setor === 'Auditoria Forense - Root') {
         let logs = [];
-        
-        // Define de qual gaveta puxar os dados biométricos
-        if (setor === 'Auditoria Forense - Root') {
-            logs = typeof logsAuditoria !== 'undefined' ? (logsAuditoria.admin || []) : [];
-        } else if (painel === 'ADM' && clienteKey) {
-            logs = typeof logsAuditoria !== 'undefined' ? (logsAuditoria.clientes[clienteKey] || []) : [];
-        } else if (painel === 'CLIENTE' && typeof clienteLogadoKey !== 'undefined') {
-            logs = typeof logsAuditoria !== 'undefined' ? (logsAuditoria.clientes[clienteLogadoKey] || []) : [];
-        }
+        if (setor === 'Auditoria Forense - Root') logs = logsAuditoria.admin || [];
+        else if (painel === 'ADM' && clienteKey) logs = logsAuditoria.clientes[clienteKey] || [];
+        else if (painel === 'CLIENTE') logs = logsAuditoria.clientes[clienteLogadoKey] || [];
 
-        conteudoTabela = `
+        conteudoHTML = `
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
                 <thead>
                     <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
                         <th style="padding: 10px;">Data / Hora</th>
                         <th style="padding: 10px;">ID Operador</th>
-                        <th style="padding: 10px;">Status</th>
-                        <th style="padding: 10px;">Hash de Integridade (SHA-256)</th>
+                        <th style="padding: 10px;">Status Biométrico</th>
+                        <th style="padding: 10px;">Cadeia de Custódia (SHA-256)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${logs.length > 0 ? logs.map(log => `
+                    ${logs.map(log => `
                         <tr style="border-bottom: 1px solid #e2e8f0;">
                             <td style="padding: 10px;">${log.dataHora}</td>
                             <td style="padding: 10px; font-weight: bold; color: #0369a1;">${log.id || 'N/A'}</td>
                             <td style="padding: 10px; color: #15803d;">Validado</td>
                             <td style="padding: 10px; word-break: break-all; color: #475569;">${log.hash || 'Legado'}</td>
                         </tr>
-                    `).join('') : '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum registro de acesso encontrado.</td></tr>'}
+                    `).join('') || '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum registro encontrado.</td></tr>'}
                 </tbody>
-            </table>
-        `;
-    } else if (setor === 'Visão Geral') {
-        // --- NOVO: LÓGICA PARA A VISÃO GERAL (MÉTRICAS E CLIENTES) ---
-        if (painel === 'ADM') {
-            // TABELA GERAL DO ADMINISTRADOR (Todos os clientes)
-            const clientesGerais = Object.keys(databaseClientes).map(k => ({ id: k, ...databaseClientes[k] }));
-            conteudoTabela = `
-                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
-                    <thead>
-                        <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
-                            <th style="padding: 10px;">ID Cliente</th>
-                            <th style="padding: 10px;">Empresa</th>
-                            <th style="padding: 10px;">Status do Contrato</th>
-                            <th style="padding: 10px;">Vencimento da Licença</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${clientesGerais.length > 0 ? clientesGerais.map(c => `
-                            <tr style="border-bottom: 1px solid #e2e8f0;">
-                                <td style="padding: 10px; font-weight: bold; color: #0369a1;">#${c.id}</td>
-                                <td style="padding: 10px;">${c.nome}</td>
-                                <td style="padding: 10px; font-weight: bold; color: ${c.ativo ? '#15803d' : '#dc2626'};">${c.status}</td>
-                                <td style="padding: 10px;">${c.expires_at}</td>
-                            </tr>
-                        `).join('') : '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum cliente registrado na malha.</td></tr>'}
-                    </tbody>
-                </table>
-            `;
-        } else if (painel === 'CLIENTE') {
-            // TABELA DE DESEMPENHO DO CLIENTE (Nós operacionais)
-            const sites = databaseClientes[clienteLogadoKey] ? databaseClientes[clienteLogadoKey].sites : [];
-            conteudoTabela = `
-                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
-                    <thead>
-                        <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
-                            <th style="padding: 10px;">Domínio Blindado</th>
-                            <th style="padding: 10px;">Uptime (SLA)</th>
-                            <th style="padding: 10px;">Latência (Ping)</th>
-                            <th style="padding: 10px;">Status de Integridade</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${sites.length > 0 ? sites.map(s => `
-                            <tr style="border-bottom: 1px solid #e2e8f0;">
-                                <td style="padding: 10px; font-weight: bold; color: #0369a1;">${s.dominio}</td>
-                                <td style="padding: 10px; font-weight: bold; color: #15803d;">${s.uptime}</td>
-                                <td style="padding: 10px;">${s.ping}</td>
-                                <td style="padding: 10px;">${s.descSaude}</td>
-                            </tr>
-                        `).join('') : '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum domínio operacional vinculado.</td></tr>'}
-                    </tbody>
-                </table>
-            `;
+            </table>`;
+    }
+    else if (setor === 'Contrato & Licença') {
+        const c = databaseClientes[clienteLogadoKey];
+        if(c) {
+            conteudoHTML = `
+                <div style="border: 2px solid #e2e8f0; padding: 40px; border-radius: 8px; text-align: center; margin-top: 30px;">
+                    <h2 style="color: #0f172a; text-transform: uppercase; font-size: 24px; margin-bottom: 10px;">Certificado de Blindagem Medius Core</h2>
+                    <p style="color: #64748b; font-size: 14px; margin-bottom: 30px;">Certificamos sob as diretrizes de SecOps que os domínios listados encontram-se sob monitoramento 24/7.</p>
+                    
+                    <div style="text-align: left; background: #f8fafc; padding: 20px; border-radius: 6px; margin-bottom: 30px;">
+                        <p style="margin-bottom: 10px;"><strong>Titular da Licença:</strong> ${c.nome}</p>
+                        <p style="margin-bottom: 10px;"><strong>Código da Operação:</strong> #${clienteLogadoKey}</p>
+                        <p style="margin-bottom: 10px;"><strong>Validade da Licença:</strong> ${c.expires_at}</p>
+                        <p><strong>Nível de Serviço Contratado:</strong> ENTERPRISE (Sincronia Total)</p>
+                    </div>
+                    
+                    <p style="font-size: 10px; color: #94a3b8; font-style: italic;">* Documento gerado criptograficamente com validação no painel administrador.</p>
+                </div>`;
+        } else {
+             conteudoHTML = `<p>Dados do contrato não encontrados.</p>`;
         }
     }
 
-    // 4. Constrói o Layout Corporativo Limpo para PDF (Enterprise Pattern)
-    const docTitle = setor === 'Visão Geral' ? 'Documento Oficial de Governança' : 'Extrato de Auditoria';
-
+    // 3. ESTRUTURA GLOBAL DO PDF
+    const docTitle = setor === 'Contrato & Licença' ? 'Certificado Oficial' : (setor === 'Visão Geral' ? 'Dossiê Executivo' : 'Extrato de Auditoria');
     const templateHtml = `
         <!DOCTYPE html>
         <html lang="pt-BR">
         <head>
             <meta charset="UTF-8">
-            <title>Relatório Oficial - ${setor}</title>
+            <title>Relatório - ${setor}</title>
             <style>
                 body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; padding: 40px; margin: 0; background: #fff; }
                 .header { border-bottom: 3px solid #0f172a; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
@@ -226,7 +323,7 @@ window.gerarRelatorioOficial = function(painel, setor, clienteKey = null) {
 
             <div class="doc-title">${docTitle}</div>
             
-            ${conteudoTabela}
+            ${conteudoHTML}
 
             <div class="footer">
                 Documento gerado automaticamente pelo sistema de governança Medius Core Enterprise.<br>
@@ -240,13 +337,12 @@ window.gerarRelatorioOficial = function(painel, setor, clienteKey = null) {
         </html>
     `;
 
-    // 5. Executa a extração e lida com bloqueadores de Pop-ups
+    // 4. EXECUÇÃO
     const printWindow = window.open('', '_blank');
     if (printWindow) {
         printWindow.document.write(templateHtml);
         printWindow.document.close();
     } else {
-        console.warn("[SECOPS AVISO] Pop-up bloqueado pelo navegador.");
-        alert("Atenção, Comandante: O seu navegador bloqueou a abertura do PDF. Por favor, permita pop-ups para este site e tente novamente.");
+        alert("Atenção: Seu navegador bloqueou o PDF. Permita os Pop-ups e tente novamente.");
     }
 };
