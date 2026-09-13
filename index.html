@@ -3252,10 +3252,12 @@
         }
 
         // --- MOTOR FORENSE: QG MASTER (ROOT) ---
-        function renderizarAuditoriaQGMaster() {
+      function renderizarAuditoriaQGMaster() {
             const lista = document.getElementById('lista-auditoria-qg');
-            if (!lista) return;
-            
+            if (!lista) {
+                console.warn("[SECOPS] Container #lista-auditoria-qg não encontrado no DOM.");
+                return;
+            }
             const logsAdmin = logsAuditoria.admin || [];
             
             if (logsAdmin.length === 0) {
