@@ -664,12 +664,9 @@
                     <button onclick="simularAtaqueReal()" class="text-[10px] uppercase font-mono text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-500 px-3 py-1.5 rounded transition">
                         Simular Anomalia SecOps
                     </button>
-                    <button onclick="gerarRelatorioLimpo()" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded border border-slate-600 text-xs font-mono font-bold transition" title="Exportar Relatório Simples">
-                        <i data-lucide="file-down" class="w-3.5 h-3.5"></i> PDF
-                    </button>
-                    <button onclick="gerarRelatorioLote()" class="flex items-center gap-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 px-3 py-1.5 rounded border border-indigo-500/40 text-xs font-mono font-bold transition shadow-[0_0_8px_rgba(99,102,241,0.2)]" title="Exportar Dossiê da Malha Completa">
-                        <i data-lucide="layers" class="w-3.5 h-3.5"></i> Dossiê em Lote
-                    </button>
+                  <button onclick="gerarRelatorioOficial('ADM', 'Visão Geral')" class="flex items-center gap-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 px-3 py-1.5 rounded font-mono text-[10px] uppercase border border-cyan-500/30 transition">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Exportar Malha Geral (PDF)
+                        </button>
                 </div>
             </header>
 
@@ -702,9 +699,9 @@
                                     <select id="tme-select-site" onchange="aoTrocarSiteTME(this.value)" class="bg-transparent text-cyan-300 text-xs font-mono outline-none py-1 cursor-pointer"></select>
                                 </div>
                                 <div class="w-px h-8 bg-slate-800 hidden sm:block"></div>
-                                <button onclick="gerarRelatorioLimpo()" class="flex items-center gap-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 px-3 py-1.5 rounded border border-cyan-500/40 text-xs font-mono font-bold transition">
-                                    <i data-lucide="file-down" class="w-3.5 h-3.5"></i> Exportar PDF da Sala
-                                </button>
+                               <button onclick="gerarRelatorioOficial('ADM', 'Auditoria Forense', tmeClienteKey)" class="flex items-center gap-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 px-3 py-1.5 rounded font-mono text-[10px] uppercase border border-cyan-500/30 transition">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Exportar PDF da Sala
+                            </button>
                             </div>
                         </div>
                     </div>
@@ -1273,10 +1270,15 @@
 
                 <div id="cli-sec-dominios" class="client-module hidden space-y-6">
                     <div class="cyber-card">
-                        <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
-                            <span>Domínios e Projetos sob Cobertura da Licença</span>
-                            <span class="text-xs text-slate-400">Proteção Ativa</span>
-                        </h3>
+                        <div class="neon-divider flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 gap-4">
+                                <h3 class="font-mono text-sm flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4" style="color: var(--accent-color);">
+                                    <span>Domínios e Projetos sob Cobertura da Licença</span>
+                                    <span class="text-xs text-slate-400 hidden sm:inline-block">| Proteção Ativa</span>
+                                </h3>
+                                <button onclick="gerarRelatorioOficial('CLIENTE', 'Visão Geral')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded font-mono text-[10px] uppercase border border-slate-600 transition flex items-center justify-center gap-2 w-full sm:w-auto">
+                                    <i data-lucide="activity" class="w-3.5 h-3.5"></i> Exportar Dossiê
+                                </button>
+                            </div>
                         <table class="w-full text-left font-sans text-xs">
                             <thead>
                                 <tr class="text-slate-400 font-mono uppercase border-b border-slate-800 pb-2">
