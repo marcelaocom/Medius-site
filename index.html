@@ -473,36 +473,6 @@
             font-weight: bold;
             color: #334155;
         }
-
-        /* WIDGETS VIVOS (NOVO TERMINAL DE VARREDURA) */
-        .widget-vivo {
-            background: linear-gradient(180deg, rgba(5,11,20,0.9) 0%, rgba(3,6,16,0.95) 100%);
-            border: 1px solid rgba(0, 210, 255, 0.2);
-            border-radius: 8px;
-            padding: 16px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-        .widget-vivo:hover {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 20px var(--accent-glow-inset);
-            transform: translateY(-2px);
-        }
-        .widget-scanline {
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 2px;
-            background: var(--accent-color);
-            opacity: 0.5;
-            box-shadow: 0 0 10px var(--accent-color);
-            animation: scanline 3s linear infinite;
-        }
-        @keyframes scanline {
-            0% { top: -5%; opacity: 0; }
-            10% { opacity: 0.5; }
-            90% { opacity: 0.5; }
-            100% { top: 105%; opacity: 0; }
-        }
     </style>
 </head>
 <body>
@@ -624,12 +594,6 @@
                         <div>
                             <i data-lucide="layout-dashboard" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-300 font-medium">Controle da Malha (Geral)</span>
-                        </div>
-                    </button>
-                    <button onclick="mudarSecaoAdmin('terminal-varredura')" id="btn-adm-terminal-varredura" class="menu-item w-full" title="Ir para o Terminal de Varredura Tática">
-                        <div>
-                            <i data-lucide="crosshair" class="w-5 h-5 flex-shrink-0 text-cyan-400"></i> 
-                            <span class="menu-texto whitespace-nowrap overflow-hidden text-cyan-300 font-bold">Terminal de Varredura Tática</span>
                         </div>
                     </button>
                     <button onclick="mudarSecaoAdmin('gestao-nos')" id="btn-adm-gestao-nos" class="menu-item w-full hidden">
@@ -843,7 +807,7 @@
                         <div>
                             <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
                                 <span>Malha Geral de Contratos & Ativos</span>
-                                <span class="text-xs text-slate-400" id="label-qnt-clientes">Calculando...</span>
+                                <span class="text-xs text-slate-400">4 Clientes Registrados</span>
                             </h3>
                             <table class="w-full text-left font-sans text-xs">
                                 <thead>
@@ -941,6 +905,33 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="border-t border-slate-800 pt-6">
+                        <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Cadastro Dinâmico de Novos Nós (Clientes)</h3>
+                        <form onsubmit="cadastrarNovoCliente(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+                            <div>
+                                <label class="block text-slate-400 mb-1">ID / Token (ex: cliente-01):</label>
+                                <input type="text" id="novo-cli-id" required placeholder="ex: estudio-beta" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">Nome do Cliente / Empresa:</label>
+                                <input type="text" id="novo-cli-nome" required placeholder="ex: Beta Produções" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">Domínio Principal:</label>
+                                <input type="text" id="novo-cli-dominio" required placeholder="ex: betaprod.com.br" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">Data de Expiração da Licença:</label>
+                                <input type="date" id="novo-cli-exp" required class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                            </div>
+                            <div class="md:col-span-2">
+                                <button type="submit" class="w-full py-3 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold border border-cyan-500/40 transition flex items-center justify-center gap-2">
+                                    <i data-lucide="user-plus" class="w-4 h-4"></i> Registrar Novo Nó na Malha
+                                </button>
+                            </div>
+                       </form>
                     </div>
                 </div>
 
@@ -1064,21 +1055,6 @@
                     <div class="cyber-card">
                         <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Análise Contábil da Malha</h3>
                         <div id="chart-financeiro-admin" style="min-height: 250px;"></div>
-                    </div>
-                </div>
-
-                <!-- NOVO MÓDULO EXCLUSIVO: TERMINAL DE VARREDURA TÁTICA -->
-                <div id="mod-terminal-varredura" class="dash-module hidden space-y-6">
-                    <div class="cyber-card">
-                        <div>
-                            <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
-                                <span>Terminal de Varredura Tática (Widgets Vivos)</span>
-                                <span class="text-xs text-cyan-400 animate-pulse">● Telemetria Leve Ativa</span>
-                            </h3>
-                            <div id="grid-clientes-admin" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
-                                <!-- Injetado dinamicamente via JS -->
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -1512,6 +1488,60 @@
                 return otp.toString().padStart(6, '0');
             } catch (err) {
                 console.error("Erro no cálculo TOTP:", err);
+                return null;
+            }
+        }
+        // ==========================================
+        // MOTOR 2FA / TOTP (AUTENTICAÇÃO MULTIFATOR)
+        // ==========================================
+        function gerarChaveSecreta32() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let secret = '';
+            for (let i = 0; i < 16; i++) {
+                secret += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return secret;
+        }
+
+        function base32ToBuffer(base32) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let bits = '';
+            for (let i = 0; i < base32.length; i++) {
+                const valChar = chars.indexOf(base32.charAt(i).toUpperCase());
+                if (valChar === -1) continue;
+                bits += valChar.toString(2).padStart(5, '0');
+            }
+            const arr = [];
+            for (let i = 0; i + 8 <= bits.length; i += 8) {
+                arr.push(parseInt(bits.substr(i, 8), 2));
+            }
+            return new Uint8Array(arr);
+        }
+
+        async function validarCodigoTOTP(secretBase32, codigoDigitado) {
+            if (!secretBase32 || codigoDigitado.length !== 6) return false;
+            const epoch = Math.floor(Date.now() / 1000);
+            const counter = Math.floor(epoch / 30);
+            for (let i = -1; i <= 1; i++) {
+                const computedCode = await calcularHMACSHA1TOTP(secretBase32, counter + i);
+                if (computedCode === codigoDigitado) return true;
+            }
+            return false;
+        }
+
+        async function calcularHMACSHA1TOTP(secretBase32, counter) {
+            try {
+                const keyBuffer = base32ToBuffer(secretBase32);
+                const msgBuffer = new ArrayBuffer(8);
+                const view = new DataView(msgBuffer);
+                view.setUint32(4, counter, false);
+                const cryptoKey = await crypto.subtle.importKey("raw", keyBuffer, { name: "HMAC", hash: { name: "SHA-1" } }, false, ["sign"]);
+                const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgBuffer);
+                const hmacArray = new Uint8Array(signature);
+                const offset = hmacArray[hmacArray.length - 1] & 0x0f;
+                const binary = ((hmacArray[offset] & 0x7f) << 24) | ((hmacArray[offset + 1] & 0xff) << 16) | ((hmacArray[offset + 2] & 0xff) << 8) | (hmacArray[offset + 3] & 0xff);
+                return (binary % 1000000).toString().padStart(6, '0');
+            } catch (err) {
                 return null;
             }
         }
@@ -2034,11 +2064,7 @@
 
         function renderizarTabelaAdmin() {
             const tbody = document.getElementById('tabela-clientes-admin');
-            const grid = document.getElementById('grid-clientes-admin');
-            
-            if (tbody) tbody.innerHTML = '';
-            if (grid) grid.innerHTML = '';
-            
+            tbody.innerHTML = '';
             let ativos = 0, vencidos = 0;
 
             Object.keys(databaseClientes).forEach(key => {
@@ -2046,90 +2072,37 @@
                 if (c.ativo) ativos++; else vencidos++;
 
                 const dominios = c.sites.map(s => s.dominio).join(', ');
-                const statusColor = c.ativo ? 'text-emerald-400' : 'text-red-500';
-                const pulseColor = c.ativo ? 'bg-emerald-500' : 'bg-red-500';
-                const reqSimulada = Math.floor(Math.random() * (c.sites[0].trafegoMax - c.sites[0].trafegoMin + 1)) + c.sites[0].trafegoMin;
 
-                if (tbody) {
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-slate-800/40 transition">
-                            <td class="py-2.5 font-mono text-white font-medium">
-                                ${c.nome} <br><span class="text-slate-500 text-[10px]">#${key}</span>
-                            </td>
-                            <td class="py-2.5 text-slate-300 font-mono text-[11px] max-w-xs truncate" title="${dominios}">${dominios}</td>
-                            <td class="py-2.5 font-mono text-[10px]">
-                                <span class="text-slate-300">${c.faturamento ? c.faturamento.valorMensal : 'R$ 0,00'}</span><br>
-                                <span class="${c.faturamento && c.faturamento.statusPagamento === 'PAGO' ? 'text-emerald-400' : 'text-red-400 font-bold'}">${c.faturamento ? c.faturamento.statusPagamento : 'N/A'}</span>
-                            </td>
-                            <td class="py-2.5">
-                                <span class="px-2 py-0.5 text-[10px] border rounded ${c.ativo ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}">
-                                    ${c.status}
-                                </span>
-                            </td>
-                            <td class="py-2.5 font-mono text-slate-300 text-[11px]">${c.expires_at}</td>
-                            <td class="py-2.5 text-right font-mono flex justify-end gap-1">
-                                <button onclick="abrirSalaDoCliente('${key}')" class="text-cyan-400 hover:text-white bg-cyan-500/10 px-2 py-1.5 rounded border border-cyan-500/30 transition flex items-center gap-1 shadow-[0_0_5px_rgba(0,210,255,0.2)]" title="Inspecionar Sala">
-                                    <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
-                                </button>
-                                <button onclick="simularWebhookPagamento('${key}')" class="text-emerald-400 hover:text-white bg-emerald-500/10 px-2 py-1.5 rounded border border-emerald-500/30 transition shadow-[0_0_5px_rgba(16,185,129,0.2)]" title="Simular Pagamento da Fatura API">
-                                    <i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }
-
-                if (grid) {
-                    grid.innerHTML += `
-                        <div class="cyber-card p-4 relative overflow-hidden group">
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <h4 class="text-white font-bold font-mono text-sm uppercase tracking-wide truncate max-w-[150px]" title="${c.nome}">${c.nome}</h4>
-                                    <span class="text-slate-500 font-mono text-[10px]">#${key}</span>
-                                </div>
-                                <div class="flex items-center gap-1.5 bg-black/50 px-2 py-0.5 rounded border border-slate-800">
-                                    <span class="w-1.5 h-1.5 rounded-full ${pulseColor} animate-ping"></span>
-                                    <span class="${statusColor} text-[9px] font-bold tracking-wider">${c.ativo ? 'ONLINE' : 'OFFLINE'}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-1.5 mb-4 font-mono text-[11px]">
-                                <div class="flex justify-between border-b border-slate-800/80 pb-1">
-                                    <span class="text-slate-400">RPS Atual:</span>
-                                    <span class="text-cyan-400 font-bold telemetria-rps" data-min="${c.sites[0].trafegoMin}" data-max="${c.sites[0].trafegoMax}">${reqSimulada} req/s</span>
-                                </div>
-                                <div class="flex justify-between border-b border-slate-800/80 pb-1">
-                                    <span class="text-slate-400">Domínios:</span>
-                                    <span class="text-slate-300 truncate max-w-[120px]" title="${dominios}">${c.sites.length} vinculado(s)</span>
-                                </div>
-                                <div class="flex justify-between pb-1">
-                                    <span class="text-slate-400">Expiração:</span>
-                                    <span class="text-slate-300">${c.expires_at}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="flex gap-2 pt-2 border-t border-slate-800">
-                                <button onclick="abrirSalaDoCliente('${key}')" class="flex-1 text-cyan-400 hover:text-white bg-cyan-500/10 py-2 rounded border border-cyan-500/30 transition flex items-center justify-center gap-1.5 text-[10px] uppercase font-mono font-bold shadow-[0_0_8px_rgba(0,210,255,0.15)]" title="Inspecionar Sala">
-                                    <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> Inspecionar
-                                </button>
-                                <button onclick="simularWebhookPagamento('${key}')" class="text-emerald-400 hover:text-white bg-emerald-500/10 px-3 py-2 rounded border border-emerald-500/30 transition shadow-[0_0_8px_rgba(16,185,129,0.15)]" title="Simular Pagamento / Renovar">
-                                    <i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="py-2.5 font-mono text-white font-medium">
+                            ${c.nome} <br><span class="text-slate-500 text-[10px]">#${key}</span>
+                        </td>
+                        <td class="py-2.5 text-slate-300 font-mono text-[11px] max-w-xs truncate" title="${dominios}">${dominios}</td>
+                        <td class="py-2.5 font-mono text-[10px]">
+                            <span class="text-slate-300">${c.faturamento ? c.faturamento.valorMensal : 'R$ 0,00'}</span><br>
+                            <span class="${c.faturamento && c.faturamento.statusPagamento === 'PAGO' ? 'text-emerald-400' : 'text-red-400 font-bold'}">${c.faturamento ? c.faturamento.statusPagamento : 'N/A'}</span>
+                        </td>
+                        <td class="py-2.5">
+                            <span class="px-2 py-0.5 text-[10px] border rounded ${c.ativo ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}">
+                                ${c.status}
+                            </span>
+                        </td>
+                        <td class="py-2.5 font-mono text-slate-300 text-[11px]">${c.expires_at}</td>
+                        <td class="py-2.5 text-right font-mono flex justify-end gap-1">
+                            <button onclick="abrirSalaDoCliente('${key}')" class="text-cyan-400 hover:text-white bg-cyan-500/10 px-2 py-1.5 rounded border border-cyan-500/30 transition flex items-center gap-1 shadow-[0_0_5px_rgba(0,210,255,0.2)]" title="Inspecionar Sala">
+                                <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="simularWebhookPagamento('${key}')" class="text-emerald-400 hover:text-white bg-emerald-500/10 px-2 py-1.5 rounded border border-emerald-500/30 transition shadow-[0_0_5px_rgba(16,185,129,0.2)]" title="Simular Pagamento da Fatura API">
+                                <i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
             });
 
-            const lblAtivos = document.getElementById('count-ativos');
-            const lblVencidos = document.getElementById('count-vencidos');
-            const lblQnt = document.getElementById('label-qnt-clientes');
-            
-            if(lblAtivos) lblAtivos.innerText = ativos;
-            if(lblVencidos) lblVencidos.innerText = vencidos;
-            if(lblQnt) lblQnt.innerText = (ativos + vencidos) + ' Clientes Registrados';
-            
-            lucide.createIcons();
+            document.getElementById('count-ativos').innerText = ativos;
+            document.getElementById('count-vencidos').innerText = vencidos;
         }
 
         // ==========================================
@@ -2309,9 +2282,6 @@
 
             if (secao === 'visao-geral') {
                 document.getElementById('mod-visao-geral').classList.remove('hidden');
-                document.getElementById('btn-adm-gestao-nos').classList.add('hidden'); 
-            } else if (secao === 'terminal-varredura') {
-                document.getElementById('mod-terminal-varredura').classList.remove('hidden');
                 document.getElementById('btn-adm-gestao-nos').classList.add('hidden'); 
             } else if (secao === 'sessoes') {
                 document.getElementById('mod-sessoes').classList.remove('hidden');
@@ -2991,18 +2961,6 @@
             
             // Roda o motor de inadimplência no background
             motorInadimplenciaAutomatica();
-
-            // Loop Global de Telemetria Leve (Mantém Widgets Vivos)
-            setInterval(() => {
-                if (perfilLogado === 'admin' && !document.getElementById('mod-visao-geral').classList.contains('hidden')) {
-                    document.querySelectorAll('.telemetria-rps').forEach(el => {
-                        const min = parseInt(el.getAttribute('data-min'));
-                        const max = parseInt(el.getAttribute('data-max'));
-                        const val = Math.floor(Math.random() * (max - min + 1)) + min;
-                        el.innerText = val + " req/s";
-                    });
-                }
-            }, 2500);
 
             // Restaura as Caixas de Auditoria Forense
             const logsSalvos = localStorage.getItem('medius_logs_auditoria');
