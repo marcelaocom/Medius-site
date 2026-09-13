@@ -638,6 +638,13 @@
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Gestão de Equipe (RBAC)</span>
                         </div>
                     </button>
+                    <!-- NOVO: BOTÃO DE AUDITORIA FORENSE (RESTRITO C.O.) -->
+                    <button onclick="mudarSecaoAdmin('auditoria-root')" id="btn-adm-auditoria-root" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="scan-eye" class="w-5 h-5 flex-shrink-0 text-red-500"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-red-400/80 font-bold">Auditoria Forense</span>
+                        </div>
+                    </button>
                     <button onclick="mudarSecaoAdmin('financeiro')" id="btn-adm-financeiro" class="menu-item w-full">
                         <div>
                             <i data-lucide="wallet" class="w-5 h-5 flex-shrink-0 text-emerald-400"></i> 
@@ -1018,9 +1025,10 @@
                                 <div>
                                     <label class="block text-slate-400 mb-1">Nível de Acesso (RBAC):</label>
                                     <select id="op-nivel" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
-                                        <option value="SUPORTE">Suporte (Apenas Chamados)</option>
-                                        <option value="SECOPS">SecOps (Radar, Logs e Sessões)</option>
-                                        <option value="GERENTE">Gerente (Faturamento e Nós)</option>
+                                        <option value="MONITOR_TECH">Monitor Tech (Monitoramento/SecOps)</option>
+                                        <option value="FINANCE">Finance (Administrativo/Financeiro)</option>
+                                        <option value="SUPPORT_GUEST">Support Guest (Acesso Técnico Temporário)</option>
+                                        <option value="FORENSIC_ADMIN">Forensic Admin (Auditoria Especial & Compliance)</option>
                                     </select>
                                 </div>
                                 <button type="submit" class="w-full py-2.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold border border-cyan-500/40 transition">
@@ -1046,12 +1054,18 @@
                         </div>
                     </div>
 
-                    <!-- NOVO: AUDITORIA FORENSE GÊNESIS (QG MASTER) -->
-                    <div class="cyber-card mt-6 border-t border-slate-800 pt-6">
+                   <!-- MÓDULO EXCLUSIVO: AUDITORIA FORENSE (QG MASTER E CLIENTES) -->
+                <div id="mod-auditoria-root" class="dash-module hidden space-y-6">
+                    <div class="cyber-card border-t-2 border-red-500 pt-6 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
                         <div>
-                            <div class="neon-divider flex items-center gap-2">
-                                <i data-lucide="scan-eye" class="w-4 h-4 text-red-500"></i>
-                                <span class="text-white font-bold uppercase font-mono text-xs">Auditoria Forense (Acessos Root / QG Master)</span>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 neon-divider pb-2">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="scan-eye" class="w-4 h-4 text-red-500"></i>
+                                    <span class="text-white font-bold uppercase font-mono text-xs">Cofre de Auditoria Forense (Alta Sensibilidade)</span>
+                                </div>
+                                <button onclick="gerarRelatorioOficial('ADM', 'Auditoria Forense - Root')" class="mt-2 sm:mt-0 px-3 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-mono text-[10px] uppercase font-bold rounded border border-red-500/30 transition flex items-center justify-center gap-2">
+                                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Exportar PDF Root
+                                </button>
                             </div>
                             <div class="flex flex-col md:flex-row gap-6 pt-2">
                                 <div class="w-full md:w-1/2 max-h-[300px] overflow-y-auto pr-2" id="lista-auditoria-qg">
@@ -1059,8 +1073,8 @@
                                 </div>
                                 <div class="w-full md:w-1/2">
                                     <div class="bg-[#030610] border border-slate-800 rounded p-4 h-full min-h-[250px] flex flex-col items-center justify-center text-center sticky top-0" id="visualizador-forense-qg">
-                                        <i data-lucide="shield-alert" class="w-10 h-10 text-slate-700 mb-2 animate-pulse"></i>
-                                        <p class="text-slate-500 font-mono text-[10px]">Selecione um registro na árvore para inspecionar a biometria de quem acessou o Gênesis Master.</p>
+                                        <i data-lucide="shield-alert" class="w-10 h-10 text-red-500 mb-2 animate-pulse"></i>
+                                        <p class="text-slate-500 font-mono text-[10px]">Cofre restrito. Selecione um registro na árvore para inspecionar a biometria de quem acessou o sistema.</p>
                                     </div>
                                 </div>
                             </div>
@@ -1135,6 +1149,12 @@
                         <div>
                             <i data-lucide="globe" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
                             <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Meus Domínios</span>
+                        </div>
+                    </button>
+                    <button onclick="mudarSecaoCliente('equipe')" id="btn-cli-equipe" class="menu-item w-full">
+                        <div>
+                            <i data-lucide="users" class="w-5 h-5 flex-shrink-0" style="color: var(--accent-color)"></i> 
+                            <span class="menu-texto whitespace-nowrap overflow-hidden text-slate-400">Gestão de Equipe</span>
                         </div>
                     </button>
                     <button onclick="mudarSecaoCliente('auditoria')" id="btn-cli-auditoria" class="menu-item w-full">
@@ -1311,6 +1331,47 @@
                             <tbody id="client-domains-table-body" class="divide-y divide-slate-800/60 font-mono">
                                 </tbody>
                         </table>
+                    </div>
+                </div>
+                
+                <div id="cli-sec-equipe" class="client-module hidden space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="cyber-card md:col-span-1">
+                            <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);"><i data-lucide="user-plus" class="w-4 h-4"></i> Credenciar Operador</h3>
+                            <form onsubmit="cadastrarOperadorCliente(event)" class="space-y-4 font-mono text-xs">
+                                <div>
+                                    <label class="block text-slate-400 mb-1">Nome / ID do Operador:</label>
+                                    <input type="text" id="op-cli-id" required placeholder="ex: thiago-seo" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 mb-1">Domínio Alvo (Permissão):</label>
+                                    <select id="op-cli-site" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 mb-1">Validade (Expiração):</label>
+                                    <input type="datetime-local" id="op-cli-validade" required class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                                </div>
+                                <button type="submit" class="w-full py-2.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold border border-cyan-500/40 transition">
+                                    Emitir Acesso Restrito
+                                </button>
+                            </form>
+                        </div>
+                        <div class="cyber-card md:col-span-2">
+                            <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);"><i data-lucide="shield" class="w-4 h-4"></i> Equipe Ativa no Contrato</h3>
+                            <table class="w-full text-left font-sans text-xs">
+                                <thead>
+                                    <tr class="text-slate-400 font-mono uppercase border-b border-slate-800 pb-2">
+                                        <th class="py-2">Operador / Emissão</th>
+                                        <th class="py-2">Domínio Autorizado</th>
+                                        <th class="py-2">Validade Limite</th>
+                                        <th class="py-2 text-right">Ação Tática</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-operadores-cliente" class="divide-y divide-slate-800/60 font-mono">
+                                    <!-- Preenchido via JS -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
