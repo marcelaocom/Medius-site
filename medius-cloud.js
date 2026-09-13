@@ -119,9 +119,64 @@ window.gerarRelatorioOficial = function(painel, setor, clienteKey = null) {
                 </tbody>
             </table>
         `;
+    } else if (setor === 'Visão Geral') {
+        // --- NOVO: LÓGICA PARA A VISÃO GERAL (MÉTRICAS E CLIENTES) ---
+        if (painel === 'ADM') {
+            // TABELA GERAL DO ADMINISTRADOR (Todos os clientes)
+            const clientesGerais = Object.keys(databaseClientes).map(k => ({ id: k, ...databaseClientes[k] }));
+            conteudoTabela = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+                            <th style="padding: 10px;">ID Cliente</th>
+                            <th style="padding: 10px;">Empresa</th>
+                            <th style="padding: 10px;">Status do Contrato</th>
+                            <th style="padding: 10px;">Vencimento da Licença</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${clientesGerais.length > 0 ? clientesGerais.map(c => `
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 10px; font-weight: bold; color: #0369a1;">#${c.id}</td>
+                                <td style="padding: 10px;">${c.nome}</td>
+                                <td style="padding: 10px; font-weight: bold; color: ${c.ativo ? '#15803d' : '#dc2626'};">${c.status}</td>
+                                <td style="padding: 10px;">${c.expires_at}</td>
+                            </tr>
+                        `).join('') : '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum cliente registrado na malha.</td></tr>'}
+                    </tbody>
+                </table>
+            `;
+        } else if (painel === 'CLIENTE') {
+            // TABELA DE DESEMPENHO DO CLIENTE (Nós operacionais)
+            const sites = databaseClientes[clienteLogadoKey] ? databaseClientes[clienteLogadoKey].sites : [];
+            conteudoTabela = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+                            <th style="padding: 10px;">Domínio Blindado</th>
+                            <th style="padding: 10px;">Uptime (SLA)</th>
+                            <th style="padding: 10px;">Latência (Ping)</th>
+                            <th style="padding: 10px;">Status de Integridade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sites.length > 0 ? sites.map(s => `
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 10px; font-weight: bold; color: #0369a1;">${s.dominio}</td>
+                                <td style="padding: 10px; font-weight: bold; color: #15803d;">${s.uptime}</td>
+                                <td style="padding: 10px;">${s.ping}</td>
+                                <td style="padding: 10px;">${s.descSaude}</td>
+                            </tr>
+                        `).join('') : '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum domínio operacional vinculado.</td></tr>'}
+                    </tbody>
+                </table>
+            `;
+        }
     }
 
     // 4. Constrói o Layout Corporativo Limpo para PDF (Enterprise Pattern)
+    const docTitle = setor === 'Visão Geral' ? 'Documento Oficial de Governança' : 'Extrato de Auditoria';
+
     const templateHtml = `
         <!DOCTYPE html>
         <html lang="pt-BR">
@@ -169,7 +224,7 @@ window.gerarRelatorioOficial = function(painel, setor, clienteKey = null) {
                 </table>
             </div>
 
-            <div class="doc-title">Extrato de Auditoria</div>
+            <div class="doc-title">${docTitle}</div>
             
             ${conteudoTabela}
 
