@@ -849,9 +849,14 @@
 
                 <!-- NOVO MÓDULO: MALHA DE CLIENTES -->
                 <div id="mod-malha-clientes" class="dash-module hidden space-y-6">
-                    <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
+                    <h3 class="font-mono text-sm neon-divider flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="color: var(--accent-color);">
                         <span><i data-lucide="network" class="w-4 h-4 inline mr-2"></i> Malha de Clientes Ativos</span>
-                        <span class="text-xs text-slate-400 bg-slate-900 px-2 py-1 rounded border border-slate-800" id="contador-clientes-cards">0 Clientes Registrados</span>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-slate-400 bg-slate-900 px-2 py-1.5 rounded border border-slate-800" id="contador-clientes-cards">0 Clientes Registrados</span>
+                            <button onclick="gerarRelatorioOficial('ADM', 'Malha de Clientes')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-mono text-[10px] uppercase font-bold rounded border border-slate-600 transition flex items-center gap-2">
+                                <i data-lucide="file-text" class="w-3 h-3"></i> Exportar Lista (PDF)
+                            </button>
+                        </div>
                     </h3>
                     <div id="grid-clientes-admin" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         <!-- Cards renderizados via JS -->
@@ -952,9 +957,14 @@
 
                 <div id="mod-sessoes" class="dash-module hidden space-y-6">
                     <div class="cyber-card">
-                        <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
+                        <h3 class="font-mono text-sm neon-divider flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="color: var(--accent-color);">
                             <span class="flex items-center gap-2"><i data-lucide="radar" class="w-4 h-4"></i> Radar de Conexões Ativas (Kill Switch)</span>
-                            <span class="text-xs text-slate-400 bg-slate-900 px-2 py-1 rounded" id="contador-sessoes">0 Conectados</span>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs text-slate-400 bg-slate-900 px-2 py-1.5 rounded" id="contador-sessoes">0 Conectados</span>
+                                <button onclick="gerarRelatorioOficial('ADM', 'Radar de Sessões')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-mono text-[10px] uppercase font-bold rounded border border-slate-600 transition flex items-center gap-2">
+                                    <i data-lucide="file-text" class="w-3 h-3"></i> Dossiê de IP
+                                </button>
+                            </div>
                         </h3>
                         <table class="w-full text-left font-sans text-xs">
                             <thead>
@@ -976,9 +986,14 @@
                 <!-- MÓDULO DE TELEMETRIA -->
                 <div id="mod-telemetria" class="dash-module hidden space-y-6">
                     <div class="cyber-card">
-                        <h3 class="font-mono text-sm neon-divider flex items-center justify-between" style="color: var(--accent-color);">
+                        <h3 class="font-mono text-sm neon-divider flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="color: var(--accent-color);">
                             <span class="flex items-center gap-2"><i data-lucide="bug" class="w-4 h-4 text-amber-400"></i> Radar de Exceções & Bugs Frontend</span>
-                            <button onclick="simularErroTelemetria()" class="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded text-[10px] uppercase font-bold hover:bg-amber-500/30 transition">Forçar Erro de Teste</button>
+                            <div class="flex items-center gap-2">
+                                <button onclick="simularErroTelemetria()" class="px-3 py-1.5 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded text-[10px] uppercase font-bold hover:bg-amber-500/30 transition">Forçar Erro</button>
+                                <button onclick="gerarRelatorioOficial('ADM', 'Telemetria de Erros')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 rounded text-[10px] uppercase font-bold transition flex items-center gap-2">
+                                    <i data-lucide="file-text" class="w-3 h-3"></i> Logs (PDF)
+                                </button>
+                            </div>
                         </h3>
                         <div class="bg-black/50 p-4 rounded border border-slate-800 font-mono text-xs max-h-96 overflow-y-auto space-y-3" id="log-telemetria-container">
                             <!-- Preenchido por JS -->
@@ -1079,7 +1094,12 @@
                         </div>
                     </div>
                     <div class="cyber-card">
-                        <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Análise Contábil da Malha</h3>
+                        <div class="neon-divider flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-2">
+                            <h3 class="font-mono text-sm" style="color: var(--accent-color);">Análise Contábil da Malha</h3>
+                            <button onclick="gerarRelatorioOficial('ADM', 'QG Financeiro')" class="mt-2 sm:mt-0 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-mono text-[10px] uppercase font-bold rounded border border-emerald-500/30 transition flex items-center justify-center gap-2">
+                                <i data-lucide="file-text" class="w-3 h-3"></i> Extrato de Faturamento
+                            </button>
+                        </div>
                         <div id="chart-financeiro-admin" style="min-height: 250px;"></div>
                     </div>
                 </div>
@@ -1324,8 +1344,8 @@
                             <h3 class="font-mono text-sm text-cyan-400 flex items-center gap-2">
                                 <i data-lucide="eye" class="w-4 h-4"></i> Auditoria Forense (Registro Ocular)
                             </h3>
-                            <button onclick="window.print()" class="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded hover:bg-cyan-500/20 transition flex items-center gap-1">
-                                <i data-lucide="file-text" class="w-3 h-3"></i> Exportar
+                            <button onclick="gerarRelatorioOficial('CLIENTE', 'Auditoria Forense')" class="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded hover:bg-cyan-500/20 transition flex items-center gap-1 font-bold uppercase">
+                                <i data-lucide="file-text" class="w-3 h-3"></i> Exportar PDF Oficial
                             </button>
                         </div>
                         
@@ -1350,7 +1370,12 @@
 
                 <div id="cli-sec-contrato" class="client-module hidden space-y-6">
                     <div class="cyber-card">
-                        <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Informações Contratuais & Licenciamento</h3>
+                        <div class="neon-divider flex flex-col sm:flex-row sm:items-center justify-between pb-2 mb-4">
+                            <h3 class="font-mono text-sm" style="color: var(--accent-color);">Informações Contratuais & Licenciamento</h3>
+                            <button onclick="gerarRelatorioOficial('CLIENTE', 'Contrato & Licença')" class="mt-2 sm:mt-0 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-mono text-[10px] uppercase font-bold rounded border border-slate-600 transition flex items-center justify-center gap-2 w-max">
+                                <i data-lucide="file-check-2" class="w-3.5 h-3.5"></i> Emitir Recibo de Blindagem
+                            </button>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-mono">
                             <div class="bg-black/40 p-4 rounded border border-slate-800 space-y-2">
                                 <p><span class="text-slate-400">Titular da Licença:</span> <strong class="text-white" id="cli-contract-name">Marcelão Digital & Entertainment</strong></p>
