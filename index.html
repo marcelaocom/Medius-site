@@ -1033,27 +1033,6 @@
                             </table>
                         </div>
                     </div>
-
-                    <!-- NOVO: AUDITORIA FORENSE GÊNESIS (QG MASTER) -->
-                    <div class="cyber-card mt-6 border-t border-slate-800 pt-6">
-                        <div>
-                            <div class="neon-divider flex items-center gap-2">
-                                <i data-lucide="scan-eye" class="w-4 h-4 text-red-500"></i>
-                                <span class="text-white font-bold uppercase font-mono text-xs">Auditoria Forense (Acessos Root / QG Master)</span>
-                            </div>
-                            <div class="flex flex-col md:flex-row gap-6 pt-2">
-                                <div class="w-full md:w-1/2 max-h-[300px] overflow-y-auto pr-2" id="lista-auditoria-qg">
-                                    <!-- Árvore hierárquica injetada via JS -->
-                                </div>
-                                <div class="w-full md:w-1/2">
-                                    <div class="bg-[#030610] border border-slate-800 rounded p-4 h-full min-h-[250px] flex flex-col items-center justify-center text-center sticky top-0" id="visualizador-forense-qg">
-                                        <i data-lucide="shield-alert" class="w-10 h-10 text-slate-700 mb-2 animate-pulse"></i>
-                                        <p class="text-slate-500 font-mono text-[10px]">Selecione um registro na árvore para inspecionar a biometria de quem acessou o Gênesis Master.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- MÓDULO FINANCEIRO (QG MASTER) -->
@@ -2460,7 +2439,6 @@
             } else if (secao === 'operadores') {
                 document.getElementById('mod-operadores').classList.remove('hidden');
                 renderizarTabelaOperadores();
-                renderizarAuditoriaQGMaster(); // Carrega o cofre forense do Gênesis
             } else if (secao === 'financeiro') {
                 document.getElementById('mod-financeiro').classList.remove('hidden');
                 renderizarFinanceiroAdmin();
@@ -3140,109 +3118,6 @@
                 renderizarTabelaOperadores();
             }
         }
-
-        // --- MOTOR FORENSE: QG MASTER (ROOT) ---
-        function renderizarAuditoriaQGMaster() {
-            const lista = document.getElementById('lista-auditoria-qg');
-            if (!lista) return;
-            
-            const logsAdmin = logsAuditoria.admin || [];
-            
-            if (logsAdmin.length === 0) {
-                lista.innerHTML = `<div class="text-slate-600 text-[10px] font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Nenhum acesso registrado no QG Master.</div>`;
-                return;
-            }
-            
-            // Agrupamento hierárquico
-            const grupos = {};
-            logsAdmin.forEach((log, index) => {
-                const dataStr = log.dataHora.split(',')[0].trim();
-                const partes = dataStr.split('/');
-                const dia = partes.length >= 3 ? partes[0] : 'Extra';
-                const mesAno = partes.length >= 3 ? `${partes[1]}/${partes[2]}` : 'Lote Especial';
-                
-                if (!grupos[mesAno]) grupos[mesAno] = {};
-                if (!grupos[mesAno][dia]) grupos[mesAno][dia] = [];
-                
-                grupos[mesAno][dia].push({ ...log, idxVirtual: index });
-            });
-
-            let html = '';
-            for (const [mesAno, dias] of Object.entries(grupos)) {
-                html += `
-                <div class="mb-4">
-                    <div class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2 border-b border-slate-800 pb-1 flex items-center gap-2">
-                        <i data-lucide="folder-lock" class="w-3.5 h-3.5"></i> Arquivo Root: ${mesAno}
-                    </div>
-                    <div class="space-y-3 pl-2">
-                `;
-                
-                for (const [dia, logs] of Object.entries(dias)) {
-                    html += `
-                        <div>
-                            <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                                <i data-lucide="calendar" class="w-3 h-3 text-red-500/60"></i> Dia ${dia}
-                            </div>
-                            <div class="space-y-1.5 pl-3 border-l border-slate-800">
-                    `;
-                    
-                    logs.forEach(log => {
-                        const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
-                        html += `
-                                <div onclick="abrirVisualizadorForenseQG(${log.idxVirtual})" class="bg-black/40 border border-slate-800 hover:border-red-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-red-400 group-hover:bg-red-500/20 transition">
-                                            <i data-lucide="scan-face" class="w-3.5 h-3.5"></i>
-                                        </div>
-                                        <div class="font-mono text-[9px]">
-                                            <p class="text-slate-300 font-bold">Acesso #${log.index}</p>
-                                            <p class="text-slate-500">Hora: ${horaRegistro}</p>
-                                        </div>
-                                    </div>
-                                    <div class="text-red-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <i data-lucide="eye" class="w-3 h-3"></i>
-                                    </div>
-                                </div>
-                        `;
-                    });
-                    html += `</div></div>`;
-                }
-                html += `</div></div>`;
-            }
-            lista.innerHTML = html;
-            if(window.lucide) lucide.createIcons();
-        }
-
-        window.abrirVisualizadorForenseQG = function(idx) {
-            const visor = document.getElementById('visualizador-forense-qg');
-            if (!visor) return;
-            
-            const log = (logsAuditoria.admin || [])[idx];
-            if (!log) return;
-
-            const imgElement = log.foto 
-                ? `<img src="${log.foto}" class="max-w-full max-h-44 object-cover rounded border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.15)] mb-3">` 
-                : `<div class="w-full h-40 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-3">CÂMERA BLOQUEADA</div>`;
-
-            visor.innerHTML = `
-                ${imgElement}
-                <div class="font-mono text-[9px] text-left w-full bg-black/60 p-2.5 rounded border border-slate-800 space-y-1.5">
-                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1">
-                        <span class="text-slate-500">Credencial Utilizada:</span> 
-                        <span class="text-red-400 font-bold">Master / Operador</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1">
-                        <span class="text-slate-500">Data de Entrada:</span> 
-                        <span class="text-slate-300">${log.dataHora}</span>
-                    </div>
-                    <div>
-                        <span class="text-slate-500 block mb-0.5">Hash de Cadeia (SHA-256):</span>
-                        <div class="text-[8px] text-emerald-400 break-all bg-emerald-500/10 p-1.5 rounded border border-emerald-500/20">${log.hash || 'Sessão Legada'}</div>
-                    </div>
-                </div>
-            `;
-            if(window.lucide) lucide.createIcons();
-        };
 
         function aplicarRegrasRBAC(role) {
             // Restaura tudo primeiro
