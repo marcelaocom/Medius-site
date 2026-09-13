@@ -857,38 +857,41 @@
                     </div>
                 </div>
 
-                <div id="mod-whitelabel" class="cyber-card dash-module hidden space-y-6">
-                    <div>
-                        <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Personalização White Label & Canal de Alertas (SecOps)</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
-                            <div>
-                                <label class="block text-slate-400 mb-1">Nome da Agência:</label>
-                                <input type="text" id="input-nome-empresa" value="Medius Core Enterprise" oninput="atualizarWhiteLabel()" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 mb-1">Cor do Neon:</label>
-                                <select id="select-cor-neon" onchange="atualizarWhiteLabel()" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white">
-                                    <option value="#00d2ff">Ciano Cyber</option>
-                                    <option value="#00ffaa">Verde Esmeralda</option>
-                                    <option value="#818cf8">Índigo Camaleão</option>
-                                    <option value="#ff0055">Vermelho Neon</option>
-                                </select>
-                            </div>
-                            <div class="md:col-span-2 pt-4 mt-2 border-t border-slate-800 space-y-3 bg-black/30 p-4 rounded border border-slate-800">
-                                <h4 class="text-indigo-400 font-bold flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4"></i> Autenticação Multifator (2FA - TOTP):</h4>
-                                <p class="text-[11px] text-slate-400">Proteja o acesso administrativo gerando uma semente secreta compatível com Google Authenticator ou Authy.</p>
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <button type="button" onclick="gerarAtivar2FAAdmin()" class="px-4 py-2 rounded bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-mono transition">
-                                        Gerar / Ativar 2FA para Admin
-                                    </button>
-                                    <span id="status-2fa-label" class="text-[11px] text-slate-400 font-mono">Status: Verificando...</span>
+                <!-- MÓDULO WHITE LABEL (AGORA ENCAPSULANDO TUDO CORRETAMENTE) -->
+                <div id="mod-whitelabel" class="dash-module hidden space-y-6">
+                    
+                    <div class="cyber-card">
+                        <div>
+                            <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Personalização White Label & Canal de Alertas (SecOps)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+                                <div>
+                                    <label class="block text-slate-400 mb-1">Nome da Agência:</label>
+                                    <input type="text" id="input-nome-empresa" value="Medius Core Enterprise" oninput="atualizarWhiteLabel()" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white">
                                 </div>
-                                <div id="container-qr-2fa" class="hidden mt-2 p-3 bg-[#030610] rounded border border-indigo-500/30 text-xs font-mono space-y-2">
-                                    <p class="text-amber-400 font-bold">⚠️ Semente Secreta gerada! Copie o código abaixo para o seu aplicativo autenticador:</p>
-                                    <div class="p-2 bg-black rounded text-cyan-300 select-all font-mono tracking-wider text-sm" id="txt-secreta-2fa">---</div>
-                                    <p class="text-[10px] text-slate-500">Insira este código manualmente no seu aplicativo (ex: Google Authenticator -> Inserir chave de configuração).</p>
+                                <div>
+                                    <label class="block text-slate-400 mb-1">Cor do Neon:</label>
+                                    <select id="select-cor-neon" onchange="atualizarWhiteLabel()" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white">
+                                        <option value="#00d2ff">Ciano Cyber</option>
+                                        <option value="#00ffaa">Verde Esmeralda</option>
+                                        <option value="#818cf8">Índigo Camaleão</option>
+                                        <option value="#ff0055">Vermelho Neon</option>
+                                    </select>
                                 </div>
-                            </div>
+                                <div class="md:col-span-2 pt-4 mt-2 border-t border-slate-800 space-y-3 bg-black/30 p-4 rounded border border-slate-800">
+                                    <h4 class="text-indigo-400 font-bold flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4"></i> Autenticação Multifator (2FA - TOTP):</h4>
+                                    <p class="text-[11px] text-slate-400">Proteja o acesso administrativo gerando uma semente secreta compatível com Google Authenticator ou Authy.</p>
+                                    <div class="flex flex-wrap items-center gap-3">
+                                        <button type="button" onclick="gerarAtivar2FAAdmin()" class="px-4 py-2 rounded bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-mono transition">
+                                            Gerar / Ativar 2FA para Admin
+                                        </button>
+                                        <span id="status-2fa-label" class="text-[11px] text-slate-400 font-mono">Status: Verificando...</span>
+                                    </div>
+                                    <div id="container-qr-2fa" class="hidden mt-2 p-3 bg-[#030610] rounded border border-indigo-500/30 text-xs font-mono space-y-2">
+                                        <p class="text-amber-400 font-bold">⚠️ Semente Secreta gerada! Copie o código abaixo para o seu aplicativo autenticador:</p>
+                                        <div class="p-2 bg-black rounded text-cyan-300 select-all font-mono tracking-wider text-sm" id="txt-secreta-2fa">---</div>
+                                        <p class="text-[10px] text-slate-500">Insira este código manualmente no seu aplicativo (ex: Google Authenticator -> Inserir chave de configuração).</p>
+                                    </div>
+                                </div>
                                 <div>
                                     <label class="block text-cyan-400 mb-1 font-bold flex items-center gap-2"><i data-lucide="send" class="w-4 h-4"></i> Webhook Telegram Bot:</label>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -907,7 +910,7 @@
                         </div>
                     </div>
 
-                    <div class="border-t border-slate-800 pt-6">
+                    <div class="cyber-card">
                         <h3 class="font-mono text-sm neon-divider" style="color: var(--accent-color);">Cadastro Dinâmico de Novos Nós (Clientes)</h3>
                         <form onsubmit="cadastrarNovoCliente(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
                             <div>
@@ -933,17 +936,18 @@
                             </div>
                        </form>
                     </div>
-                </div>
 
-                <!-- CAIXA DE TICKETS DO NÓ (ADMIN) -->
-                <div class="cyber-card">
-                    <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
-                        <i data-lucide="inbox" class="w-4 h-4"></i> Caixa de Chamados & Helpdesk do Nó
-                    </h3>
-                    <div id="grid-tickets-admin" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto pr-2">
-                        <!-- Preenchido via JS -->
+                    <!-- CAIXA DE TICKETS DO NÓ (ADMIN) -->
+                    <div class="cyber-card">
+                        <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+                            <i data-lucide="inbox" class="w-4 h-4"></i> Caixa de Chamados & Helpdesk do Nó
+                        </h3>
+                        <div id="grid-tickets-admin" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto pr-2">
+                            <!-- Preenchido via JS -->
+                        </div>
                     </div>
-                </div>
+                    
+                </div> <!-- FIM DO MODULO WHITELABEL E CADASTRO -->
 
                 <div id="mod-sessoes" class="dash-module hidden space-y-6">
                     <div class="cyber-card">
