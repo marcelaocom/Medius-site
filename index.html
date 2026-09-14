@@ -725,9 +725,14 @@
                         </div>
                         <div class="col-span-1 md:col-span-4 flex flex-col gap-6">
                             <div class="cyber-card flex-1 flex flex-col">
-                                <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
-                                    <i data-lucide="crosshair" class="w-4 h-4"></i> Índice de Integridade
-                                </h3>
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+    <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+        <i data-lucide="terminal" class="w-4 h-4"></i> Relatório de Integridade e Histórico de Eventos SecOps
+    </h3>
+    <button onclick="gerarRelatorioOficial('CLIENTE', 'Auditoria SecOps')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded font-mono text-[10px] uppercase border border-slate-600 transition flex items-center gap-2">
+        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> LAUDO DE INTEGRIDADE & SECOPS
+    </button>
+</div>
                                 <div class="flex-1 flex flex-col items-center justify-center pb-2">
                                     <div id="chart-saude-admin"></div>
                                     <p class="text-xs text-slate-400 font-mono" id="tme-health-desc">Nó Operacional e Blindado</p>
@@ -1224,10 +1229,14 @@
 
                 <div id="cli-sec-visao" class="client-module space-y-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <div>
-                            <h2 class="text-xl font-bold text-white font-mono" id="client-active-domain-title">marcelaodigital.com.br</h2>
-                            <p class="text-xs text-slate-400" id="client-active-domain-desc">Site Institucional & Portfólio</p>
-                        </div>
+    <div>
+        <h2 class="text-xl font-bold text-white font-mono" id="client-active-domain-title"></h2>
+        <p class="text-xs text-slate-400" id="client-active-domain-desc">Site Institucional & Portfólio</p>
+    </div>
+    <button onclick="gerarRelatorioOficial('CLIENTE', 'Visão Geral')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded font-mono text-[10px] uppercase border border-slate-600 transition flex items-center gap-2">
+        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> EXPORTAR MALHA GERAL (PDF)
+    </button>
+</div>
                         <div class="text-xs font-mono text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded flex items-center gap-2">
                             <span>Latência: <span class="text-blue-400" id="client-active-ping">22ms</span></span>
                             <span class="text-slate-600">|</span>
@@ -1358,8 +1367,14 @@
                             </form>
                         </div>
                         <div class="cyber-card md:col-span-2">
-                            <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);"><i data-lucide="shield" class="w-4 h-4"></i> Equipe Ativa no Contrato</h3>
-                            <table class="w-full text-left font-sans text-xs">
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+    <h3 class="font-mono text-sm neon-divider flex items-center gap-2" style="color: var(--accent-color);">
+        <i data-lucide="users" class="w-4 h-4"></i> Equipe Ativa no Contrato
+    </h3>
+    <button onclick="gerarRelatorioOficial('CLIENTE', 'Gestão de Equipe')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded font-mono text-[10px] uppercase border border-slate-600 transition flex items-center gap-2">
+        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> RELATÓRIO DE OPERADORES & ACESSOS
+    </button>
+</div>                            <table class="w-full text-left font-sans text-xs">
                                 <thead>
                                     <tr class="text-slate-400 font-mono uppercase border-b border-slate-800 pb-2">
                                         <th class="py-2">Operador / Emissão</th>
