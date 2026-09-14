@@ -62,8 +62,8 @@
             sincronizarMalhaDaNuvem();
         });
 
-        // ==========================================
-        // MOTOR DE RELATÓRIOS OFICIAIS (CÉREBRO UNIVERSAL)
+       // ==========================================
+        // MOTOR DE RELATÓRIOS OFICIAIS (CORRIGIDO)
         // ==========================================
         window.gerarRelatorioOficial = function(painel, setor, clienteKey = null) {
             const dataHora = new Date().toLocaleString('pt-BR');
@@ -84,13 +84,13 @@
                 dominiosAlvo = c && c.sites && c.sites.length > 0 ? c.sites.map(s => s.dominio).join(', ') : 'Nenhum domínio registrado';
             }
 
-            const thStyle = "padding: 10px; border: 1px solid #cbd5e1; background-color: #f1f5f9; color: #334155; font-weight: bold;";
-            const tdStyle = "padding: 10px; border: 1px solid #e2e8f0; color: #1e293b; background-color: #ffffff;";
+            const thStyle = "padding: 10px; border: 1px solid #cbd5e1; background-color: #f1f5f9; color: #334155; font-weight: bold; text-align: left;";
+            const tdStyle = "padding: 10px; border: 1px solid #e2e8f0; color: #1e293b; background-color: #ffffff; text-align: left;";
 
             if (setor === 'Visão Geral' && painel === 'ADM') {
                 const clientesGerais = Object.keys(databaseClientes).map(k => ({ id: k, ...databaseClientes[k] }));
                 conteudoHTML = `
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: Arial, sans-serif;">
                         <thead>
                             <tr>
                                 <th style="${thStyle}">ID Cliente</th>
@@ -110,11 +110,10 @@
                             `).join('') || `<tr><td colspan="4" style="${tdStyle} text-align: center;">Nenhum cliente registrado.</td></tr>`}
                         </tbody>
                     </table>`;
-            } 
-            else if (setor === 'Malha de Clientes') {
+            } else if (setor === 'Malha de Clientes') {
                 const clientesGerais = Object.keys(databaseClientes).map(k => ({ id: k, ...databaseClientes[k] }));
                 conteudoHTML = `
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: Arial, sans-serif;">
                         <thead>
                             <tr>
                                 <th style="${thStyle}">Cliente / Nó</th>
@@ -134,11 +133,10 @@
                             `).join('') || `<tr><td colspan="4" style="${tdStyle} text-align: center;">Nenhum cliente registrado.</td></tr>`}
                         </tbody>
                     </table>`;
-            }
-            else if (setor === 'Radar de Sessões') {
+            } else if (setor === 'Radar de Sessões') {
                 const sessoes = JSON.parse(localStorage.getItem('medius_sessoes_ativas') || '[]');
                 conteudoHTML = `
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: Arial, sans-serif;">
                         <thead>
                             <tr>
                                 <th style="${thStyle}">Usuário / Nó</th>
@@ -158,11 +156,10 @@
                             `).join('') || `<tr><td colspan="4" style="${tdStyle} text-align: center;">Nenhuma sessão ativa.</td></tr>`}
                         </tbody>
                     </table>`;
-            }
-            else if (setor === 'Telemetria de Erros') {
+            } else if (setor === 'Telemetria de Erros') {
                 const erros = JSON.parse(localStorage.getItem('medius_telemetria_logs') || '[]');
                 conteudoHTML = `
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: Arial, sans-serif;">
                         <thead>
                             <tr>
                                 <th style="${thStyle}">Horário</th>
@@ -182,31 +179,29 @@
                             `).join('') || `<tr><td colspan="4" style="${tdStyle} text-align: center;">Nenhum log de erro detectado.</td></tr>`}
                         </tbody>
                     </table>`;
-            }
-            else if (setor === 'QG Financeiro') {
+            } else if (setor === 'QG Financeiro') {
                 const fin = typeof calcularFinanceiroGeral === 'function' ? calcularFinanceiroGeral() : { mrr: 0, custos: 0, lucro: 0 };
                 const fmt = val => val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
                 conteudoHTML = `
-                    <div style="display: flex; gap: 20px; margin-top: 20px;">
-                        <div style="flex: 1; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center; background: #f8fafc;">
-                            <span style="display: block; font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase;">Faturamento Total (MRR)</span>
-                            <span style="display: block; font-size: 24px; font-weight: bold; color: #10b981; margin-top: 10px;">${fmt(fin.mrr)}</span>
+                    <div style="display: flex; gap: 20px; margin-top: 20px; font-family: Arial, sans-serif;">
+                        <div style="flex: 1; padding: 15px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; background: #f8fafc;">
+                            <span style="display: block; font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase;">Faturamento (MRR)</span>
+                            <span style="display: block; font-size: 20px; font-weight: bold; color: #10b981; margin-top: 8px;">${fmt(fin.mrr)}</span>
                         </div>
-                        <div style="flex: 1; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center; background: #fef2f2;">
-                            <span style="display: block; font-size: 10px; font-weight: bold; color: #ef4444; text-transform: uppercase;">Custos de Operação (AWS/Taxas)</span>
-                            <span style="display: block; font-size: 24px; font-weight: bold; color: #ef4444; margin-top: 10px;">${fmt(fin.custos)}</span>
+                        <div style="flex: 1; padding: 15px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; background: #fef2f2;">
+                            <span style="display: block; font-size: 10px; font-weight: bold; color: #ef4444; text-transform: uppercase;">Custos (AWS/Taxas)</span>
+                            <span style="display: block; font-size: 20px; font-weight: bold; color: #ef4444; margin-top: 8px;">${fmt(fin.custos)}</span>
                         </div>
-                        <div style="flex: 1; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center; background: #f0f9ff;">
-                            <span style="display: block; font-size: 10px; font-weight: bold; color: #0284c7; text-transform: uppercase;">Lucro Líquido Medius</span>
-                            <span style="display: block; font-size: 24px; font-weight: bold; color: #0284c7; margin-top: 10px;">${fmt(fin.lucro)}</span>
+                        <div style="flex: 1; padding: 15px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; background: #f0f9ff;">
+                            <span style="display: block; font-size: 10px; font-weight: bold; color: #0284c7; text-transform: uppercase;">Lucro Líquido</span>
+                            <span style="display: block; font-size: 20px; font-weight: bold; color: #0284c7; margin-top: 8px;">${fmt(fin.lucro)}</span>
                         </div>
                     </div>`;
-            }
-            else if (setor === 'Visão Geral' && painel === 'CLIENTE') {
+            } else if (setor === 'Visão Geral' && painel === 'CLIENTE') {
                 const c = databaseClientes[clienteLogadoKey];
                 const sites = c ? c.sites : [];
                 conteudoHTML = `
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: Arial, sans-serif;">
                         <thead>
                             <tr>
                                 <th style="${thStyle}">Domínio Blindado</th>
@@ -226,15 +221,14 @@
                             `).join('') || `<tr><td colspan="4" style="${tdStyle} text-align: center;">Nenhum domínio vinculado.</td></tr>`}
                         </tbody>
                     </table>`;
-            }
-            else if (setor === 'Auditoria Forense' || setor === 'Auditoria Forense - Root') {
+            } else if (setor === 'Auditoria Forense' || setor === 'Auditoria Forense - Root') {
                 let logs = [];
                 if (setor === 'Auditoria Forense - Root') logs = logsAuditoria.admin || [];
                 else if (painel === 'ADM' && clienteKey) logs = logsAuditoria.clientes[clienteKey] || [];
                 else if (painel === 'CLIENTE') logs = logsAuditoria.clientes[clienteLogadoKey] || [];
 
                 conteudoHTML = `
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: monospace;">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; font-family: Arial, sans-serif;">
                         <thead>
                             <tr>
                                 <th style="${thStyle}">Data / Hora</th>
@@ -249,95 +243,60 @@
                                     <td style="${tdStyle}">${log.dataHora}</td>
                                     <td style="${tdStyle} font-weight: bold; color: #0369a1;">${log.id || 'N/A'}</td>
                                     <td style="${tdStyle} color: #15803d;">Validado</td>
-                                    <td style="${tdStyle} word-break: break-all; color: #475569;">${log.hash || 'Legado'}</td>
+                                    <td style="${tdStyle} word-break: break-all; color: #475569; font-size: 10px;">${log.hash || 'Legado'}</td>
                                 </tr>
                             `).join('') || `<tr><td colspan="4" style="${tdStyle} text-align: center;">Nenhum registro encontrado.</td></tr>`}
                         </tbody>
                     </table>`;
-            }
-            else if (setor === 'Contrato & Licença') {
+            } else if (setor === 'Contrato & Licença') {
                 const c = databaseClientes[clienteLogadoKey];
                 if(c) {
                     conteudoHTML = `
-                        <div style="border: 2px solid #e2e8f0; padding: 40px; border-radius: 8px; text-align: center; margin-top: 30px; background-color: #ffffff;">
-                            <h2 style="color: #0f172a; text-transform: uppercase; font-size: 24px; margin-bottom: 10px;">Certificado de Blindagem Medius Core</h2>
-                            <p style="color: #64748b; font-size: 14px; margin-bottom: 30px;">Certificamos sob as diretrizes de SecOps que os domínios listados encontram-se sob monitoramento 24/7.</p>
-                            
-                            <div style="text-align: left; background: #f8fafc; padding: 20px; border-radius: 6px; margin-bottom: 30px; color: #1e293b;">
-                                <p style="margin-bottom: 10px;"><strong>Titular da Licença:</strong> ${c.nome}</p>
-                                <p style="margin-bottom: 10px;"><strong>Código da Operação:</strong> #${clienteLogadoKey}</p>
-                                <p style="margin-bottom: 10px;"><strong>Validade da Licença:</strong> ${c.expires_at}</p>
-                                <p><strong>Nível de Serviço Contratado:</strong> ENTERPRISE (Sincronia Total)</p>
-                            </div>
-                            
-                            <p style="font-size: 10px; color: #94a3b8; font-style: italic;">* Documento gerado criptograficamente com validação no painel administrador.</p>
+                        <div style="border: 1px solid #cbd5e1; padding: 30px; border-radius: 6px; margin-top: 20px; background-color: #f8fafc; font-family: Arial, sans-serif;">
+                            <h3 style="color: #0f172a; text-transform: uppercase; font-size: 16px; margin-bottom: 15px;">Certificado de Blindagem Medius Core</h3>
+                            <p style="margin-bottom: 8px; font-size: 12px;"><strong>Titular da Licença:</strong> ${c.nome}</p>
+                            <p style="margin-bottom: 8px; font-size: 12px;"><strong>Código da Operação:</strong> #${clienteLogadoKey}</p>
+                            <p style="margin-bottom: 8px; font-size: 12px;"><strong>Validade da Licença:</strong> ${c.expires_at}</p>
+                            <p style="font-size: 12px;"><strong>Nível de Serviço:</strong> ENTERPRISE (Sincronia Total)</p>
                         </div>`;
                 } else {
-                     conteudoHTML = `<p style="color: #1e293b;">Dados do contrato não encontrados.</p>`;
+                    conteudoHTML = `<p>Dados do contrato não encontrados.</p>`;
                 }
             }
 
-            const docTitle = setor === 'Contrato & Licença' ? 'Certificado Oficial' : (setor === 'Visão Geral' ? 'Dossiê Executivo' : 'Extrato de Auditoria');
             const templateHtml = `
-                <div style="background-color: #ffffff; color: #1e293b; font-family: Helvetica, Arial, sans-serif; padding: 40px; width: 800px; box-sizing: border-box; position: relative;">
-                    <table style="width: 100%; border-bottom: 3px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px;">
-                        <tr>
-                            <td style="font-size: 24px; font-weight: 900; letter-spacing: 2px; color: #0f172a; text-transform: uppercase; vertical-align: bottom;">MEDIUS CORE // TME</td>
-                            <td style="font-size: 12px; font-weight: bold; color: #64748b; text-align: right; vertical-align: bottom;">PAINEL: ${painel}<br>GERADO EM: ${dataHora}</td>
-                        </tr>
-                    </table>
-                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin-bottom: 30px; font-size: 12px;">
-                        <table style="width: 100%; border: none;">
-                            <tr>
-                                <td style="width: 50%; vertical-align: top; padding-right: 10px;">
-                                    <span style="font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 4px;">Módulo Analisado:</span>
-                                    <span style="font-weight: bold; color: #0f172a; display: block; margin-bottom: 12px;">${setor}</span>
-                                    <span style="font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 4px;">Protocolo de Segurança:</span>
-                                    <span style="font-weight: bold; color: #10b981; display: block;">Blindagem Ativa (SHA-256)</span>
-                                </td>
-                                <td style="width: 50%; vertical-align: top;">
-                                    <span style="font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 4px;">Organização / ID Alvo:</span>
-                                    <span style="font-weight: bold; color: #0f172a; display: block; margin-bottom: 12px;">${nomeAlvo}</span>
-                                    <span style="font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 4px;">Domínios Cobertos:</span>
-                                    <span style="font-weight: bold; color: #0f172a; display: block;">${dominiosAlvo}</span>
-                                </td>
-                            </tr>
-                        </table>
+                <div style="background-color: #ffffff; color: #1e293b; font-family: Arial, sans-serif; padding: 30px; width: 750px; box-sizing: border-box;">
+                    <div style="border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between;">
+                        <span style="font-size: 20px; font-weight: bold; color: #0f172a; text-transform: uppercase;">MEDIUS CORE // RELATÓRIO</span>
+                        <span style="font-size: 10px; color: #64748b; text-align: right;">PAINEL: ${painel}<br>DATA: ${dataHora}</span>
                     </div>
-                    <h2 style="font-size: 18px; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">${docTitle}</h2>
+                    <div style="background-color: #f1f5f9; padding: 12px; border-radius: 4px; margin-bottom: 20px; font-size: 11px;">
+                        <strong>Setor Analisado:</strong> ${setor} | <strong>Alvo:</strong> ${nomeAlvo}
+                    </div>
                     ${conteudoHTML}
-                    <div style="margin-top: 50px; font-size: 10px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px;">
-                        Documento gerado automaticamente pelo sistema de governança Medius Core Enterprise.<br>A integridade destes dados é protegida por criptografia de ponta a ponta.
-                    </div>
                 </div>
             `;
 
             const printArea = document.createElement('div');
             printArea.innerHTML = templateHtml;
             printArea.style.position = 'absolute';
+            printArea.style.left = '-9999px';
             printArea.style.top = '0';
-            printArea.style.left = '0';
-            printArea.style.zIndex = '-9999';
-            printArea.style.opacity = '0'; 
             document.body.appendChild(printArea);
 
-            const filenameStr = `Relatorio_${setor.replace(/ /g, '_')}_${new Date().getTime()}.pdf`;
             const opt = {
                 margin:       0.5,
-                filename:     filenameStr,
+                filename:     `Relatorio_${setor.replace(/ /g, '_')}_${new Date().getTime()}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
 
-            alert("Aviso: Gerando Documento Oficial. O download do PDF vai começar em instantes...");
-
             html2pdf().set(opt).from(printArea).save().then(() => {
                 document.body.removeChild(printArea);
             }).catch(err => {
-                console.error("Erro ao gerar PDF:", err);
-                alert("Falha SecOps: Ocorreu um erro ao renderizar o PDF. Verifique o console.");
-                document.body.removeChild(printArea);
+                console.error("Erro PDF:", err);
+                if (printArea.parentNode) document.body.removeChild(printArea);
             });
         };
 
