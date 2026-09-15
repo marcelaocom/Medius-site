@@ -21,7 +21,7 @@
         }
         ::-webkit-scrollbar-track {
             background: rgba(15, 23, 42, 0.4); /* Fundo escuro sutil */
-            border-radius: 4px;
+            border-radius: 4px;y
         }
         ::-webkit-scrollbar-thumb {
             background: rgba(51, 65, 85, 0.6); /* Cinza escuro elegante */
@@ -1579,6 +1579,32 @@
             </tbody>
         </table>
     </div>
+    <!-- ========================================== -->
+<!-- BLOCO DOS GRÁFICOS DO COCKPIT (APEXCHARTS) -->
+<!-- ========================================== -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+    <!-- Gráfico de Tráfego da Malha -->
+    <div class="bg-black/40 border border-slate-800 rounded-lg p-4 shadow-lg backdrop-blur-md">
+        <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
+            <span class="text-xs font-mono text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4"></i> Telemetria de Tráfego da Malha
+            </span>
+            <span class="text-[10px] font-mono text-slate-500">Tempo Real</span>
+        </div>
+        <div id="chart-trafego-admin" class="w-full h-64"></div>
+    </div>
+
+    <!-- Gráfico de Saúde Operacional -->
+    <div class="bg-black/40 border border-slate-800 rounded-lg p-4 shadow-lg backdrop-blur-md">
+        <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
+            <span class="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-4 h-4"></i> Índice de Saúde dos Nós
+            </span>
+            <span class="text-[10px] font-mono text-slate-500">SLA 99.9%</span>
+        </div>
+        <div id="chart-saude-admin" class="w-full h-64"></div>
+    </div>
+</div>
 
     <script>
         // BASE DE DADOS DOS CLIENTES (Dinâmica / Vazia para Cadastros)
