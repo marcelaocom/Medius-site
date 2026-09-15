@@ -21,7 +21,7 @@
         }
         ::-webkit-scrollbar-track {
             background: rgba(15, 23, 42, 0.4); /* Fundo escuro sutil */
-            border-radius: 4px;y
+            border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb {
             background: rgba(51, 65, 85, 0.6); /* Cinza escuro elegante */
@@ -1579,32 +1579,7 @@
             </tbody>
         </table>
     </div>
-    <!-- ========================================== -->
-<!-- BLOCO DOS GRÁFICOS DO COCKPIT (APEXCHARTS) -->
-<!-- ========================================== -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-    <!-- Gráfico de Tráfego da Malha -->
-    <div class="bg-black/40 border border-slate-800 rounded-lg p-4 shadow-lg backdrop-blur-md">
-        <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
-            <span class="text-xs font-mono text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-2">
-                <i data-lucide="activity" class="w-4 h-4"></i> Telemetria de Tráfego da Malha
-            </span>
-            <span class="text-[10px] font-mono text-slate-500">Tempo Real</span>
-        </div>
-        <div id="chart-trafego-admin" class="w-full h-64"></div>
-    </div>
-
-    <!-- Gráfico de Saúde Operacional -->
-    <div class="bg-black/40 border border-slate-800 rounded-lg p-4 shadow-lg backdrop-blur-md">
-        <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
-            <span class="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-2">
-                <i data-lucide="shield-check" class="w-4 h-4"></i> Índice de Saúde dos Nós
-            </span>
-            <span class="text-[10px] font-mono text-slate-500">SLA 99.9%</span>
-        </div>
-        <div id="chart-saude-admin" class="w-full h-64"></div>
-    </div>
-</div>
+    
 
     <script>
         // BASE DE DADOS DOS CLIENTES (Dinâmica / Vazia para Cadastros)
@@ -1703,60 +1678,7 @@
                 return null;
             }
         }
-        // ==========================================
-        // MOTOR 2FA / TOTP (AUTENTICAÇÃO MULTIFATOR)
-        // ==========================================
-        function gerarChaveSecreta32() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-            let secret = '';
-            for (let i = 0; i < 16; i++) {
-                secret += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return secret;
-        }
-
-        function base32ToBuffer(base32) {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-            let bits = '';
-            for (let i = 0; i < base32.length; i++) {
-                const valChar = chars.indexOf(base32.charAt(i).toUpperCase());
-                if (valChar === -1) continue;
-                bits += valChar.toString(2).padStart(5, '0');
-            }
-            const arr = [];
-            for (let i = 0; i + 8 <= bits.length; i += 8) {
-                arr.push(parseInt(bits.substr(i, 8), 2));
-            }
-            return new Uint8Array(arr);
-        }
-
-        async function validarCodigoTOTP(secretBase32, codigoDigitado) {
-            if (!secretBase32 || codigoDigitado.length !== 6) return false;
-            const epoch = Math.floor(Date.now() / 1000);
-            const counter = Math.floor(epoch / 30);
-            for (let i = -1; i <= 1; i++) {
-                const computedCode = await calcularHMACSHA1TOTP(secretBase32, counter + i);
-                if (computedCode === codigoDigitado) return true;
-            }
-            return false;
-        }
-
-        async function calcularHMACSHA1TOTP(secretBase32, counter) {
-            try {
-                const keyBuffer = base32ToBuffer(secretBase32);
-                const msgBuffer = new ArrayBuffer(8);
-                const view = new DataView(msgBuffer);
-                view.setUint32(4, counter, false);
-                const cryptoKey = await crypto.subtle.importKey("raw", keyBuffer, { name: "HMAC", hash: { name: "SHA-1" } }, false, ["sign"]);
-                const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgBuffer);
-                const hmacArray = new Uint8Array(signature);
-                const offset = hmacArray[hmacArray.length - 1] & 0x0f;
-                const binary = ((hmacArray[offset] & 0x7f) << 24) | ((hmacArray[offset + 1] & 0xff) << 16) | ((hmacArray[offset + 2] & 0xff) << 8) | (hmacArray[offset + 3] & 0xff);
-                return (binary % 1000000).toString().padStart(6, '0');
-            } catch (err) {
-                return null;
-            }
-        }
+        
 
         let logsAuditoria = {
             admin: [],     // Caixa Principal (QG Gênesis)
