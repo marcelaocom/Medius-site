@@ -1926,6 +1926,105 @@
         }
 
         // ==========================================
+        // FUNÇÕES ÓRFÃS RESTAURADAS (PDF, PURGA E EQUIPE CLIENTE)
+        // ==========================================
+        window.gerarRelatorioOficial = function(perfil, secao, extraId = null) {
+            if (secao === 'Malha de Clientes') {
+                gerarRelatorioLote();
+                return;
+            }
+            const tituloEl = document.getElementById('pdf-titulo');
+            if (tituloEl) tituloEl.innerText = `AUDITORIA // ${perfil} - ${secao.toUpperCase()}`;
+            gerarRelatorioLimpo();
+        };
+
+        let tipoExclusaoPendente = null;
+        window.abrirModalExclusaoForense = function(tipo) {
+            tipoExclusaoPendente = tipo;
+            document.getElementById('input-senha-co').value = '';
+            document.getElementById('modal-senha-co').classList.remove('hidden');
+        };
+
+        window.confirmarExclusaoComSenha = function() {
+            const senha = document.getElementById('input-senha-co').value;
+            if (senha !== 'admin123') { // Senha Mestre de C.O. (Comandante)
+                alert('Acesso Negado SecOps: Chave Mestre de Comando incorreta.');
+                return;
+            }
+            if (tipoExclusaoPendente === 'admin') {
+                logsAuditoria.admin = [];
+            } else if (tipoExclusaoPendente === 'sala' && tmeClienteKey) {
+                logsAuditoria.clientes[tmeClienteKey] = [];
+            }
+            localStorage.setItem('medius_logs_auditoria', JSON.stringify(logsAuditoria));
+            renderizarAuditoriaMaster();
+            renderizarAuditoriaQGMaster();
+            document.getElementById('modal-senha-co').classList.add('hidden');
+            alert('Protocolo Concluído: A Cadeia Forense foi completamente sanitizada.');
+        };
+
+        window.cadastrarOperadorCliente = function(e) {
+            e.preventDefault();
+            const id = document.getElementById('op-cli-id').value.trim();
+            const siteIdx = document.getElementById('op-cli-site').value;
+            const validade = document.getElementById('op-cli-validade').value;
+            
+            const cli = databaseClientes[clienteLogadoKey];
+            if (!cli.operadores) cli.operadores = [];
+            
+            cli.operadores.push({
+                id: id, siteIdx: siteIdx,
+                validade: validade.replace('T', ' '),
+                emissao: new Date().toLocaleDateString('pt-BR')
+            });
+            
+            localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
+            e.target.reset();
+            renderizarEquipeCliente();
+            alert(`Crachá SecOps emitido para o Operador [${id}].`);
+        };
+
+        window.renderizarEquipeCliente = function() {
+            const selectSite = document.getElementById('op-cli-site');
+            const tbody = document.getElementById('tabela-operadores-cliente');
+            const cli = databaseClientes[clienteLogadoKey];
+            
+            // Popula automaticamente a lista de sites no formulário de credenciamento
+            if(selectSite && cli) {
+                selectSite.innerHTML = '<option value="all">Malha Completa (Root)</option>' + 
+                    cli.sites.map((s, i) => `<option value="${i}">${s.dominio}</option>`).join('');
+            }
+
+            if (!tbody) return;
+            
+            if (!cli || !cli.operadores || cli.operadores.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-500 text-xs">Nenhum operador cadastrado para este contrato.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = cli.operadores.map((op, index) => {
+                const siteNome = op.siteIdx === 'all' ? 'Toda a Malha' : (cli.sites[op.siteIdx]?.dominio || 'Desconhecido');
+                return `
+                    <tr class="hover:bg-slate-800/40 border-b border-slate-800/50">
+                        <td class="py-2 text-white font-bold">${op.id}<br><span class="text-[9px] text-slate-500">Emissão: ${op.emissao}</span></td>
+                        <td class="py-2 text-cyan-400 text-xs">${siteNome}</td>
+                        <td class="py-2 text-slate-400 text-xs">${op.validade}</td>
+                        <td class="py-2 text-right">
+                            <button onclick="revogarOperadorCliente(${index})" class="text-red-400 hover:text-white bg-red-500/10 px-2 py-1 rounded border border-red-500/30 transition text-[10px]">Cortar Acesso</button>
+                        </td>
+                    </tr>`;
+            }).join('');
+        };
+
+        window.revogarOperadorCliente = function(index) {
+            if(confirm('Atenção: Revogar as credenciais cortará o acesso imediato deste operador. Prosseguir?')) {
+                databaseClientes[clienteLogadoKey].operadores.splice(index, 1);
+                localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
+                renderizarEquipeCliente();
+            }
+        };
+
+        // ==========================================
         // MOTOR DE SESSÕES & FINGERPRINTING
         // ==========================================
         function obterInfoDispositivo() {
