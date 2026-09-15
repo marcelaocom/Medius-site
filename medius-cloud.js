@@ -1141,3 +1141,102 @@
                 renderizarEquipeCliente();
             }
         };
+        // ==========================================
+        // PARTE 5: MOTORES DE LOGIN BLINDADOS (ANTI-TRAVAMENTO)
+        // ==========================================
+        window.autenticarComo = function(tipo, clientId = null) {
+            document.getElementById('tela-login').classList.add('hidden');
+            
+            if (tipo === 'admin') {
+                perfilLogado = 'admin';
+                document.getElementById('painel-admin').classList.remove('hidden');
+                document.getElementById('indicador-conexao').innerHTML = '<span class="text-red-500 font-bold uppercase tracking-widest"><i data-lucide="shield-alert" class="w-4 h-4 inline mr-1"></i> Root / QG Master</span>';
+                mudarSecaoAdmin('visao-geral');
+                if (typeof renderizarFinanceiroAdmin === 'function') renderizarFinanceiroAdmin();
+            } else if (tipo === 'cliente') {
+                perfilLogado = 'cliente';
+                clienteLogadoKey = clientId || 'estudio-marcelao-01';
+                document.getElementById('painel-cliente').classList.remove('hidden');
+                document.getElementById('indicador-conexao').innerHTML = `<span class="text-cyan-400 font-bold uppercase tracking-widest"><i data-lucide="server" class="w-4 h-4 inline mr-1"></i> Nó: #${clienteLogadoKey}</span>`;
+                mudarSecaoCliente('visao-geral');
+            }
+            if (window.lucide) window.lucide.createIcons();
+        };
+
+        window.iniciarLoginRapido = async function(e, tipo, clientId = null) {
+            e.preventDefault();
+            const btnLogin = e.currentTarget;
+            const textoOriginal = btnLogin.innerHTML;
+            btnLogin.innerHTML = `<i data-lucide="scan-face" class="w-4 h-4 animate-pulse"></i> Biometria...`;
+            btnLogin.disabled = true;
+            if (window.lucide) window.lucide.createIcons();
+
+            try {
+                const snapshot = await capturarForense();
+                const identificador = tipo === 'admin' ? 'admin' : (clientId || 'estudio-marcelao-01');
+                const tipoAcessoStr = tipo === 'admin' ? 'QG Master' : 'Nó Cliente';
+                
+                await registrarLogAcesso(identificador, tipoAcessoStr, snapshot);
+                autenticarComo(tipo, clientId);
+            } catch (err) {
+                console.error("[SECOPS ERRO] Falha no Login Rápido:", err);
+                alert("Falha de autenticação SecOps: O sistema não conseguiu validar a sessão.");
+            } finally {
+                // A MÁGICA QUE DESTRAVA O BOTÃO MESMO SE DER ERRO
+                btnLogin.innerHTML = textoOriginal;
+                btnLogin.disabled = false;
+                if (window.lucide) window.lucide.createIcons();
+            }
+        };
+
+        window.realizarLoginManual = async function(e) {
+            e.preventDefault();
+            const btnLogin = e.target.querySelector('button[type="submit"]');
+            const textoOriginal = btnLogin.innerHTML;
+            btnLogin.innerHTML = `<i data-lucide="scan-face" class="w-4 h-4 animate-pulse"></i> Biometria...`;
+            btnLogin.disabled = true;
+            if (window.lucide) window.lucide.createIcons();
+
+            try {
+                const user = document.getElementById('login-user').value.trim().toLowerCase();
+                const snapshot = await capturarForense();
+                
+                const isRoot = user === 'admin';
+                const isOperador = typeof databaseOperadores !== 'undefined' && databaseOperadores[user] !== undefined;
+                const isAdmin = isRoot || isOperador;
+
+                const identificador = user !== '' ? user : 'estudio-marcelao-01'; 
+                await registrarLogAcesso(identificador, (isAdmin ? 'QG Master' : 'Nó Cliente'), snapshot);
+
+                if (isAdmin) {
+                    const role = isRoot ? 'ADMIN_MASTER' : databaseOperadores[user].nivel;
+                    aplicarRegrasRBAC(role);
+                    autenticarComo('admin');
+                } else if (typeof databaseClientes !== 'undefined' && databaseClientes[user]) {
+                    autenticarComo('cliente', user);
+                } else {
+                    // Fallback para demonstração se a senha não existir
+                    autenticarComo('cliente', 'estudio-marcelao-01');
+                }
+            } catch (err) {
+                console.error("[SECOPS ERRO] Falha no Login Manual:", err);
+                alert("Falha de credencial. Acesso não reconhecido pela malha.");
+            } finally {
+                // A MÁGICA QUE DESTRAVA O BOTÃO MESMO SE DER ERRO
+                btnLogin.innerHTML = textoOriginal;
+                btnLogin.disabled = false;
+                if (window.lucide) window.lucide.createIcons();
+            }
+        };
+        
+        window.encerrarSessao = function() {
+            if (confirm("Encerrar conexão e sanitizar rastros locais?")) {
+                perfilLogado = null;
+                clienteLogadoKey = null;
+                document.getElementById('painel-admin').classList.add('hidden');
+                document.getElementById('painel-cliente').classList.add('hidden');
+                document.getElementById('tela-login').classList.remove('hidden');
+                document.getElementById('indicador-conexao').innerHTML = '<span class="text-amber-500 font-bold uppercase tracking-widest"><i class="fas fa-satellite-dish mr-1"></i> Aguardando Handshake</span>';
+                if (window.lucide) window.lucide.createIcons();
+            }
+        };
