@@ -1716,46 +1716,39 @@
         // REGRAS DE ACESSO CORPORATIVO (RBAC) E COMPLIANCE
         // ==========================================
         function aplicarRegrasRBAC(role) {
-            // Reset de segurança: Exibe tudo primeiro antes de podar
             document.querySelectorAll('#sidebar-admin .menu-item').forEach(el => el.style.display = 'flex');
             const labelEl = document.getElementById('label-empresa-ativa');
             if(labelEl) labelEl.innerHTML = `Operando sob <span class="text-white font-semibold">Credencial: ${role}</span>`;
 
-            // Restaura a visibilidade do Card Forense dentro da Sala de Inspeção
-            const cardForenseInt = document.getElementById('card-caixa-forense-sala');
-            if (cardForenseInt) cardForenseInt.style.display = 'block';
+            // REGRA C.O.: Auditoria Forense é restrita
+            if (role !== 'ADMIN_MASTER' && role !== 'FORENSIC_ADMIN') {
+                const btnAuditoria = document.getElementById('btn-adm-auditoria-root');
+                if(btnAuditoria) btnAuditoria.style.display = 'none';
+            }
 
-            // REGRA C.O. (Forensic Admin): Acesso Absoluto
-            if (role === 'ADMIN_MASTER' || role === 'FORENSIC_ADMIN') return;
+            if (role === 'ADMIN_MASTER') return; 
 
-            // Restrição imediata: Módulo Auditoria Master e o Card Forense de Inspeção ficam bloqueados
-            const btnAuditoria = document.getElementById('btn-adm-auditoria-root');
-            if(btnAuditoria) btnAuditoria.style.display = 'none';
-            if (cardForenseInt) cardForenseInt.style.display = 'none';
-
-            // REGRA: Administrativo / Financeiro (FINANCE)
-            if (role === 'FINANCE') {
-                if (document.getElementById('btn-adm-visao-geral')) document.getElementById('btn-adm-visao-geral').style.display = 'none';
-                if (document.getElementById('btn-adm-malha-clientes')) document.getElementById('btn-adm-malha-clientes').style.display = 'none';
-                if (document.getElementById('btn-adm-gestao-nos')) document.getElementById('btn-adm-gestao-nos').style.display = 'none';
-                if (document.getElementById('btn-adm-sessoes')) document.getElementById('btn-adm-sessoes').style.display = 'none';
-                if (document.getElementById('btn-adm-camaleao')) document.getElementById('btn-adm-camaleao').style.display = 'none';
-                if (document.getElementById('btn-adm-telemetria')) document.getElementById('btn-adm-telemetria').style.display = 'none';
-            } 
-            // REGRA: Técnico de Monitoramento (MONITOR_TECH)
-            else if (role === 'MONITOR_TECH') {
-                if (document.getElementById('btn-adm-operadores')) document.getElementById('btn-adm-operadores').style.display = 'none';
-                if (document.getElementById('btn-adm-financeiro')) document.getElementById('btn-adm-financeiro').style.display = 'none';
-                if (document.getElementById('btn-adm-whitelabel')) document.getElementById('btn-adm-whitelabel').style.display = 'none';
-                if (document.getElementById('btn-adm-camaleao')) document.getElementById('btn-adm-camaleao').style.display = 'none';
-            } 
-            // REGRA: Suporte Convidado (SUPPORT_GUEST)
-            else if (role === 'SUPPORT_GUEST') {
-                if (document.getElementById('btn-adm-operadores')) document.getElementById('btn-adm-operadores').style.display = 'none';
-                if (document.getElementById('btn-adm-financeiro')) document.getElementById('btn-adm-financeiro').style.display = 'none';
-                if (document.getElementById('btn-adm-whitelabel')) document.getElementById('btn-adm-whitelabel').style.display = 'none';
-                if (document.getElementById('btn-adm-camaleao')) document.getElementById('btn-adm-camaleao').style.display = 'none';
-                if (document.getElementById('btn-adm-visao-geral')) document.getElementById('btn-adm-visao-geral').style.display = 'none';
+            if (role === 'MONITOR_TECH') {
+                document.getElementById('btn-adm-whitelabel').style.display = 'none';
+                document.getElementById('btn-adm-operadores').style.display = 'none';
+                document.getElementById('btn-adm-financeiro').style.display = 'none';
+                document.getElementById('btn-adm-malha-clientes').style.display = 'none';
+            } else if (role === 'SUPPORT_GUEST') {
+                document.getElementById('btn-adm-whitelabel').style.display = 'none';
+                document.getElementById('btn-adm-operadores').style.display = 'none';
+                document.getElementById('btn-adm-financeiro').style.display = 'none';
+                document.getElementById('btn-adm-sessoes').style.display = 'none';
+                document.getElementById('btn-adm-camaleao').style.display = 'none';
+                document.getElementById('btn-adm-telemetria').style.display = 'none';
+                document.getElementById('btn-adm-malha-clientes').style.display = 'none';
+            } else if (role === 'FINANCE') {
+                document.getElementById('btn-adm-camaleao').style.display = 'none';
+                document.getElementById('btn-adm-telemetria').style.display = 'none';
+                document.getElementById('btn-adm-sessoes').style.display = 'none';
+                document.getElementById('btn-adm-whitelabel').style.display = 'none';
+            } else if (role === 'FORENSIC_ADMIN') {
+                document.getElementById('btn-adm-financeiro').style.display = 'none';
+                document.getElementById('btn-adm-whitelabel').style.display = 'none';
             }
         }
 
