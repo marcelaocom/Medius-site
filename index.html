@@ -1025,10 +1025,10 @@
                                 <div>
                                     <label class="block text-slate-400 mb-1">Nível de Acesso (RBAC):</label>
                                     <select id="op-nivel" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
-                                        <option value="MONITOR_TECH">Monitor Tech (Monitoramento/SecOps)</option>
-                                        <option value="FINANCE">Finance (Administrativo/Financeiro)</option>
-                                        <option value="SUPPORT_GUEST">Support Guest (Acesso Técnico Temporário)</option>
-                                        <option value="FORENSIC_ADMIN">Forensic Admin (Auditoria Especial & Compliance)</option>
+                                        <option value="FORENSIC_ADMIN">Forensic Admin (C.O. / Acesso Absoluto)</option>
+                                        <option value="FINANCE">Finance (Administrativo / Financeiro)</option>
+                                        <option value="MONITOR_TECH">Monitor Tech (Técnico de Monitoramento)</option>
+                                        <option value="SUPPORT_GUEST">Support Guest (Suporte Técnico Temporário)</option>
                                     </select>
                                 </div>
                                 <button type="submit" class="w-full py-2.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold border border-cyan-500/40 transition">
@@ -3362,26 +3362,41 @@
         };
 
         function aplicarRegrasRBAC(role) {
-            // Restaura tudo primeiro
+            // Reset de segurança: Exibe tudo primeiro antes de podar
             document.querySelectorAll('#sidebar-admin .menu-item').forEach(el => el.style.display = 'flex');
-            document.getElementById('label-empresa-ativa').innerHTML = `Operando sob <span class="text-white font-semibold">Credencial ${role}</span>`;
+            document.getElementById('label-empresa-ativa').innerHTML = `Operando sob <span class="text-white font-semibold">Credencial: ${role}</span>`;
 
-            if (role === 'SUPER') return; // Root vê tudo
+            // REGRA C.O. (Forensic Admin): Acesso Absoluto
+            if (role === 'ADMIN_MASTER' || role === 'FORENSIC_ADMIN') return;
 
-            if (role === 'SECOPS') {
-                document.getElementById('btn-adm-whitelabel').style.display = 'none';
-                document.getElementById('btn-adm-operadores').style.display = 'none';
-                document.getElementById('btn-adm-financeiro').style.display = 'none';
-            } else if (role === 'SUPORTE') {
-                document.getElementById('btn-adm-whitelabel').style.display = 'none';
-                document.getElementById('btn-adm-operadores').style.display = 'none';
-                document.getElementById('btn-adm-financeiro').style.display = 'none';
+            // REGRA: Apenas C.O. acessa Auditoria Forense e Sala de Gestão de Nós profunda
+            document.getElementById('btn-adm-auditoria-root').style.display = 'none';
+            if (document.getElementById('btn-adm-gestao-nos')) {
+                document.getElementById('btn-adm-gestao-nos').style.display = 'none';
+            }
+
+            // REGRA: Administrativo / Financeiro (FINANCE)
+            if (role === 'FINANCE') {
+                document.getElementById('btn-adm-visao-geral').style.display = 'none';
+                document.getElementById('btn-adm-malha-clientes').style.display = 'none';
                 document.getElementById('btn-adm-sessoes').style.display = 'none';
                 document.getElementById('btn-adm-camaleao').style.display = 'none';
                 document.getElementById('btn-adm-telemetria').style.display = 'none';
-            } else if (role === 'GERENTE') {
+            } 
+            // REGRA: Técnico de Monitoramento (MONITOR_TECH)
+            else if (role === 'MONITOR_TECH') {
+                document.getElementById('btn-adm-operadores').style.display = 'none';
+                document.getElementById('btn-adm-financeiro').style.display = 'none';
+                document.getElementById('btn-adm-whitelabel').style.display = 'none';
                 document.getElementById('btn-adm-camaleao').style.display = 'none';
-                document.getElementById('btn-adm-telemetria').style.display = 'none';
+            } 
+            // REGRA: Suporte Convidado (SUPPORT_GUEST)
+            else if (role === 'SUPPORT_GUEST') {
+                document.getElementById('btn-adm-operadores').style.display = 'none';
+                document.getElementById('btn-adm-financeiro').style.display = 'none';
+                document.getElementById('btn-adm-whitelabel').style.display = 'none';
+                document.getElementById('btn-adm-camaleao').style.display = 'none';
+                document.getElementById('btn-adm-visao-geral').style.display = 'none';
             }
         }
 
