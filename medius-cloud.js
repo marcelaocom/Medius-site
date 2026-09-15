@@ -404,10 +404,19 @@
         }
 
         async function gerarHashSHA256(conteudo) {
-            const msgBuffer = new TextEncoder().encode(conteudo);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            try {
+                if (!crypto || !crypto.subtle) {
+                    console.warn("[SECOPS] API criptográfica inacessível (requer HTTPS). Usando fallback para ambiente de teste.");
+                    return "legacy-hash-test-" + Math.floor(Math.random() * 999999999);
+                }
+                const msgBuffer = new TextEncoder().encode(conteudo);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (err) {
+                console.error("[SECOPS] Erro ao gerar SHA-256:", err);
+                return "error-hash-secops";
+            }
         }
 
         async function registrarLogAcesso(usuarioId, tipoAcesso, snapshot) {
@@ -594,17 +603,21 @@
             btnLogin.disabled = true;
             lucide.createIcons();
 
-            const snapshot = await capturarForense();
-            const identificador = tipo === 'admin' ? 'admin' : (clientId || 'estudio-marcelao-01');
-            const tipoAcessoStr = tipo === 'admin' ? 'QG Master' : 'Nó Cliente';
-            
-            await registrarLogAcesso(identificador, tipoAcessoStr, snapshot);
-
-            btnLogin.innerHTML = textoOriginal;
-            btnLogin.disabled = false;
-            lucide.createIcons();
-
-            autenticarComo(tipo, clientId);
+            try {
+                const snapshot = await capturarForense();
+                const identificador = tipo === 'admin' ? 'admin' : (clientId || 'estudio-marcelao-01');
+                const tipoAcessoStr = tipo === 'admin' ? 'QG Master' : 'Nó Cliente';
+                
+                await registrarLogAcesso(identificador, tipoAcessoStr, snapshot);
+                autenticarComo(tipo, clientId);
+            } catch (err) {
+                console.error("Erro SecOps no Login Rápido:", err);
+                alert("Falha de autenticação: O sistema não conseguiu validar a sessão.");
+            } finally {
+                btnLogin.innerHTML = textoOriginal;
+                btnLogin.disabled = false;
+                lucide.createIcons();
+            }
         }
 
         let pendingAuthTipo = null;
@@ -679,29 +692,33 @@
             btnLogin.disabled = true;
             lucide.createIcons();
 
-            const user = document.getElementById('login-user').value.trim().toLowerCase();
-            const snapshot = await capturarForense();
-            
-            const isRoot = user === 'admin';
-            const isOperador = databaseOperadores[user] !== undefined;
-            const isAdmin = isRoot || isOperador;
+            try {
+                const user = document.getElementById('login-user').value.trim().toLowerCase();
+                const snapshot = await capturarForense();
+                
+                const isRoot = user === 'admin';
+                const isOperador = databaseOperadores[user] !== undefined;
+                const isAdmin = isRoot || isOperador;
 
-            const identificador = user !== '' ? user : 'estudio-marcelao-01'; 
-            await registrarLogAcesso(identificador, (isAdmin ? 'QG Master' : 'Nó Cliente'), snapshot);
+                const identificador = user !== '' ? user : 'estudio-marcelao-01'; 
+                await registrarLogAcesso(identificador, (isAdmin ? 'QG Master' : 'Nó Cliente'), snapshot);
 
-            btnLogin.innerHTML = textoOriginal;
-            btnLogin.disabled = false;
-            lucide.createIcons();
-
-            if (isAdmin) {
-                // Modificado para o padrão corporativo
-                const role = isRoot ? 'ADMIN_MASTER' : databaseOperadores[user].nivel;
-                aplicarRegrasRBAC(role);
-                autenticarComo('admin');
-            } else if (databaseClientes[user]) {
-                autenticarComo('cliente', user);
-            } else {
-                autenticarComo('cliente', 'estudio-marcelao-01');
+                if (isAdmin) {
+                    const role = isRoot ? 'ADMIN_MASTER' : databaseOperadores[user].nivel;
+                    aplicarRegrasRBAC(role);
+                    autenticarComo('admin');
+                } else if (databaseClientes[user]) {
+                    autenticarComo('cliente', user);
+                } else {
+                    autenticarComo('cliente', 'estudio-marcelao-01');
+                }
+            } catch (err) {
+                console.error("Erro SecOps no Login Manual:", err);
+                alert("Falha de credencial. Acesso não reconhecido pela malha.");
+            } finally {
+                btnLogin.innerHTML = textoOriginal;
+                btnLogin.disabled = false;
+                lucide.createIcons();
             }
         }
 
