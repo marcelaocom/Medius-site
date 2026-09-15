@@ -373,46 +373,12 @@
         let logsAuditoria = { admin: [], clientes: {} };
         let registrosSelecionadosParaPurga = { contexto: null, indices: [] };
 
-        async function capturarForense() {
-            if (MODO_STEALTH_ATIVO) {
-                console.warn("[SECOPS] MODO STEALTH ATIVO: Câmera física desativada para testes de laboratório.");
-                return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGYxNzJhIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiMzOGJkZjgiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTRweCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1PRE8gU1RFQUxUSCAoQ0FNIE9GRik8L3RleHQ+PC9zdmc+";
-            }
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-                const video = document.getElementById('forense-video');
-                const canvas = document.getElementById('forense-canvas');
-                
-                video.style.display = "block";
-                video.style.position = "fixed";
-                video.style.top = "20px";
-                video.style.right = "20px";
-                video.style.width = "200px";
-                video.style.border = "3px solid #00d2ff";
-                video.style.borderRadius = "8px";
-                video.style.zIndex = "999999";
-
-                video.srcObject = stream;
-                video.play(); 
-
-                await new Promise(resolve => video.onplaying = resolve);
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                const snapshot = canvas.toDataURL('image/jpeg', 0.8); 
-                stream.getTracks().forEach(track => track.stop()); 
-                video.style.display = "none";
-                return snapshot;
-            } catch (err) {
-                console.warn("Câmera bloqueada. Usando fallback.");
-                return null;
-            }
+       async function capturarForense() {
+            // MODO STEALTH BLINDADO PARA CHROME / GITHUB PAGES
+            console.warn("[SECOPS] Modo Stealth ativado: Câmera isolada para estabilidade total.");
+            return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGYxNzJhIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiMzOGJkZjgiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTRweCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1PRE8gU1RFQUxUSCAoQ0FNIE9GRik8L3RleHQ+PC9zdmc+";
         }
-
+ 
         async function gerarHashSHA256(conteudo) {
             try {
                 if (!crypto || !crypto.subtle) return "hash-test-" + Math.floor(Math.random()*99999);
