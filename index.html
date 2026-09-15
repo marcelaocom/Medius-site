@@ -11,6 +11,32 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     
     <style>
+        /* ==========================================
+           SCROLLBARS DISCRETAS SEC-OPS (GLOBAL)
+           ========================================== */
+        /* Para navegadores baseados em Webkit (Chrome, Edge, Safari) */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.4); /* Fundo escuro sutil */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.6); /* Cinza escuro elegante */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 210, 255, 0.5); /* Brilho ciano suave ao passar o mouse */
+        }
+
+        /* Para Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(51, 65, 85, 0.6) rgba(15, 23, 42, 0.4);
+        }
+
         :root {
             --bg-base: #030610; 
             --bg-sidebar: #050b14;
