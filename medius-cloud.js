@@ -366,9 +366,19 @@
             }
         }
 
+        // ==========================================
+        // PARTE 1: ESTADO GLOBAL E MOTOR FORENSE
+        // ==========================================
+        let MODO_STEALTH_ATIVO = true; 
         let logsAuditoria = { admin: [], clientes: {} };
+        let registrosSelecionadosParaPurga = { contexto: null, indices: [] };
 
         async function capturarForense() {
+            if (MODO_STEALTH_ATIVO) {
+                console.warn("[SECOPS] MODO STEALTH ATIVO: Câmera física desativada para testes de laboratório.");
+                return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGYxNzJhIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiMzOGJkZjgiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTRweCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1PRE8gU1RFQUxUSCAoQ0FNIE9GRik8L3RleHQ+PC9zdmc+";
+            }
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
                 const video = document.getElementById('forense-video');
@@ -398,25 +408,19 @@
                 video.style.display = "none";
                 return snapshot;
             } catch (err) {
-                alert("Alerta SecOps: Câmera não autorizada ou indisponível! " + err.message);
+                console.warn("Câmera bloqueada. Usando fallback.");
                 return null;
             }
         }
 
         async function gerarHashSHA256(conteudo) {
             try {
-                if (!crypto || !crypto.subtle) {
-                    console.warn("[SECOPS] API criptográfica inacessível (requer HTTPS). Usando fallback para ambiente de teste.");
-                    return "legacy-hash-test-" + Math.floor(Math.random() * 999999999);
-                }
+                if (!crypto || !crypto.subtle) return "hash-test-" + Math.floor(Math.random()*99999);
                 const msgBuffer = new TextEncoder().encode(conteudo);
                 const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
                 const hashArray = Array.from(new Uint8Array(hashBuffer));
                 return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            } catch (err) {
-                console.error("[SECOPS] Erro ao gerar SHA-256:", err);
-                return "error-hash-secops";
-            }
+            } catch(e) { return "error-hash"; }
         }
 
         async function registrarLogAcesso(usuarioId, tipoAcesso, snapshot) {
@@ -442,7 +446,69 @@
             localStorage.setItem('medius_logs_auditoria', JSON.stringify(logsAuditoria));
             renderizarAuditoriaMaster();
         }
+        // ==========================================
+        // PARTE 2: SISTEMA DE SELEÇÃO E PURGA FORENSE
+        // ==========================================
+        window.alternarSelecaoForense = function(checkboxEl, contexto, idxVirtual) {
+            if (registrosSelecionadosParaPurga.contexto !== contexto) {
+                registrosSelecionadosParaPurga.contexto = contexto;
+                registrosSelecionadosParaPurga.indices = [];
+                document.querySelectorAll('.log-chk').forEach(c => { if(c !== checkboxEl) c.checked = false; });
+            }
 
+            if (checkboxEl.checked) {
+                if (!registrosSelecionadosParaPurga.indices.includes(idxVirtual)) registrosSelecionadosParaPurga.indices.push(idxVirtual);
+            } else {
+                registrosSelecionadosParaPurga.indices = registrosSelecionadosParaPurga.indices.filter(i => i !== idxVirtual);
+            }
+
+            const contId = contexto === 'admin' ? 'cont-sel-admin' : (contexto === 'sala' ? 'cont-sel-sala' : 'cont-sel-cliente');
+            const elCont = document.getElementById(contId);
+            if (elCont) elCont.innerText = registrosSelecionadosParaPurga.indices.length;
+        };
+
+        window.abrirModalExclusaoForense = function(contextoEsperado) {
+            if (registrosSelecionadosParaPurga.contexto !== contextoEsperado || registrosSelecionadosParaPurga.indices.length === 0) {
+                alert("Nenhum registro selecionado para purga nesta caixa.");
+                return;
+            }
+            document.getElementById('modal-senha-co').classList.remove('hidden');
+            document.getElementById('input-senha-co').value = '';
+            document.getElementById('input-senha-co').focus();
+        };
+
+        window.confirmarExclusaoComSenha = function() {
+            const senhaDigitada = document.getElementById('input-senha-co').value;
+            // Para ambiente de teste, usamos 'admin' como senha de autorização
+            if (senhaDigitada !== 'admin' && senhaDigitada !== 'master') {
+                alert("ACESSO NEGADO: Assinatura de Comando inválida. A purga foi bloqueada pelo SecOps.");
+                document.getElementById('input-senha-co').value = '';
+                return;
+            }
+
+            const ctx = registrosSelecionadosParaPurga.contexto;
+            const indicesOrdenados = registrosSelecionadosParaPurga.indices.sort((a,b) => b - a); 
+            
+            let alvoDb;
+            if (ctx === 'admin') alvoDb = logsAuditoria.admin;
+            else if (ctx === 'sala') alvoDb = logsAuditoria.clientes[tmeClienteKey];
+            else if (ctx === 'cliente') alvoDb = logsAuditoria.clientes[clienteLogadoKey];
+
+            indicesOrdenados.forEach(idx => alvoDb.splice(idx, 1));
+            localStorage.setItem('medius_logs_auditoria', JSON.stringify(logsAuditoria));
+            
+            registrosSelecionadosParaPurga.indices = [];
+            document.getElementById('modal-senha-co').classList.add('hidden');
+            
+            if (ctx === 'admin') { renderizarAuditoriaQGMaster(); document.getElementById('cont-sel-admin').innerText = '0'; }
+            if (ctx === 'sala') { renderizarAuditoriaMaster(); document.getElementById('cont-sel-sala').innerText = '0'; }
+            if (ctx === 'cliente') { renderizarAuditoriaCliente(); document.getElementById('cont-sel-cliente').innerText = '0'; }
+            
+            alert("Operação SecOps Concluída: Registros sanitizados permanentemente da malha.");
+        };
+        // ==========================================
+        // PARTE 3: RENDERIZADORES VISUAIS FORENSES
+        // ==========================================
         function renderizarAuditoriaMaster() {
             const lista = document.getElementById('lista-auditoria-sala');
             if (!lista || !tmeClienteKey) return; 
@@ -472,15 +538,18 @@
                     logs.forEach(log => {
                         const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
                         html += `
-                            <div onclick="abrirVisualizadorForenseAdmin('${tmeClienteKey}', ${log.idxVirtual})" class="bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition"><i data-lucide="scan-face" class="w-3.5 h-3.5"></i></div>
-                                    <div class="font-mono text-[9px]">
-                                        <p class="text-slate-300 font-bold">Sessão #${log.index}</p>
-                                        <p class="text-slate-500">Hora: ${horaRegistro}</p>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" class="log-chk w-3 h-3 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900" onchange="window.alternarSelecaoForense(this, 'sala', ${log.idxVirtual})">
+                                <div onclick="window.abrirVisualizadorForenseAdmin('${tmeClienteKey}', ${log.idxVirtual})" class="flex-1 bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition"><i data-lucide="scan-face" class="w-3.5 h-3.5"></i></div>
+                                        <div class="font-mono text-[9px]">
+                                            <p class="text-slate-300 font-bold">Sessão #${log.index}</p>
+                                            <p class="text-slate-500">Hora: ${horaRegistro}</p>
+                                        </div>
                                     </div>
+                                    <div class="text-emerald-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="eye" class="w-3 h-3"></i></div>
                                 </div>
-                                <div class="text-emerald-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="eye" class="w-3 h-3"></i></div>
                             </div>`;
                     });
                     html += `</div></div>`;
@@ -488,7 +557,7 @@
                 html += `</div></div>`;
             }
             lista.innerHTML = html;
-            if(window.lucide) lucide.createIcons();
+            if(window.lucide) window.lucide.createIcons();
         }
 
         window.abrirVisualizadorForenseAdmin = function(cliKey, idx) {
@@ -501,9 +570,9 @@
                 return;
             }
 
-            const imgElement = log.foto 
+            const imgElement = log.foto && !log.foto.includes("svg+xml")
                 ? `<img src="${log.foto}" class="max-w-full max-h-44 object-cover rounded border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.15)] mb-3">` 
-                : `<div class="w-full h-40 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-3">CÂMERA BLOQUEADA</div>`;
+                : `<div class="w-full h-40 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-3">CÂMERA DESATIVADA (STEALTH)</div>`;
 
             visor.innerHTML = `
                 ${imgElement}
@@ -513,658 +582,21 @@
                         <span class="text-emerald-400 font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Validada</span>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Data de Entrada:</span> 
+                        <span class="text-slate-500">Data:</span> 
                         <span class="text-slate-300">${log.dataHora}</span>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Nome / Operador:</span> 
+                        <span class="text-slate-500">Nome:</span> 
                         <span class="text-cyan-400 font-bold flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${log.id || 'Desconhecido'}</span>
                     </div>
                     <div class="pt-1">
-                        <span class="text-slate-500 block mb-1">Cadeia Criptográfica (SHA-256):</span>
-                        <div class="text-[8px] ${log.hash ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'} break-all p-1.5 rounded border">${log.hash || 'SESSÃO LEGADA'}</div>
+                        <span class="text-slate-500 block mb-1">Cadeia (SHA-256):</span>
+                        <div class="text-[8px] ${log.hash && !log.hash.includes("test") ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'} break-all p-1.5 rounded border">${log.hash || 'SESSÃO LEGADA'}</div>
                     </div>
                 </div>
             `;
             if(window.lucide) window.lucide.createIcons();
         };
-
-        function obterInfoDispositivo() {
-            const ua = navigator.userAgent;
-            let os = "Desconhecido";
-            if (ua.indexOf("Win") !== -1) os = "Windows";
-            if (ua.indexOf("Mac") !== -1) os = "MacOS";
-            if (ua.indexOf("Linux") !== -1) os = "Linux";
-            if (ua.indexOf("Android") !== -1) os = "Android";
-            if (ua.indexOf("like Mac") !== -1) os = "iOS";
-            let browser = "Navegador";
-            if (ua.indexOf("Chrome") !== -1) browser = "Chrome";
-            else if (ua.indexOf("Firefox") !== -1) browser = "Firefox";
-            else if (ua.indexOf("Safari") !== -1) browser = "Safari";
-            return `${browser} / ${os}`;
-        }
-
-        function gerarIPFalso() {
-            return `${Math.floor(Math.random()*200)+50}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
-        }
-
-        function registrarSessaoRadar(usuarioId) {
-            let sessoes = JSON.parse(localStorage.getItem('medius_sessoes_ativas') || '[]');
-            const idUnico = 'sess_' + Math.random().toString(36).substr(2, 9);
-            const novaSessao = { idSessao: idUnico, usuario: usuarioId, ip: gerarIPFalso(), dispositivo: obterInfoDispositivo(), entrada: new Date().toLocaleTimeString('pt-BR') };
-            sessoes = sessoes.filter(s => s.usuario !== usuarioId);
-            sessoes.unshift(novaSessao);
-            localStorage.setItem('medius_sessoes_ativas', JSON.stringify(sessoes));
-            localStorage.setItem('medius_minha_sessao', idUnico);
-        }
-
-        function renderizarSessoesAtivas() {
-            const tbody = document.getElementById('tabela-sessoes-admin');
-            const contador = document.getElementById('contador-sessoes');
-            if (!tbody) return;
-
-            let sessoes = JSON.parse(localStorage.getItem('medius_sessoes_ativas') || '[]');
-            if (sessoes.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-500">Nenhuma conexão ativa.</td></tr>`;
-                contador.innerText = "0 Conectados";
-                return;
-            }
-
-            contador.innerText = `${sessoes.length} Conectado(s)`;
-            tbody.innerHTML = sessoes.map(s => `
-                <tr class="hover:bg-slate-800/40 transition">
-                    <td class="py-2.5 text-white font-bold">${s.usuario === 'admin' ? '<span class="text-red-400">Gênesis Master</span>' : s.usuario}</td>
-                    <td class="py-2.5 text-emerald-400 text-[11px]"><i data-lucide="map-pin" class="w-3 h-3 inline"></i> ${s.ip}</td>
-                    <td class="py-2.5 text-slate-400">${s.dispositivo}</td>
-                    <td class="py-2.5 text-slate-500">${s.entrada}</td>
-                    <td class="py-2.5 text-right flex justify-end">
-                        ${s.usuario !== 'admin' ? `<button onclick="derrubarSessaoRemota('${s.idSessao}', '${s.usuario}')" class="text-red-400 hover:text-white bg-red-500/10 px-3 py-1.5 rounded border border-red-500/30 transition flex items-center gap-1 shadow-[0_0_5px_rgba(239,68,68,0.2)]"><i data-lucide="power" class="w-3 h-3"></i> Abater</button>` : '<span class="text-slate-600 text-[10px] uppercase font-bold border border-slate-800 px-2 py-1 rounded">Intocável</span>'}
-                    </td>
-                </tr>
-            `).join('');
-            lucide.createIcons();
-        }
-
-        function derrubarSessaoRemota(idSessao, nomeNo) {
-            if(confirm(`Acionar o Kill Switch e derrubar a conexão de [${nomeNo}] imediatamente?`)) {
-                let sessoes = JSON.parse(localStorage.getItem('medius_sessoes_ativas') || '[]');
-                sessoes = sessoes.filter(s => s.idSessao !== idSessao);
-                localStorage.setItem('medius_sessoes_ativas', JSON.stringify(sessoes));
-                renderizarSessoesAtivas();
-                dispararAlertaSecOps("KILL SWITCH (ABATE)", `O nó remoto [${nomeNo}] foi desconectado à força.`);
-            }
-        }
-
-        async function iniciarLoginRapido(e, tipo, clientId = null) {
-            e.preventDefault();
-            const btnLogin = e.currentTarget;
-            const textoOriginal = btnLogin.innerHTML;
-            btnLogin.innerHTML = `<i data-lucide="scan-face" class="w-4 h-4 animate-pulse"></i> Biometria...`;
-            btnLogin.disabled = true;
-            lucide.createIcons();
-
-            try {
-                const snapshot = await capturarForense();
-                const identificador = tipo === 'admin' ? 'admin' : (clientId || 'estudio-marcelao-01');
-                const tipoAcessoStr = tipo === 'admin' ? 'QG Master' : 'Nó Cliente';
-                
-                await registrarLogAcesso(identificador, tipoAcessoStr, snapshot);
-                autenticarComo(tipo, clientId);
-            } catch (err) {
-                console.error("Erro SecOps no Login Rápido:", err);
-                alert("Falha de autenticação: O sistema não conseguiu validar a sessão.");
-            } finally {
-                btnLogin.innerHTML = textoOriginal;
-                btnLogin.disabled = false;
-                lucide.createIcons();
-            }
-        }
-
-        let pendingAuthTipo = null;
-        let pendingAuthClientId = null;
-
-        function autenticarComo(tipo, clientId = null) {
-            const chave2FAKey = tipo === 'admin' ? 'medius_2fa_secret_admin' : `medius_2fa_secret_${clientId || 'estudio-marcelao-01'}`;
-            const secretSalvo = localStorage.getItem(chave2FAKey);
-
-            if (secretSalvo) {
-                pendingAuthTipo = tipo;
-                pendingAuthClientId = clientId;
-                document.getElementById('modal-2fa').classList.remove('hidden');
-                document.getElementById('input-codigo-2fa').value = '';
-                document.getElementById('input-codigo-2fa').focus();
-                lucide.createIcons();
-                return;
-            }
-            executarAutenticacaoFinal(tipo, clientId);
-        }
-
-        async function confirmarAutenticacao2FA() {
-            const codigo = document.getElementById('input-codigo-2fa').value.trim();
-            const chave2FAKey = pendingAuthTipo === 'admin' ? 'medius_2fa_secret_admin' : `medius_2fa_secret_${pendingAuthClientId || 'estudio-marcelao-01'}`;
-            const secretSalvo = localStorage.getItem(chave2FAKey);
-
-            const valido = await validarCodigoTOTP(secretSalvo, codigo);
-
-            if (valido) {
-                document.getElementById('modal-2fa').classList.add('hidden');
-                executarAutenticacaoFinal(pendingAuthTipo, pendingAuthClientId);
-            } else {
-                alert("Erro SecOps: Código TOTP inválido ou expirado!");
-                document.getElementById('input-codigo-2fa').value = '';
-            }
-        }
-
-        function cancelarVerificacao2FA() {
-            document.getElementById('modal-2fa').classList.add('hidden');
-            pendingAuthTipo = null;
-            pendingAuthClientId = null;
-        }
-
-        function executarAutenticacaoFinal(tipo, clientId) {
-            perfilLogado = tipo;
-            clienteLogadoKey = clientId;
-
-            registrarSessaoRadar(tipo === 'admin' ? 'admin' : (clientId || 'estudio-marcelao-01'));
-            document.getElementById('portal-login').classList.add('hidden');
-
-            if (tipo === 'admin') {
-                executarBootAnimado(() => {
-                    document.getElementById('painel-admin').classList.remove('hidden');
-                    lucide.createIcons();
-                    initAdminCharts();
-                    renderizarTabelaAdmin();
-                    aoTrocarClienteTME(tmeClienteKey);
-                });
-            } else if (tipo === 'cliente') {
-                executarBootAnimado(() => {
-                    document.getElementById('painel-cliente').classList.remove('hidden');
-                    carregarConsoleDoCliente(clientId || "estudio-marcelao-01");
-                });
-            }
-        }
-
-        async function realizarLoginManual(e) {
-            e.preventDefault();
-            const btnLogin = e.target.querySelector('button[type="submit"]');
-            const textoOriginal = btnLogin.innerHTML;
-            btnLogin.innerHTML = `<i data-lucide="scan-face" class="w-4 h-4 animate-pulse"></i> Biometria...`;
-            btnLogin.disabled = true;
-            lucide.createIcons();
-
-            try {
-                const user = document.getElementById('login-user').value.trim().toLowerCase();
-                const snapshot = await capturarForense();
-                
-                const isRoot = user === 'admin';
-                const isOperador = databaseOperadores[user] !== undefined;
-                const isAdmin = isRoot || isOperador;
-
-                const identificador = user !== '' ? user : 'estudio-marcelao-01'; 
-                await registrarLogAcesso(identificador, (isAdmin ? 'QG Master' : 'Nó Cliente'), snapshot);
-
-                if (isAdmin) {
-                    const role = isRoot ? 'ADMIN_MASTER' : databaseOperadores[user].nivel;
-                    aplicarRegrasRBAC(role);
-                    autenticarComo('admin');
-                } else if (databaseClientes[user]) {
-                    autenticarComo('cliente', user);
-                } else {
-                    autenticarComo('cliente', 'estudio-marcelao-01');
-                }
-            } catch (err) {
-                console.error("Erro SecOps no Login Manual:", err);
-                alert("Falha de credencial. Acesso não reconhecido pela malha.");
-            } finally {
-                btnLogin.innerHTML = textoOriginal;
-                btnLogin.disabled = false;
-                lucide.createIcons();
-            }
-        }
-
-        function realizarLogout() {
-            document.getElementById('painel-admin').classList.add('hidden');
-            document.getElementById('painel-cliente').classList.add('hidden');
-            document.getElementById('portal-login').classList.remove('hidden');
-            perfilLogado = null;
-            clienteLogadoKey = null;
-        }
-
-        function executarBootAnimado(callbackConclusao) {
-            const bootScreen = document.getElementById('bootScreen');
-            const progressFill = document.getElementById('bootProgressFill');
-            const bootCounter = document.getElementById('bootCounter');
-            const bootStatus = document.getElementById('bootStatus');
-
-            bootScreen.style.display = 'flex';
-            bootScreen.classList.remove('fade-out');
-
-            const msgsFases = [
-                "Fase 1: Iniciando núcleos neurais...",
-                "Fase 2: Varredura de Segurança SecOps...",
-                "Fase 3: Sincronizando Malha de Contratos...",
-                "Fase 4: Desbloqueando Cockpit Autorizado..."
-            ];
-
-            let progresso = 0;
-            let fase = 1;
-
-            const intervalo = setInterval(() => {
-                progresso += Math.floor(Math.random() * 12) + 8;
-                if (progresso >= 100) {
-                    if (fase < 4) {
-                        progresso = 0;
-                        fase++;
-                        bootStatus.textContent = msgsFases[fase - 1];
-                    } else {
-                        progresso = 100;
-                        clearInterval(intervalo);
-                        progressFill.style.width = '100%';
-                        bootCounter.textContent = '100%';
-
-                        setTimeout(() => {
-                            bootScreen.classList.add('fade-out');
-                            setTimeout(() => {
-                                bootScreen.style.display = 'none';
-                                if (callbackConclusao) callbackConclusao();
-                            }, 500);
-                        }, 300);
-                    }
-                }
-                progressFill.style.width = progresso + '%';
-                bootCounter.textContent = progresso + '%';
-            }, 60);
-        }
-
-        function aoTrocarClienteTME(clientId) {
-            tmeClienteKey = clientId;
-            const cliente = databaseClientes[clientId];
-            if (!cliente) return;
-
-            const titleEl = document.getElementById('sala-client-name');
-            if (titleEl) titleEl.innerText = cliente.nome;
-            
-            const badge = document.getElementById('tme-client-status');
-            if(badge) {
-                badge.innerText = cliente.status;
-                badge.className = `px-2 py-0.5 text-[10px] border rounded font-sans tracking-wider ${cliente.statusClass}`;
-            }
-
-            const siteSelect = document.getElementById('tme-select-site');
-            if(siteSelect) {
-                siteSelect.innerHTML = '';
-                cliente.sites.forEach((site, index) => {
-                    const opt = document.createElement('option');
-                    opt.value = index;
-                    opt.text = site.dominio;
-                    siteSelect.appendChild(opt);
-                });
-            }
-            aoTrocarSiteTME(0);
-        }
-
-        function aoTrocarSiteTME(siteIdx) {
-            tmeSiteIdx = parseInt(siteIdx);
-            const cliente = databaseClientes[tmeClienteKey];
-            if(!cliente) return;
-            const site = cliente.sites[tmeSiteIdx];
-            if (!site) return;
-
-            const disp = document.getElementById('tme-active-site-display');
-            if(disp) disp.innerText = site.dominio;
-            const shaDisp = document.getElementById('tme-client-sha');
-            if(shaDisp) shaDisp.innerText = site.sha;
-
-            if (chartSaudeAdmin) chartSaudeAdmin.updateSeries([site.saude]);
-
-            const logBox = document.getElementById('log-secops');
-            if(logBox) {
-                const timestamp = new Date().toLocaleTimeString('pt-BR');
-                const novoLog = document.createElement('div');
-                novoLog.className = "border-l-2 border-blue-500 pl-3 bg-blue-500/5 p-2";
-                novoLog.innerHTML = `<span class="text-blue-400 font-bold">[TME]</span> [${timestamp}] Alvo: ${site.dominio} (#${tmeClienteKey}).`;
-                logBox.prepend(novoLog);
-            }
-        }
-
-        function initAdminCharts() {
-            if (!chartTrafegoAdmin && document.querySelector("#chart-trafego-admin")) {
-                const optTrafego = {
-                    series: [{ name: 'RPS (Nó Específico)', data: seriesAdminData }],
-                    chart: { type: 'area', height: 250, toolbar: { show: false }, animations: { speed: 800 } },
-                    colors: [corAtual],
-                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05 } },
-                    stroke: { curve: 'smooth', width: 2 },
-                    xaxis: { labels: { show: false }, axisBorder: { show: false } },
-                    yaxis: { labels: { style: { colors: '#94a3b8', fontFamily: 'monospace' } } },
-                    grid: { borderColor: 'rgba(255,255,255,0.05)', strokeDashArray: 4 }
-                };
-                chartTrafegoAdmin = new ApexCharts(document.querySelector("#chart-trafego-admin"), optTrafego);
-                chartTrafegoAdmin.render();
-            }
-
-            if (!chartSaudeAdmin && document.querySelector("#chart-saude-admin")) {
-                const optSaude = {
-                    series: [100],
-                    chart: { type: 'radialBar', height: 240 },
-                    colors: [corAtual],
-                    plotOptions: {
-                        radialBar: {
-                            hollow: { size: '60%' },
-                            track: { background: 'rgba(255,255,255,0.05)' },
-                            dataLabels: { value: { color: '#fff', fontSize: '24px', formatter: val => val + "%" } }
-                        }
-                    }
-                };
-                chartSaudeAdmin = new ApexCharts(document.querySelector("#chart-saude-admin"), optSaude);
-                chartSaudeAdmin.render();
-            }
-
-            setInterval(() => {
-                if (perfilLogado === 'admin') {
-                    const cli = databaseClientes[tmeClienteKey];
-                    if(cli && cli.sites[tmeSiteIdx]) {
-                        const site = cli.sites[tmeSiteIdx] || cli.sites[0];
-                        seriesAdminData.shift();
-                        let val = Math.floor(Math.random() * (site.trafegoMax - site.trafegoMin + 1)) + site.trafegoMin;
-                        seriesAdminData.push(val);
-                        if(chartTrafegoAdmin) chartTrafegoAdmin.updateSeries([{ data: seriesAdminData }]);
-                    }
-                }
-            }, 2000);
-        }
-
-        function renderizarTabelaAdmin() {
-            const gridCards = document.getElementById('grid-clientes-admin');
-            const contadorLbl = document.getElementById('contador-clientes-cards');
-            let ativos = 0, vencidos = 0;
-            const chaves = Object.keys(databaseClientes);
-            
-            if (contadorLbl) contadorLbl.innerText = `${chaves.length} Clientes Registrados`;
-            if (gridCards) gridCards.innerHTML = '';
-
-            const themeMap = {
-                'emerald': { bg: 'bg-emerald-400', text: 'text-emerald-400', border: 'border-emerald-500/30', bgLight: 'bg-emerald-500/10', shadowHover: 'hover:shadow-[0_0_25px_rgba(16,185,129,0.3)]' },
-                'red': { bg: 'bg-red-400', text: 'text-red-400', border: 'border-red-500/30', bgLight: 'bg-red-500/10', shadowHover: 'hover:shadow-[0_0_25px_rgba(239,68,68,0.3)]' },
-                'amber': { bg: 'bg-amber-400', text: 'text-amber-400', border: 'border-amber-500/30', bgLight: 'bg-amber-500/10', shadowHover: 'hover:shadow-[0_0_25px_rgba(245,158,11,0.3)]' },
-                'indigo': { bg: 'bg-indigo-400', text: 'text-indigo-400', border: 'border-indigo-500/30', bgLight: 'bg-indigo-500/10', shadowHover: 'hover:shadow-[0_0_25px_rgba(99,102,241,0.3)]' },
-                'blue': { bg: 'bg-blue-400', text: 'text-blue-400', border: 'border-blue-500/30', bgLight: 'bg-blue-500/10', shadowHover: 'hover:shadow-[0_0_25px_rgba(59,130,246,0.3)]' }
-            };
-
-            chaves.forEach((key, index) => {
-                const c = databaseClientes[key];
-                if (c.ativo) ativos++; else vencidos++;
-                
-                let themeKey = 'emerald';
-                let pulseEffect = '';
-                if (!c.ativo) { themeKey = 'red'; pulseEffect = 'animate-pulse'; }
-                else if (c.faturamento && c.faturamento.statusPagamento !== 'PAGO') themeKey = 'amber';
-                else if (index % 3 === 1) themeKey = 'indigo';
-                else if (index % 3 === 2) themeKey = 'blue';
-
-                const theme = themeMap[themeKey];
-
-                if (gridCards) {
-                    const sparkline = `<div class="flex items-end gap-1 h-10 opacity-30 mt-3 mb-4 px-2">
-                        ${Array.from({length: 15}).map(() => `<div class="w-full ${theme.bg} rounded-t-sm" style="height: ${Math.floor(Math.random() * 80) + 20}%"></div>`).join('')}
-                    </div>`;
-
-                    gridCards.innerHTML += `
-                        <div class="cyber-card cursor-pointer group hover:-translate-y-1 transition-all duration-300 ${theme.shadowHover} bg-black/20 flex flex-col justify-between" onclick="abrirSalaDoCliente('${key}')">
-                            <div>
-                                <div class="flex justify-between items-start mb-1">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-2 h-2 rounded-full ${theme.bg} ${pulseEffect} shadow-[0_0_8px_currentColor]"></div>
-                                        <h4 class="font-bold text-white font-mono text-sm truncate max-w-[160px]" title="${c.nome}">${c.nome}</h4>
-                                    </div>
-                                    <span class="text-[8px] uppercase tracking-wider font-bold font-mono ${theme.text} ${theme.border} ${theme.bgLight} px-1.5 py-0.5 rounded border flex items-center gap-1">
-                                        <i data-lucide="shield-check" class="w-3 h-3"></i> SHA-256
-                                    </span>
-                                </div>
-                                <p class="text-[10px] text-slate-500 font-mono mb-2 truncate pl-4">ID: #${key}</p>
-                                ${sparkline}
-                            </div>
-                            <div class="flex justify-between items-end border-t border-slate-800/80 pt-3 mt-auto">
-                                <div>
-                                    <p class="text-[8px] text-slate-500 uppercase tracking-widest mb-0.5">Status</p>
-                                    <p class="text-[10px] font-bold ${theme.text} uppercase flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3"></i> ${c.status}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-[8px] text-slate-500 uppercase tracking-widest mb-0.5">Renovação</p>
-                                    <p class="text-[10px] font-mono text-slate-300">${c.expires_at}</p>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-
-            const lblAtivos = document.getElementById('count-ativos');
-            if(lblAtivos) lblAtivos.innerText = ativos;
-            const lblVencidos = document.getElementById('count-vencidos');
-            if(lblVencidos) lblVencidos.innerText = vencidos;
-            if(window.lucide) window.lucide.createIcons();
-        }
-
-        function motorInadimplenciaAutomatica() {
-            let houveMudanca = false;
-            const hojeStr = new Date().toISOString().split('T')[0];
-
-            Object.keys(databaseClientes).forEach(key => {
-                const cli = databaseClientes[key];
-                if (cli.expires_at < hojeStr && cli.ativo) {
-                    cli.ativo = false;
-                    cli.status = "BLOQUEADO (FINANCEIRO)";
-                    cli.statusClass = "bg-red-500/10 text-red-400 border-red-500/30";
-                    if(cli.faturamento) cli.faturamento.statusPagamento = "VENCIDO";
-                    houveMudanca = true;
-                }
-            });
-
-            if (houveMudanca) {
-                localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
-                if (perfilLogado === 'admin') renderizarTabelaAdmin();
-            }
-        }
-
-        function abrirChamadoCliente(e) {
-            e.preventDefault();
-            const assunto = document.getElementById('ticket-assunto').value;
-            const urgencia = document.getElementById('ticket-urgencia').value;
-            const mensagem = document.getElementById('ticket-mensagem').value;
-            
-            const cli = databaseClientes[clienteLogadoKey];
-            if (!cli.tickets) cli.tickets = [];
-            
-            const novoTicket = {
-                id: 'TK-' + Math.floor(Math.random() * 10000),
-                dataHora: new Date().toLocaleString('pt-BR'),
-                assunto: assunto,
-                urgencia: urgencia,
-                status: 'ABERTO',
-                mensagens: [ { autor: 'CLIENTE', texto: mensagem, dataHora: new Date().toLocaleTimeString('pt-BR') } ]
-            };
-            
-            cli.tickets.unshift(novoTicket);
-            localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
-            
-            alert(`Chamado ${novoTicket.id} aberto com sucesso!`);
-            e.target.reset();
-            renderizarTicketsCliente();
-        }
-
-        function renderizarTicketsCliente() {
-            const grid = document.getElementById('grid-tickets-cliente');
-            if (!grid) return;
-            const cli = databaseClientes[clienteLogadoKey];
-            const tickets = cli.tickets || [];
-            
-            if (tickets.length === 0) {
-                grid.innerHTML = '<div class="text-slate-500 text-xs font-mono text-center p-4 border border-slate-800 rounded bg-black/30">Nenhum chamado aberto.</div>';
-                return;
-            }
-            
-            grid.innerHTML = tickets.map(t => `
-                <div class="bg-black/40 border ${t.status === 'ABERTO' ? 'border-amber-500/30' : 'border-emerald-500/30'} rounded p-3 text-xs font-mono shadow-md">
-                    <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2">
-                        <span class="font-bold text-white">${t.id} - ${t.assunto}</span>
-                        <span class="px-2 py-0.5 rounded text-[9px] ${t.status === 'ABERTO' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'}">${t.status}</span>
-                    </div>
-                    <div class="space-y-2 max-h-32 overflow-y-auto pr-1">
-                        ${t.mensagens.map(m => `
-                            <div class="${m.autor === 'CLIENTE' ? 'text-slate-400' : 'text-cyan-400 bg-cyan-500/5 p-2 rounded'}">
-                                <strong class="${m.autor === 'CLIENTE' ? 'text-slate-300' : 'text-cyan-300'}">${m.autor === 'CLIENTE' ? 'Você' : 'Engenharia'}:</strong> ${m.texto}
-                                <div class="text-[9px] text-slate-600 mt-0.5">${m.dataHora}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderizarTicketsAdmin() {
-            const grid = document.getElementById('grid-tickets-admin');
-            if (!grid) return;
-            const cli = databaseClientes[tmeClienteKey];
-            if(!cli) return;
-            const tickets = cli.tickets || [];
-            
-            if (tickets.length === 0) {
-                grid.innerHTML = '<div class="text-slate-500 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 col-span-2 text-center">Caixa de chamados vazia.</div>';
-                return;
-            }
-            
-            grid.innerHTML = tickets.map(t => `
-                <div class="bg-black/40 border ${t.status === 'ABERTO' ? 'border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : 'border-slate-800'} rounded p-3 text-xs font-mono">
-                    <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2">
-                        <span class="font-bold ${t.status === 'ABERTO' ? 'text-red-400' : 'text-slate-400'}">${t.id} [${t.urgencia}]</span>
-                        <span class="text-white truncate max-w-[150px]">${t.assunto}</span>
-                    </div>
-                    <div class="space-y-2 mb-3 max-h-32 overflow-y-auto pr-1">
-                        ${t.mensagens.map(m => `
-                            <div class="${m.autor === 'CLIENTE' ? 'text-amber-400' : 'text-cyan-400 bg-cyan-500/5 p-2 rounded'}">
-                                <strong>${m.autor}:</strong> <span class="text-slate-300">${m.texto}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    ${t.status === 'ABERTO' ? `
-                    <div class="flex flex-wrap gap-2 mt-2 pt-2 border-t border-slate-800">
-                        <input type="text" id="resp-${t.id}" placeholder="Escreva a resposta..." class="flex-1 min-w-[150px] bg-[#030610] border border-slate-700 rounded px-2 py-1 text-white outline-none focus:border-cyan-400">
-                        <button onclick="responderTicketAdmin('${t.id}')" class="bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded border border-cyan-500/40 hover:bg-cyan-500/30 transition shadow-sm"><i data-lucide="send" class="w-3 h-3"></i></button>
-                        <button onclick="fecharTicketAdmin('${t.id}')" class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded border border-emerald-500/40 hover:bg-emerald-500/30 transition text-[10px] font-bold">RESOLVER</button>
-                    </div>
-                    ` : '<span class="text-emerald-400 text-[10px] uppercase font-bold flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> Arquivado</span>'}
-                </div>
-            `).join('');
-            lucide.createIcons();
-        }
-
-        function responderTicketAdmin(ticketId) {
-            const input = document.getElementById(`resp-${ticketId}`);
-            if (!input || !input.value.trim()) return;
-            const cli = databaseClientes[tmeClienteKey];
-            const ticket = cli.tickets.find(t => t.id === ticketId);
-            if (ticket) {
-                ticket.mensagens.push({ autor: 'ENGENHARIA QG', texto: input.value.trim(), dataHora: new Date().toLocaleTimeString('pt-BR') });
-                localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
-                renderizarTicketsAdmin();
-            }
-        }
-
-        function fecharTicketAdmin(ticketId) {
-            const cli = databaseClientes[tmeClienteKey];
-            const ticket = cli.tickets.find(t => t.id === ticketId);
-            if (ticket && confirm(`Marcar o chamado ${ticketId} como resolvido?`)) {
-                ticket.status = 'RESOLVIDO';
-                localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
-                renderizarTicketsAdmin();
-            }
-        }
-
-        function abrirSalaDoCliente(clientId) {
-            const btnSala = document.getElementById('btn-adm-gestao-nos');
-            if(btnSala) btnSala.classList.remove('hidden');
-            
-            tmeClienteKey = clientId;
-            const cliente = databaseClientes[clientId];
-            if(!cliente) return;
-            
-            const nameEl = document.getElementById('sala-client-name');
-            if(nameEl) nameEl.innerText = cliente.nome;
-            const idEl = document.getElementById('sala-client-id');
-            if(idEl) idEl.innerText = '#' + clientId;
-            
-            const siteSelect = document.getElementById('tme-select-site');
-            if(siteSelect) {
-                siteSelect.innerHTML = '';
-                cliente.sites.forEach((site, index) => {
-                    const opt = document.createElement('option');
-                    opt.value = index;
-                    opt.text = site.dominio;
-                    siteSelect.appendChild(opt);
-                });
-            }
-            
-            mudarSecaoAdmin('gestao-nos');
-            aoTrocarSiteTME(0); 
-            renderizarAuditoriaMaster(); 
-            renderizarTicketsAdmin(); 
-        }
-
-        function toggleSidebarAdmin() {
-            document.getElementById('sidebar-admin').classList.toggle('recolhido');
-        }
-
-        function carregarConsoleDoCliente(clientId) {
-            const cliente = databaseClientes[clientId] || databaseClientes["estudio-marcelao-01"];
-            
-            document.getElementById('client-view-name').innerText = cliente.nome;
-            document.getElementById('client-view-id').innerText = '#' + clientId;
-            const cNameEl = document.getElementById('cli-contract-name');
-            if(cNameEl) cNameEl.innerText = cliente.nome;
-            const cIdEl = document.getElementById('cli-contract-id');
-            if(cIdEl) cIdEl.innerText = '#' + clientId;
-            const cExpEl = document.getElementById('cli-contract-exp');
-            if(cExpEl) cExpEl.innerText = cliente.expires_at;
-
-            const tabsContainer = document.getElementById('client-sites-tabs-container');
-            if(tabsContainer) {
-                tabsContainer.innerHTML = '';
-                cliente.sites.forEach((site, index) => {
-                    const btn = document.createElement('button');
-                    btn.className = `tab-site-btn ${index === 0 ? 'active' : ''}`;
-                    btn.id = `tab-site-${index}`;
-                    btn.innerHTML = `<i data-lucide="globe" class="w-3.5 h-3.5"></i> ${site.dominio}`;
-                    btn.onclick = () => selecionarSiteCliente(clientId, index);
-                    tabsContainer.appendChild(btn);
-                });
-            }
-
-            const domTable = document.getElementById('client-domains-table-body');
-            if(domTable) {
-                domTable.innerHTML = '';
-                cliente.sites.forEach((site, index) => {
-                    domTable.innerHTML += `
-                        <tr class="hover:bg-slate-800/40 transition">
-                            <td class="py-2.5 text-white font-bold">${site.dominio}</td>
-                            <td class="py-2.5 text-slate-300">${site.tipo}</td>
-                            <td class="py-2.5"><span class="px-2 py-0.5 text-[10px] rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">ATIVO (256-bit)</span></td>
-                            <td class="py-2.5 text-right">
-                                <button onclick="selecionarSiteCliente('${clientId}', ${index}); mudarSecaoCliente('visao-geral');" class="text-cyan-400 hover:text-white underline">
-                                    Inspecionar
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            }
-
-            lucide.createIcons();
-            selecionarSiteCliente(clientId, 0);
-            initClienteCharts();
-            renderizarTicketsCliente(); 
-            mudarSecaoCliente('visao-geral');
-        }
 
         function renderizarAuditoriaCliente() {
             const lista = document.getElementById('lista-auditoria-cliente');
@@ -1195,15 +627,18 @@
                     logs.forEach(log => {
                         const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
                         html += `
-                            <div onclick="abrirVisualizadorForense(${log.idxVirtual})" class="bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition"><i data-lucide="scan-face" class="w-4 h-4"></i></div>
-                                    <div class="font-mono text-[10px]">
-                                        <p class="text-slate-300 font-bold">Sessão #${log.index}</p>
-                                        <p class="text-slate-500">Hora: ${horaRegistro}</p>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" class="log-chk w-3.5 h-3.5 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900" onchange="window.alternarSelecaoForense(this, 'cliente', ${log.idxVirtual})">
+                                <div onclick="window.abrirVisualizadorForense(${log.idxVirtual})" class="flex-1 bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition"><i data-lucide="scan-face" class="w-4 h-4"></i></div>
+                                        <div class="font-mono text-[10px]">
+                                            <p class="text-slate-300 font-bold">Sessão #${log.index}</p>
+                                            <p class="text-slate-500">Hora: ${horaRegistro}</p>
+                                        </div>
                                     </div>
+                                    <div class="text-emerald-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="eye" class="w-3 h-3"></i></div>
                                 </div>
-                                <div class="text-emerald-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="eye" class="w-3 h-3"></i></div>
                             </div>`;
                     });
                     html += `</div></div>`;
@@ -1211,7 +646,7 @@
                 html += `</div></div>`;
             }
             lista.innerHTML = html;
-            lucide.createIcons();
+            if(window.lucide) window.lucide.createIcons();
         }
 
         window.abrirVisualizadorForense = function(idx) {
@@ -1220,9 +655,9 @@
             const log = logsAuditoria.clientes[clienteLogadoKey][idx];
             if (!log) return;
 
-            const imgElement = log.foto 
+            const imgElement = log.foto && !log.foto.includes("svg+xml")
                 ? `<img src="${log.foto}" class="max-w-full max-h-48 object-cover rounded border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.15)] mb-4">` 
-                : `<div class="w-full h-48 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-4">CÂMERA BLOQUEADA</div>`;
+                : `<div class="w-full h-48 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-4">CÂMERA DESATIVADA (STEALTH)</div>`;
 
             visor.innerHTML = `
                 ${imgElement}
@@ -1232,284 +667,21 @@
                         <span class="text-emerald-400 font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Validada</span>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Data de Entrada:</span> 
+                        <span class="text-slate-500">Data:</span> 
                         <span class="text-slate-300">${log.dataHora}</span>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Nome / Operador:</span> 
+                        <span class="text-slate-500">Operador:</span> 
                         <span class="text-cyan-400 font-bold flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${log.id || 'Desconhecido'}</span>
                     </div>
                     <div class="pt-1">
-                        <span class="text-slate-500 block mb-1">Cadeia Criptográfica (SHA-256):</span>
-                        <div class="text-[8px] ${log.hash ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'} break-all p-2 rounded border">${log.hash || 'SESSÃO LEGADA'}</div>
+                        <span class="text-slate-500 block mb-1">Cadeia (SHA-256):</span>
+                        <div class="text-[8px] ${log.hash && !log.hash.includes("test") ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'} break-all p-2 rounded border">${log.hash || 'SESSÃO LEGADA'}</div>
                     </div>
                 </div>
             `;
             if(window.lucide) window.lucide.createIcons();
         };
-
-        function toggleSidebarCliente() {
-            document.getElementById('sidebar-cliente').classList.toggle('recolhido');
-        }
-
-        function selecionarSiteCliente(clientId, siteIndex) {
-            siteAtivoClienteIdx = siteIndex;
-            const cliente = databaseClientes[clientId];
-            if(!cliente) return;
-            const site = cliente.sites[siteIndex];
-            if(!site) return;
-
-            document.querySelectorAll('.tab-site-btn').forEach(btn => btn.classList.remove('active'));
-            const activeBtn = document.getElementById(`tab-site-${siteIndex}`);
-            if (activeBtn) activeBtn.classList.add('active');
-
-            const titleEl = document.getElementById('client-active-domain-title');
-            if(titleEl) titleEl.innerText = site.dominio;
-            const descEl = document.getElementById('client-active-domain-desc');
-            if(descEl) descEl.innerText = site.tipo;
-            const pingEl = document.getElementById('client-active-ping');
-            if(pingEl) pingEl.innerText = site.ping;
-            const upEl = document.getElementById('client-card-uptime');
-            if(upEl) upEl.innerText = site.uptime;
-            const reqEl = document.getElementById('client-card-req');
-            if(reqEl) reqEl.innerText = site.requisicoesHoje;
-        }
-
-        function initClienteCharts() {
-            if (!chartTrafegoCliente && document.querySelector("#chart-trafego-cliente")) {
-                const optTrafego = {
-                    series: [{ name: 'Acessos/min', data: seriesClienteData }],
-                    chart: { type: 'area', height: 240, toolbar: { show: false }, animations: { speed: 800 } },
-                    colors: ['#3b82f6'],
-                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.05 } },
-                    stroke: { curve: 'smooth', width: 2 },
-                    xaxis: { labels: { show: false }, axisBorder: { show: false } },
-                    yaxis: { labels: { style: { colors: '#64748b', fontFamily: 'monospace' } } },
-                    grid: { borderColor: 'rgba(255,255,255,0.05)', strokeDashArray: 4 }
-                };
-                chartTrafegoCliente = new ApexCharts(document.querySelector("#chart-trafego-cliente"), optTrafego);
-                chartTrafegoCliente.render();
-            }
-
-            if (!chartCoesaoCliente && document.querySelector("#chart-coesao-cliente")) {
-                const optCoesao = {
-                    series: [100],
-                    chart: { type: 'radialBar', height: 240 },
-                    colors: ['#34d399'], 
-                    plotOptions: {
-                        radialBar: {
-                            hollow: { size: '65%' },
-                            track: { background: 'rgba(255,255,255,0.05)' },
-                            dataLabels: { 
-                                name: { show: false },
-                                value: { color: '#34d399', fontSize: '28px', fontWeight: 'bold', formatter: val => val + "%" } 
-                            }
-                        }
-                    },
-                    stroke: { lineCap: 'round' }
-                };
-                chartCoesaoCliente = new ApexCharts(document.querySelector("#chart-coesao-cliente"), optCoesao);
-                chartCoesaoCliente.render();
-            }
-
-            setInterval(() => {
-                if (perfilLogado === 'cliente') {
-                    seriesClienteData.shift();
-                    seriesClienteData.push(Math.floor(Math.random() * 40) + 25);
-                    if(chartTrafegoCliente) chartTrafegoCliente.updateSeries([{ data: seriesClienteData }]);
-                }
-            }, 2500);
-        }
-
-        function alternarKillSwitch(bloquear) {
-            const ks = document.getElementById('killSwitchScreen');
-            if(ks) ks.style.display = bloquear ? 'flex' : 'none';
-        }
-
-        async function dispararAlertaSecOps(tipoAmeaca, detalhes) {
-            const timestamp = new Date().toLocaleString('pt-BR');
-            const logBox = document.getElementById('log-secops');
-            if (logBox) {
-                const novoLog = document.createElement('div');
-                novoLog.className = "border-l-2 border-red-500 pl-3 bg-red-500/10 p-2 mb-2 animate-pulse text-white font-mono text-xs";
-                novoLog.innerHTML = `<span class="text-red-400 font-bold">[${tipoAmeaca}]</span> [${timestamp}] ${detalhes}`;
-                logBox.prepend(novoLog);
-            }
-
-            const inTgToken = document.getElementById('input-telegram-token')?.value.trim();
-            const inTgChat = document.getElementById('input-telegram-chatid')?.value.trim();
-            const inWaUrl = document.getElementById('input-wa-url')?.value.trim();
-            const inWaNum = document.getElementById('input-wa-numero')?.value.trim();
-
-            if (inTgToken) localStorage.setItem('medius_tg_token', inTgToken);
-            if (inTgChat) localStorage.setItem('medius_tg_chat', inTgChat);
-            if (inWaUrl) localStorage.setItem('medius_wa_url', inWaUrl);
-            if (inWaNum) localStorage.setItem('medius_wa_num', inWaNum);
-
-            const tgToken = localStorage.getItem('medius_tg_token');
-            const tgChat = localStorage.getItem('medius_tg_chat');
-            const waUrl = localStorage.getItem('medius_wa_url');
-            const waNum = localStorage.getItem('medius_wa_num');
-
-            const msgTg = `🚨 *ALERTA SECOPS // MEDIUS CORE* 🚨\n\n⚠️ *Ameaça:* ${tipoAmeaca}\n📌 *Detalhes:* ${detalhes}\n🕒 *Horário:* ${timestamp}\n🛡️ *Status:* Registrado na Malha.`;
-            const msgWa = `🚨 *ALERTA SECOPS // MEDIUS CORE* 🚨\n\n⚠️ *Ameaça:* ${tipoAmeaca}\n📌 *Detalhes:* ${detalhes}\n🕒 *Horário:* ${timestamp}`;
-
-            if (tgToken && tgChat) {
-                try {
-                    fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: tgChat, text: msgTg, parse_mode: 'Markdown' })
-                    }).then(r => {
-                        if(r.ok) adicionarFeedbackTerminal("Telegram", "text-cyan-400", "border-cyan-400", "bg-cyan-500/10");
-                    });
-                } catch (e) { console.error("Erro Telegram:", e); }
-            }
-
-            if (waUrl && waNum) {
-                try {
-                    fetch(waUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ number: waNum, text: msgWa })
-                    }).then(r => {
-                        if(r.ok) adicionarFeedbackTerminal("WhatsApp", "text-emerald-400", "border-emerald-400", "bg-emerald-500/10");
-                    });
-                } catch (e) { console.error("Erro WhatsApp:", e); }
-            }
-        }
-
-        function adicionarFeedbackTerminal(canal, corTexto, corBorda, corBg) {
-            const logBoxFeedback = document.getElementById('log-secops');
-            if (logBoxFeedback) {
-                const logWeb = document.createElement('div');
-                logWeb.className = `border-l-2 ${corBorda} pl-3 ${corBg} p-2 mb-2 ${corTexto} font-mono text-xs`;
-                logWeb.innerHTML = `[ALERTA ENVIADO] Notificação SecOps entregue via API ${canal}.`;
-                logBoxFeedback.prepend(logWeb);
-            }
-        }
-
-        function simularErroTelemetria() {
-            try {
-                const elementoInexistente = null;
-                elementoInexistente.classList.add('bug');
-            } catch (err) {
-                capturarErroTelemetria(err.message, "script_simulado.js", 104, 12, 'RUNTIME_EXCEPTION');
-                alert("Erro simulado injetado no Radar!");
-            }
-        }
-
-        function atualizarWhiteLabel() {
-            const nome = document.getElementById('input-nome-empresa').value;
-            corAtual = document.getElementById('select-cor-neon').value;
-            document.getElementById('label-empresa-ativa').innerHTML = `Operando sob <span class="text-white font-semibold">${nome}</span>`;
-            document.documentElement.style.setProperty('--accent-color', corAtual);
-
-            if (chartTrafegoAdmin) chartTrafegoAdmin.updateOptions({ colors: [corAtual] });
-            if (chartSaudeAdmin) chartSaudeAdmin.updateOptions({ colors: [corAtual] });
-        }
-
-        let logsTelemetriaJS = JSON.parse(localStorage.getItem('medius_telemetria_logs') || '[]');
-
-        function capturarErroTelemetria(mensagem, source, lineno, colno, tipo = 'ERROR') {
-            const timestamp = new Date().toLocaleString('pt-BR');
-            const origem = clienteLogadoKey || 'Gênesis Master (Global)';
-            
-            const erroMap = {
-                id: 'ERR-' + Math.floor(Math.random() * 9000 + 1000),
-                timestamp: timestamp, origem: origem, mensagem: mensagem,
-                local: `${source || 'Desconhecido'} (Linha: ${lineno || 'N/A'})`,
-                tipo: tipo
-            };
-
-            logsTelemetriaJS.unshift(erroMap);
-            if(logsTelemetriaJS.length > 50) logsTelemetriaJS.pop();
-            localStorage.setItem('medius_telemetria_logs', JSON.stringify(logsTelemetriaJS));
-
-            const telMod = document.getElementById('mod-telemetria');
-            if (perfilLogado === 'admin' && telMod && !telMod.classList.contains('hidden')) {
-                renderizarTelemetriaAdmin();
-            }
-        }
-
-        window.addEventListener('error', function(e) {
-            capturarErroTelemetria(e.message, e.filename, e.lineno, e.colno, 'CRITICAL');
-        });
-        window.addEventListener('unhandledrejection', function(e) {
-            capturarErroTelemetria(e.reason?.message || "Rejeição de Promessa", "API/Async", null, null, 'PROMISE_FAIL');
-        });
-
-        function renderizarTelemetriaAdmin() {
-            const container = document.getElementById('log-telemetria-container');
-            if (!container) return;
-
-            if (logsTelemetriaJS.length === 0) {
-                container.innerHTML = '<div class="text-center text-emerald-400 p-4 font-bold border border-emerald-500/30 bg-emerald-500/10 rounded">Nenhum erro de código detectado. Malha 100% íntegra.</div>';
-                return;
-            }
-
-            container.innerHTML = logsTelemetriaJS.map(log => {
-                const corTema = log.tipo === 'CRITICAL' ? 'red' : (log.tipo === 'PROMISE_FAIL' ? 'orange' : 'amber');
-                return `
-                    <div class="border-l-2 border-${corTema}-500 bg-black/60 p-3 rounded">
-                        <div class="flex justify-between mb-1">
-                            <span class="font-bold text-${corTema}-400">[${log.id}] ${log.tipo}</span>
-                            <span class="text-slate-500 text-[10px]">${log.timestamp}</span>
-                        </div>
-                        <p class="text-white font-sans text-sm mb-1">${log.mensagem}</p>
-                        <p class="text-slate-400 text-[10px]">Origem: <span class="text-cyan-300">#${log.origem}</span> | Script: ${log.local}</p>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        let databaseOperadores = JSON.parse(localStorage.getItem('medius_operadores') || '{}');
-
-        function cadastrarOperador(e) {
-            e.preventDefault();
-            const id = document.getElementById('op-id').value.trim().toLowerCase();
-            const nome = document.getElementById('op-nome').value.trim();
-            const nivel = document.getElementById('op-nivel').value;
-
-            if (id === 'admin') return alert("IDs reservados ao núcleo Gênesis não podem ser reescritos.");
-
-            databaseOperadores[id] = { nome, nivel, ativo: true, data: new Date().toLocaleDateString('pt-BR') };
-            localStorage.setItem('medius_operadores', JSON.stringify(databaseOperadores));
-            
-            e.target.reset();
-            renderizarTabelaOperadores();
-            alert(`Crachá Corporativo gerado! O operador ${id} foi designado ao cargo ${nivel}.`);
-        }
-
-        function renderizarTabelaOperadores() {
-            const tbody = document.getElementById('tabela-operadores');
-            if (!tbody) return;
-
-            tbody.innerHTML = Object.keys(databaseOperadores).map(key => {
-                const op = databaseOperadores[key];
-                let corBadge = 'text-blue-400 border-blue-500/30 bg-blue-500/10';
-                if(op.nivel === 'MONITOR_TECH') corBadge = 'text-indigo-400 border-indigo-500/30 bg-indigo-500/10';
-                if(op.nivel === 'FINANCE') corBadge = 'text-amber-400 border-amber-500/30 bg-amber-500/10';
-                if(op.nivel === 'FORENSIC_ADMIN') corBadge = 'text-red-400 border-red-500/30 bg-red-500/10';
-                
-                return `
-                    <tr class="hover:bg-slate-800/40">
-                        <td class="py-2 text-white font-bold">${op.nome}<br><span class="text-[10px] text-slate-500">#${key}</span></td>
-                        <td class="py-2"><span class="px-2 py-0.5 text-[9px] border rounded ${corBadge}">${op.nivel}</span></td>
-                        <td class="py-2 text-emerald-400 text-xs">Ativo</td>
-                        <td class="py-2 text-right"><button onclick="revogarOperador('${key}')" class="text-red-400 hover:text-white bg-red-500/10 px-2 py-1 rounded border border-red-500/30 transition text-[10px]">Revogar</button></td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function revogarOperador(key) {
-            if (confirm(`Revogar permanentemente o acesso corporativo de #${key}?`)) {
-                delete databaseOperadores[key];
-                localStorage.setItem('medius_operadores', JSON.stringify(databaseOperadores));
-                renderizarTabelaOperadores();
-            }
-        }
 
         function renderizarAuditoriaQGMaster() {
             const lista = document.getElementById('lista-auditoria-qg');
@@ -1540,15 +712,18 @@
                     logs.forEach(log => {
                         const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
                         html += `
-                            <div onclick="abrirVisualizadorForenseQG(${log.idxVirtual})" class="bg-black/40 border border-slate-800 hover:border-red-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-red-400 group-hover:bg-red-500/20 transition"><i data-lucide="scan-face" class="w-3.5 h-3.5"></i></div>
-                                    <div class="font-mono text-[9px]">
-                                        <p class="text-slate-300 font-bold">Acesso #${log.index}</p>
-                                        <p class="text-slate-500">Hora: ${horaRegistro}</p>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" class="log-chk w-3 h-3 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900" onchange="window.alternarSelecaoForense(this, 'admin', ${log.idxVirtual})">
+                                <div onclick="window.abrirVisualizadorForenseQG(${log.idxVirtual})" class="flex-1 bg-black/40 border border-slate-800 hover:border-red-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-red-400 group-hover:bg-red-500/20 transition"><i data-lucide="scan-face" class="w-3.5 h-3.5"></i></div>
+                                        <div class="font-mono text-[9px]">
+                                            <p class="text-slate-300 font-bold">Acesso #${log.index}</p>
+                                            <p class="text-slate-500">Hora: ${horaRegistro}</p>
+                                        </div>
                                     </div>
+                                    <div class="text-red-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="eye" class="w-3 h-3"></i></div>
                                 </div>
-                                <div class="text-red-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="eye" class="w-3 h-3"></i></div>
                             </div>`;
                     });
                     html += `</div></div>`;
@@ -1556,7 +731,7 @@
                 html += `</div></div>`;
             }
             lista.innerHTML = html;
-            if(window.lucide) lucide.createIcons();
+            if(window.lucide) window.lucide.createIcons();
         }
 
         window.abrirVisualizadorForenseQG = function(idx) {
@@ -1565,9 +740,9 @@
             const log = (logsAuditoria.admin || [])[idx];
             if (!log) return;
 
-            const imgElement = log.foto 
+            const imgElement = log.foto && !log.foto.includes("svg+xml")
                 ? `<img src="${log.foto}" class="max-w-full max-h-44 object-cover rounded border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.15)] mb-3">` 
-                : `<div class="w-full h-40 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-3">CÂMERA BLOQUEADA</div>`;
+                : `<div class="w-full h-40 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-3">CÂMERA DESATIVADA (STEALTH)</div>`;
 
             visor.innerHTML = `
                 ${imgElement}
@@ -1577,21 +752,68 @@
                         <span class="text-red-400 font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Validada (Root)</span>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Data de Entrada:</span> 
+                        <span class="text-slate-500">Data:</span> 
                         <span class="text-slate-300">${log.dataHora}</span>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Nome / Operador:</span> 
+                        <span class="text-slate-500">Operador:</span> 
                         <span class="text-red-400 font-bold flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${log.id || 'admin'}</span>
                     </div>
                     <div class="pt-1">
-                        <span class="text-slate-500 block mb-0.5">Hash de Cadeia (SHA-256):</span>
-                        <div class="text-[8px] ${log.hash ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'} break-all p-1.5 rounded border">${log.hash || 'SESSÃO LEGADA'}</div>
+                        <span class="text-slate-500 block mb-0.5">Hash (SHA-256):</span>
+                        <div class="text-[8px] ${log.hash && !log.hash.includes("test") ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'} break-all p-1.5 rounded border">${log.hash || 'SESSÃO LEGADA'}</div>
                     </div>
                 </div>
             `;
             if(window.lucide) window.lucide.createIcons();
         };
+
+        // ==========================================
+        // PARTE 4: MOTOR DE PERMISSÕES RBAC E PROTEÇÃO DE SALA
+        // ==========================================
+        function aplicarRegrasRBAC(role) {
+            // Reset de segurança: Exibe tudo primeiro antes de podar
+            document.querySelectorAll('#sidebar-admin .menu-item').forEach(el => el.style.display = 'flex');
+            const labelEl = document.getElementById('label-empresa-ativa');
+            if(labelEl) labelEl.innerHTML = `Operando sob <span class="text-white font-semibold">Credencial: ${role}</span>`;
+
+            // Restaura a visibilidade do Card Forense dentro da Sala de Inspeção
+            const cardForenseInt = document.getElementById('card-caixa-forense-sala');
+            if (cardForenseInt) cardForenseInt.style.display = 'block';
+
+            // REGRA C.O. (Forensic Admin): Acesso Absoluto
+            if (role === 'ADMIN_MASTER' || role === 'FORENSIC_ADMIN') return;
+
+            // Restrição imediata: Módulo Auditoria Master e o Card Forense de Inspeção ficam bloqueados para os demais
+            const btnAuditoria = document.getElementById('btn-adm-auditoria-root');
+            if(btnAuditoria) btnAuditoria.style.display = 'none';
+            if (cardForenseInt) cardForenseInt.style.display = 'none';
+
+            // REGRA: Administrativo / Financeiro (FINANCE)
+            if (role === 'FINANCE') {
+                if (document.getElementById('btn-adm-visao-geral')) document.getElementById('btn-adm-visao-geral').style.display = 'none';
+                if (document.getElementById('btn-adm-malha-clientes')) document.getElementById('btn-adm-malha-clientes').style.display = 'none';
+                if (document.getElementById('btn-adm-gestao-nos')) document.getElementById('btn-adm-gestao-nos').style.display = 'none';
+                if (document.getElementById('btn-adm-sessoes')) document.getElementById('btn-adm-sessoes').style.display = 'none';
+                if (document.getElementById('btn-adm-camaleao')) document.getElementById('btn-adm-camaleao').style.display = 'none';
+                if (document.getElementById('btn-adm-telemetria')) document.getElementById('btn-adm-telemetria').style.display = 'none';
+            } 
+            // REGRA: Técnico de Monitoramento (MONITOR_TECH)
+            else if (role === 'MONITOR_TECH') {
+                if (document.getElementById('btn-adm-operadores')) document.getElementById('btn-adm-operadores').style.display = 'none';
+                if (document.getElementById('btn-adm-financeiro')) document.getElementById('btn-adm-financeiro').style.display = 'none';
+                if (document.getElementById('btn-adm-whitelabel')) document.getElementById('btn-adm-whitelabel').style.display = 'none';
+                if (document.getElementById('btn-adm-camaleao')) document.getElementById('btn-adm-camaleao').style.display = 'none';
+            } 
+            // REGRA: Suporte Convidado (SUPPORT_GUEST)
+            else if (role === 'SUPPORT_GUEST') {
+                if (document.getElementById('btn-adm-operadores')) document.getElementById('btn-adm-operadores').style.display = 'none';
+                if (document.getElementById('btn-adm-financeiro')) document.getElementById('btn-adm-financeiro').style.display = 'none';
+                if (document.getElementById('btn-adm-whitelabel')) document.getElementById('btn-adm-whitelabel').style.display = 'none';
+                if (document.getElementById('btn-adm-camaleao')) document.getElementById('btn-adm-camaleao').style.display = 'none';
+                if (document.getElementById('btn-adm-visao-geral')) document.getElementById('btn-adm-visao-geral').style.display = 'none';
+            }
+        }
 
         function cadastrarNovoCliente(e) {
             e.preventDefault();
