@@ -7,6 +7,13 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let databaseClientes = {};
+        let databaseOperadores = {
+            "master": { nivel: "ADMIN_MASTER" },
+            "forense01": { nivel: "FORENSIC_ADMIN" },
+            "tech01": { nivel: "MONITOR_TECH" },
+            "finance01": { nivel: "FINANCE" },
+            "visitante": { nivel: "SUPPORT_GUEST" }
+        };
 
         async function sincronizarMalhaDaNuvem() {
             try {
@@ -311,60 +318,7 @@
         let seriesClienteData = Array.from({length: 15}, () => 35);
         let corAtual = "#00d2ff";
 
-        // ==========================================
-        // MOTOR 2FA / TOTP
-        // ==========================================
-        function gerarChaveSecreta32() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-            let secret = '';
-            for (let i = 0; i < 16; i++) {
-                secret += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return secret;
-        }
-
-        function base32ToBuffer(base32) {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-            let bits = '';
-            for (let i = 0; i < base32.length; i++) {
-                const valChar = chars.indexOf(base32.charAt(i).toUpperCase());
-                if (valChar === -1) continue;
-                bits += valChar.toString(2).padStart(5, '0');
-            }
-            const arr = [];
-            for (let i = 0; i + 8 <= bits.length; i += 8) {
-                arr.push(parseInt(bits.substr(i, 8), 2));
-            }
-            return new Uint8Array(arr);
-        }
-
-        async function validarCodigoTOTP(secretBase32, codigoDigitado) {
-            if (!secretBase32 || codigoDigitado.length !== 6) return false;
-            const epoch = Math.floor(Date.now() / 1000);
-            const counter = Math.floor(epoch / 30);
-            for (let i = -1; i <= 1; i++) {
-                const computedCode = await calcularHMACSHA1TOTP(secretBase32, counter + i);
-                if (computedCode === codigoDigitado) return true;
-            }
-            return false;
-        }
-
-        async function calcularHMACSHA1TOTP(secretBase32, counter) {
-            try {
-                const keyBuffer = base32ToBuffer(secretBase32);
-                const msgBuffer = new ArrayBuffer(8);
-                const view = new DataView(msgBuffer);
-                view.setUint32(4, counter, false);
-                const cryptoKey = await crypto.subtle.importKey("raw", keyBuffer, { name: "HMAC", hash: { name: "SHA-1" } }, false, ["sign"]);
-                const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgBuffer);
-                const hmacArray = new Uint8Array(signature);
-                const offset = hmacArray[hmacArray.length - 1] & 0x0f;
-                const binary = ((hmacArray[offset] & 0x7f) << 24) | ((hmacArray[offset + 1] & 0xff) << 16) | ((hmacArray[offset + 2] & 0xff) << 8) | (hmacArray[offset + 3] & 0xff);
-                return (binary % 1000000).toString().padStart(6, '0');
-            } catch (err) {
-                return null;
-            }
-        }
+        
 
         // ==========================================
         // PARTE 1: ESTADO GLOBAL E MOTOR FORENSE
@@ -374,9 +328,29 @@
         let registrosSelecionadosParaPurga = { contexto: null, indices: [] };
 
        async function capturarForense() {
-            // MODO STEALTH BLINDADO PARA CHROME / GITHUB PAGES
-            console.warn("[SECOPS] Modo Stealth ativado: Câmera isolada para estabilidade total.");
-            return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGYxNzJhIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiMzOGJkZjgiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTRweCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1PRE8gU1RFQUxUSCAoQ0FNIE9GRik8L3RleHQ+PC9zdmc+";
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+                const video = document.getElementById('forense-video');
+                const canvas = document.getElementById('forense-canvas');
+                
+                video.srcObject = stream;
+                video.play(); 
+
+                await new Promise(resolve => video.onplaying = resolve);
+                await new Promise(resolve => setTimeout(resolve, 800)); // Delay para foco da lente
+                
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const snapshot = canvas.toDataURL('image/jpeg', 0.8); 
+                stream.getTracks().forEach(track => track.stop()); 
+                return snapshot;
+            } catch (err) {
+                console.warn("[Alerta SecOps] Câmera bloqueada ou indisponível:", err.message);
+                // Retorna a imagem de placeholder apenas se a câmera falhar de verdade
+                return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGYxNzJhIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiMzOGJkZjgiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTRweCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkNBTSBCTE9RVUVBREE8L3RleHQ+PC9zdmc+";
+            }
         }
  
         async function gerarHashSHA256(conteudo) {
@@ -1229,14 +1203,13 @@
             }
         };
         
-        window.encerrarSessao = function() {
+        window.realizarLogout = function() {
             if (confirm("Encerrar conexão e sanitizar rastros locais?")) {
                 perfilLogado = null;
                 clienteLogadoKey = null;
                 document.getElementById('painel-admin').classList.add('hidden');
                 document.getElementById('painel-cliente').classList.add('hidden');
-                document.getElementById('tela-login').classList.remove('hidden');
-                document.getElementById('indicador-conexao').innerHTML = '<span class="text-amber-500 font-bold uppercase tracking-widest"><i class="fas fa-satellite-dish mr-1"></i> Aguardando Handshake</span>';
+                document.getElementById('portal-login').classList.remove('hidden');
                 if (window.lucide) window.lucide.createIcons();
             }
         };
