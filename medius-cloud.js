@@ -733,7 +733,41 @@
             `;
             if(window.lucide) window.lucide.createIcons();
         };
+        // ==========================================
+        // RENDERIZADOR DE GRÁFICOS (NOVO APEXCHARTS)
+        // ==========================================
+        function renderizarGraficosGeraisAdmin() {
+    if (!document.querySelector("#chart-trafego-admin") || !document.querySelector("#chart-saude-admin")) return;
 
+    if (!chartTrafegoAdmin) {
+        const optionsTrafego = {
+            series: [{ name: 'Requisições/s', data: seriesAdminData }],
+            chart: { type: 'area', height: 250, toolbar: { show: false }, background: 'transparent' },
+            colors: ['#00d2ff'],
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0 } },
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 2 },
+            xaxis: { labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
+            yaxis: { labels: { style: { colors: '#64748b' } } },
+            grid: { borderColor: 'rgba(255,255,255,0.05)', strokeDashArray: 4 },
+            theme: { mode: 'dark' }
+        };
+        chartTrafegoAdmin = new ApexCharts(document.querySelector("#chart-trafego-admin"), optionsTrafego);
+        chartTrafegoAdmin.render();
+    }
+
+    if (!chartSaudeAdmin) {
+        const optionsSaude = {
+            series: [100],
+            chart: { type: 'radialBar', height: 250, background: 'transparent' },
+            plotOptions: { radialBar: { hollow: { size: '65%' }, dataLabels: { value: { color: '#10b981', fontSize: '24px', fontWeight: 'bold', formatter: val => val + "%" } } } },
+            labels: ['SLA da Malha'], colors: ['#10b981'], theme: { mode: 'dark' }
+        };
+        chartSaudeAdmin = new ApexCharts(document.querySelector("#chart-saude-admin"), optionsSaude);
+        chartSaudeAdmin.render();
+    }
+        }
+    
         // ==========================================
         // PARTE 4: MOTOR DE PERMISSÕES RBAC E PROTEÇÃO DE SALA
         // ==========================================
