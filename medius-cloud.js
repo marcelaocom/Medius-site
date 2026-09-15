@@ -505,7 +505,7 @@
                         const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
                         html += `
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" class="log-chk w-3 h-3 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900" onchange="window.alternarSelecaoForense(this, 'sala', ${log.idxVirtual})">
+                                <input type="checkbox" class="log-chk w-4 h-4 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900 ml-1" onchange="window.alternarSelecaoForense(this, 'sala', ${log.idxVirtual})">
                                 <div onclick="window.abrirVisualizadorForenseAdmin('${tmeClienteKey}', ${log.idxVirtual})" class="flex-1 bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
                                     <div class="flex items-center gap-2.5">
                                         <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition"><i data-lucide="scan-face" class="w-3.5 h-3.5"></i></div>
@@ -594,7 +594,7 @@
                         const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
                         html += `
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" class="log-chk w-3.5 h-3.5 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900" onchange="window.alternarSelecaoForense(this, 'cliente', ${log.idxVirtual})">
+                                <input type="checkbox" class="log-chk w-4 h-4 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900 ml-1" onchange="window.alternarSelecaoForense(this, 'cliente', ${log.idxVirtual})">
                                 <div onclick="window.abrirVisualizadorForense(${log.idxVirtual})" class="flex-1 bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
                                     <div class="flex items-center gap-3">
                                         <div class="w-8 h-8 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition"><i data-lucide="scan-face" class="w-4 h-4"></i></div>
@@ -679,7 +679,7 @@
                         const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
                         html += `
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" class="log-chk w-3 h-3 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900" onchange="window.alternarSelecaoForense(this, 'admin', ${log.idxVirtual})">
+                                <input type="checkbox" class="log-chk w-4 h-4 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900 ml-1" onchange="window.alternarSelecaoForense(this, 'admin', ${log.idxVirtual})">
                                 <div onclick="window.abrirVisualizadorForenseQG(${log.idxVirtual})" class="flex-1 bg-black/40 border border-slate-800 hover:border-red-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
                                     <div class="flex items-center gap-2.5">
                                         <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-red-400 group-hover:bg-red-500/20 transition"><i data-lucide="scan-face" class="w-3.5 h-3.5"></i></div>
