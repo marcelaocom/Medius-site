@@ -814,6 +814,7 @@
                         status_contrato: "SINCRONIZADO",
                         expires_at: expires,
                         ativo: true,
+                        chave_sha256: senha,
                         senha_acesso: senha
                     }]);
 
