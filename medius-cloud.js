@@ -1204,30 +1204,42 @@
             if (window.lucide) window.lucide.createIcons();
 
             try {
+                // Proteção C.O.R.E: Garante as variáveis corretas da interface
+                const idMestre = typeof user !== 'undefined' ? user : '';
+                const campoSenha = document.querySelector('input[type="password"]');
+                const senhaMestre = typeof senha !== 'undefined' ? senha : (campoSenha ? campoSenha.value.trim() : '');
+
                 const { data: clienteEncontrado, error: errBusca } = await supabaseClient
                     .from('clients')
                     .select('*')
-                    .eq('id', identificador)
+                    .eq('id', idMestre)
                     .single();
 
                 if (errBusca || !clienteEncontrado) {
-                    throw new Error("Identificador não encontrado na malha.");
+                    throw new Error("Nó não encontrado na malha oficial.");
                 }
 
-                if (clienteEncontrado.senha_acesso !== senha && clienteEncontrado.chave_sha256 !== senha) {
+                if (clienteEncontrado.senha_acesso !== senhaMestre && clienteEncontrado.chave_sha256 !== senhaMestre) {
                     throw new Error("Chave de acesso inválida para este nó.");
                 }
 
-                await registrarLogAcesso(identificador, identificador === 'admin' ? 'QG Master' : 'Nó Cliente', snapshot);
+                // Log de acesso blindado (não quebra o login se falhar)
+                try {
+                    const snap = typeof snapshot !== 'undefined' ? snapshot : null;
+                    await registrarLogAcesso(idMestre, (idMestre === 'admin' || idMestre === 'root') ? 'QG Master' : 'Nó Cliente', snap);
+                } catch (e) { 
+                    console.warn("Log SecOps ignorado: ", e.message); 
+                }
 
-                if (identificador === 'admin' || identificador === 'root') {
+                // Liberação da porta
+                if (idMestre === 'admin' || idMestre === 'root') {
                     autenticarComo('admin');
                 } else {
-                    autenticarComo('cliente', identificador);
+                    autenticarComo('cliente', idMestre);
                 }
 
             } catch (err) {
-                console.error("[SECOPS ERRO] Falha no Login Manual via Supabase:", err);
+                console.error("[SECOPS ERRO] Falha no Login via Supabase:", err);
                 alert("Falha de credencial: " + err.message);
             }finally {
                 // A MÁGICA QUE DESTRAVA O BOTÃO MESMO SE DER ERRO
