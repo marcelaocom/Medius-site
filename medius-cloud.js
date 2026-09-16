@@ -1196,58 +1196,66 @@
         };
 
         window.realizarLoginManual = async function(e) {
-            e.preventDefault();
-            const btnLogin = e.target.querySelector('button[type="submit"]');
-            const textoOriginal = btnLogin.innerHTML;
-            btnLogin.innerHTML = `<i data-lucide="scan-face" class="w-4 h-4 animate-pulse"></i> Biometria...`;
-            btnLogin.disabled = true;
-            if (window.lucide) window.lucide.createIcons();
+        e.preventDefault();
+        const btnLogin = e.target.querySelector('button[type="submit"]');
+        const textoOriginal = btnLogin.innerHTML;
+        btnLogin.innerHTML = `<i data-lucide="scan-face" class="w-4 h-4 animate-pulse"></i> Biometria...`;
+        btnLogin.disabled = true;
+        if (window.lucide) window.lucide.createIcons();
 
-            try {
-                // Proteção C.O.R.E: Garante as variáveis corretas da interface
-                const idMestre = typeof user !== 'undefined' ? user : '';
-                const campoSenha = document.querySelector('input[type="password"]');
-                const senhaMestre = typeof senha !== 'undefined' ? senha : (campoSenha ? campoSenha.value.trim() : '');
+        try {
+            // Captura C.O.R.E. Diretamente dos inputs do HTML
+            const inputUser = document.getElementById('login-user');
+            const inputPass = document.getElementById('login-pass');
+            
+            const idMestre = inputUser ? inputUser.value.trim().toLowerCase().replace(/\s+/g, '-') : '';
+            const senhaMestre = inputPass ? inputPass.value.trim() : '';
 
-                const { data: clienteEncontrado, error: errBusca } = await supabaseClient
-                    .from('clients')
-                    .select('*')
-                    .eq('id', idMestre)
-                    .single();
-
-                if (errBusca || !clienteEncontrado) {
-                    throw new Error("Nó não encontrado na malha oficial.");
-                }
-
-                if (clienteEncontrado.senha_acesso !== senhaMestre && clienteEncontrado.chave_sha256 !== senhaMestre) {
-                    throw new Error("Chave de acesso inválida para este nó.");
-                }
-
-                // Log de acesso blindado (não quebra o login se falhar)
-                try {
-                    const snap = typeof snapshot !== 'undefined' ? snapshot : null;
-                    await registrarLogAcesso(idMestre, (idMestre === 'admin' || idMestre === 'root') ? 'QG Master' : 'Nó Cliente', snap);
-                } catch (e) { 
-                    console.warn("Log SecOps ignorado: ", e.message); 
-                }
-
-                // Liberação da porta
-                if (idMestre === 'admin' || idMestre === 'root') {
-                    autenticarComo('admin');
-                } else {
-                    autenticarComo('cliente', idMestre);
-                }
-
-            } catch (err) {
-                console.error("[SECOPS ERRO] Falha no Login via Supabase:", err);
-                alert("Falha de credencial: " + err.message);
-            }finally {
-                // A MÁGICA QUE DESTRAVA O BOTÃO MESMO SE DER ERRO
-                btnLogin.innerHTML = textoOriginal;
-                btnLogin.disabled = false;
-                if (window.lucide) window.lucide.createIcons();
+            if (!idMestre) {
+                throw new Error("O campo Identificador está vazio.");
             }
-        };
+
+            // Busca a verdade no Supabase usando o ID real
+            const { data: clienteEncontrado, error: errBusca } = await supabaseClient
+                .from('clients')
+                .select('*')
+                .eq('id', idMestre)
+                .single();
+
+            if (errBusca || !clienteEncontrado) {
+                throw new Error("Nó não encontrado na malha oficial.");
+            }
+
+            // Valida a credencial (compatibilidade com as duas colunas)
+            if (clienteEncontrado.senha_acesso !== senhaMestre && clienteEncontrado.chave_sha256 !== senhaMestre) {
+                throw new Error("Chave de acesso inválida para este nó.");
+            }
+
+            // Registra o log sem quebrar a operação
+            try {
+                const snap = null; // Ignorando a câmera para evitar quebra no login
+                await registrarLogAcesso(idMestre, (idMestre === 'admin' || idMestre === 'root') ? 'QG Master' : 'Nó Cliente', snap);
+            } catch (e) { 
+                console.warn("Log SecOps ignorado."); 
+            }
+
+            // Catraca liberada
+            if (idMestre === 'admin' || idMestre === 'root') {
+                autenticarComo('admin');
+            } else {
+                autenticarComo('cliente', idMestre);
+            }
+
+        } catch (err) {
+            console.error("[SECOPS ERRO] Falha no Login via Supabase:", err);
+            alert("Falha de credencial: " + err.message);
+        } finally {
+            // A MÁGICA QUE DESTRAVA O BOTÃO MESMO SE DER ERRO
+            btnLogin.innerHTML = textoOriginal;
+            btnLogin.disabled = false;
+            if (window.lucide) window.lucide.createIcons();
+        }
+    };
         
         window.realizarLogout = function() {
             if (confirm("Encerrar conexão e sanitizar rastros locais?")) {
