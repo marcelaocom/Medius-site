@@ -1204,30 +1204,32 @@
             if (window.lucide) window.lucide.createIcons();
 
             try {
-                const user = document.getElementById('login-user').value.trim().toLowerCase();
-                const snapshot = await capturarForense();
-                
-                const isRoot = user === 'admin';
-                const isOperador = typeof databaseOperadores !== 'undefined' && databaseOperadores[user] !== undefined;
-                const isAdmin = isRoot || isOperador;
+                const { data: clienteEncontrado, error: errBusca } = await supabaseClient
+                    .from('clients')
+                    .select('*')
+                    .eq('id', identificador)
+                    .single();
 
-                const identificador = user !== '' ? user : 'estudio-marcelao-01'; 
-                await registrarLogAcesso(identificador, (isAdmin ? 'QG Master' : 'Nó Cliente'), snapshot);
-
-                if (isAdmin) {
-                    const role = isRoot ? 'ADMIN_MASTER' : databaseOperadores[user].nivel;
-                    aplicarRegrasRBAC(role);
-                    autenticarComo('admin');
-                } else if (typeof databaseClientes !== 'undefined' && databaseClientes[user]) {
-                    autenticarComo('cliente', user);
-                } else {
-                    // Fallback para demonstração se a senha não existir
-                    autenticarComo('cliente', 'estudio-marcelao-01');
+                if (errBusca || !clienteEncontrado) {
+                    throw new Error("Identificador não encontrado na malha.");
                 }
+
+                if (clienteEncontrado.senha_acesso !== senha && clienteEncontrado.chave_sha256 !== senha) {
+                    throw new Error("Chave de acesso inválida para este nó.");
+                }
+
+                await registrarLogAcesso(identificador, identificador === 'admin' ? 'QG Master' : 'Nó Cliente', snapshot);
+
+                if (identificador === 'admin' || identificador === 'root') {
+                    autenticarComo('admin');
+                } else {
+                    autenticarComo('cliente', identificador);
+                }
+
             } catch (err) {
-                console.error("[SECOPS ERRO] Falha no Login Manual:", err);
-                alert("Falha de credencial. Acesso não reconhecido pela malha.");
-            } finally {
+                console.error("[SECOPS ERRO] Falha no Login Manual via Supabase:", err);
+                alert("Falha de credencial: " + err.message);
+            }finally {
                 // A MÁGICA QUE DESTRAVA O BOTÃO MESMO SE DER ERRO
                 btnLogin.innerHTML = textoOriginal;
                 btnLogin.disabled = false;
