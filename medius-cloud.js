@@ -1147,7 +1147,9 @@
         // PARTE 5: MOTORES DE LOGIN BLINDADOS (ANTI-TRAVAMENTO)
         // ==========================================
         window.autenticarComo = function(tipo, clientId = null) {
-            document.getElementById('tela-login').classList.add('hidden');
+            // CORREÇÃO C.O.R.E: Aponta para o ID correto do HTML (portal-login)
+            const telaLogin = document.getElementById('portal-login');
+            if (telaLogin) telaLogin.classList.add('hidden');
             
             if (tipo === 'admin') {
                 perfilLogado = 'admin';
