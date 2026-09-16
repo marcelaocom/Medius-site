@@ -796,6 +796,7 @@
             const nome = document.getElementById('novo-cli-nome').value.trim();
             const dominio = document.getElementById('novo-cli-dominio').value.trim();
             const expires = document.getElementById('novo-cli-exp').value || "2026-12-31";
+            const senha = document.getElementById('novo-cli-senha').value.trim();
 
             const btnSubmit = e.target.querySelector('button[type="submit"]');
             const txtOriginal = btnSubmit.innerHTML;
@@ -804,7 +805,7 @@
             if (window.lucide) window.lucide.createIcons();
 
             try {
-                // Disparo 1: Injeta na tabela principal de clientes
+                // Disparo 1: Injeta na tabela principal de clientes (Agora com a Senha)
                 const { error: errCliente } = await supabaseClient
                     .from('clients')
                     .insert([{
@@ -812,7 +813,8 @@
                         nome_empresa: nome,
                         status_contrato: "SINCRONIZADO",
                         expires_at: expires,
-                        ativo: true
+                        ativo: true,
+                        senha_acesso: senha
                     }]);
 
                 if (errCliente) throw new Error("Falha ao registrar cliente: " + errCliente.message);
@@ -834,7 +836,6 @@
                 alert(`Sucesso SecOps! O nó #${id} foi blindado e gravado na nuvem.`);
                 e.target.reset();
                 
-                // Força a malha a buscar a verdade atualizada no Supabase e repintar a tela
                 await sincronizarMalhaDaNuvem();
                 mudarSecaoAdmin('visao-geral');
 
