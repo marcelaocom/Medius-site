@@ -15,55 +15,71 @@
             "visitante": { nivel: "SUPPORT_GUEST" }
         };
 
-        async function sincronizarMalhaDaNuvem() {
-            try {
-                let { data: clientesSupabase, error } = await supabaseClient
-                    .from('clients')
-                    .select('*, client_sites(*)');
+       async function sincronizarMalhaDaNuvem() {
+        try {
+            // Busca os dados das duas tabelas usando Join
+            let { data: clientesSupabase, error } = await supabaseClient
+                .from('clients')
+                .select('*, client_sites(*)');
 
-                if (error) {
-                    console.error("[SECOPS ERRO] Falha ao sincronizar com o Supabase:", error.message);
-                    return;
-                }
-
-                databaseClientes = {};
-                clientesSupabase.forEach(cli => {
-                    databaseClientes[cli.id] = {
-                        nome: cli.nome_empresa,
-                        status: cli.status_contrato,
-                        statusClass: cli.ativo ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-red-500/10 text-red-400 border-red-500/30",
-                        expires_at: cli.expires_at,
-                        ativo: cli.ativo,
-                        faturamento: {
-                            valorMensal: "R$ 1.500,00",
-                            statusPagamento: "PAGO"
-                        },
-                        tickets: [],
-                        equipe: [],
-                        sites: cli.client_sites.map(s => ({
-                            dominio: s.dominio,
-                            tipo: s.tipo_aplicacao,
-                            ping: s.ping_ms + "ms",
-                            sha: "Válida (256-bit)",
-                            saude: s.saude_percentual,
-                            descSaude: "Nó Operacional Protegido",
-                            uptime: "99.98%",
-                            requisicoesHoje: "14,250",
-                            trafegoMin: 30,
-                            trafegoMax: 90
-                        }))
-                    };
-                });
-
-                console.log("[MEDIUS CORE] Malha sincronizada com sucesso via Supabase!");
-                
-                if (typeof renderizarTabelaAdmin === 'function') {
-                    renderizarTabelaAdmin();
-                }
-            } catch (err) {
-                console.error("[CRITICAL] Erro de rede no handshake com a nuvem:", err);
+            if (error) {
+                console.error("[SECOPS ERRO] Falha ao sincronizar com o Supabase:", error.message);
+                return;
             }
+
+            databaseClientes = {}; // Limpa a memória local
+            
+            // Popula a memória com os dados REAIS da nuvem
+            clientesSupabase.forEach(cli => {
+                // Formata o ID exatamente como o login espera
+                const idFormatado = String(cli.id).trim().toLowerCase().replace(/\s+/g, '-');
+                
+                // Trata a array de sites (se o Supabase retornar vazio, garante que é array)
+                const sitesSeguros = Array.isArray(cli.client_sites) ? cli.client_sites : [];
+
+                databaseClientes[idFormatado] = {
+                    nome: cli.nome_empresa || "Sem Nome",
+                    status: cli.status_contrato || "SINCRONIZADO",
+                    statusClass: cli.ativo ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-red-500/10 text-red-400 border-red-500/30",
+                    expires_at: cli.expires_at || "N/A",
+                    ativo: cli.ativo,
+                    faturamento: {
+                        valorMensal: "R$ 1.500,00",
+                        statusPagamento: "PAGO"
+                    },
+                    tickets: [],
+                    equipe: [],
+                    sites: sitesSeguros.map(s => ({
+                        dominio: s.dominio,
+                        tipo: s.tipo_aplicacao || "Geral",
+                        ping: (s.ping_ms || 20) + "ms",
+                        sha: "Válida (256-bit)",
+                        saude: s.saude_percentual || 100,
+                        descSaude: "Nó Operacional Protegido",
+                        uptime: "99.98%",
+                        requisicoesHoje: "14,250",
+                        trafegoMin: 30,
+                        trafegoMax: 90
+                    }))
+                };
+            });
+
+            console.log("[MEDIUS CORE] Malha sincronizada com sucesso. Clientes carregados:", Object.keys(databaseClientes).length);
+            
+            // Salva na memória local do navegador para manter o estado da interface
+            localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
+
+            // Atualiza a tabela na tela
+            if (typeof renderizarTabelaAdmin === 'function') {
+                renderizarTabelaAdmin();
+            }
+            if (typeof renderizarMalhaClientesGeral === 'function') {
+                renderizarMalhaClientesGeral();
+            }
+        } catch (err) {
+            console.error("[CRITICAL] Erro de rede no handshake com a nuvem:", err);
         }
+    }
 
         window.addEventListener('DOMContentLoaded', () => {
             sincronizarMalhaDaNuvem();
