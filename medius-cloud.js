@@ -1155,26 +1155,35 @@
         // ==========================================
         // PARTE 5: MOTORES DE LOGIN BLINDADOS (ANTI-TRAVAMENTO)
         // ==========================================
-        window.autenticarComo = function(tipo, clientId = null) {
-            // CORREÇÃO C.O.R.E: Aponta para o ID correto do HTML (portal-login)
-            const telaLogin = document.getElementById('portal-login');
-            if (telaLogin) telaLogin.classList.add('hidden');
+       window.autenticarComo = function(tipo, clientId = null) {
+        // CORREÇÃO C.O.R.E: Aponta para o ID correto do HTML (portal-login)
+        const telaLogin = document.getElementById('portal-login');
+        if (telaLogin) telaLogin.classList.add('hidden');
+        
+        // C.O.R.E: Captura o indicador com segurança
+        const indicador = document.getElementById('indicador-conexao');
+        
+        if (tipo === 'admin') {
+            perfilLogado = 'admin';
+            document.getElementById('painel-admin').classList.remove('hidden');
             
-            if (tipo === 'admin') {
-                perfilLogado = 'admin';
-                document.getElementById('painel-admin').classList.remove('hidden');
-                document.getElementById('indicador-conexao').innerHTML = '<span class="text-red-500 font-bold uppercase tracking-widest"><i data-lucide="shield-alert" class="w-4 h-4 inline mr-1"></i> Root / QG Master</span>';
-                mudarSecaoAdmin('visao-geral');
-                if (typeof renderizarFinanceiroAdmin === 'function') renderizarFinanceiroAdmin();
-            } else if (tipo === 'cliente') {
-                perfilLogado = 'cliente';
-                clienteLogadoKey = clientId || 'estudio-marcelao-01';
-                document.getElementById('painel-cliente').classList.remove('hidden');
-                document.getElementById('indicador-conexao').innerHTML = `<span class="text-cyan-400 font-bold uppercase tracking-widest"><i data-lucide="server" class="w-4 h-4 inline mr-1"></i> Nó: #${clienteLogadoKey}</span>`;
-                mudarSecaoCliente('visao-geral');
-            }
-            if (window.lucide) window.lucide.createIcons();
-        };
+            // Só tenta injetar o texto se a tag existir no HTML
+            if (indicador) indicador.innerHTML = '<span class="text-red-500 font-bold uppercase tracking-widest"><i data-lucide="shield-alert" class="w-4 h-4 inline mr-1"></i> Root / QG Master</span>';
+            
+            mudarSecaoAdmin('visao-geral');
+            if (typeof renderizarFinanceiroAdmin === 'function') renderizarFinanceiroAdmin();
+        } else if (tipo === 'cliente') {
+            perfilLogado = 'cliente';
+            clienteLogadoKey = clientId || 'estudio-marcelao-01';
+            document.getElementById('painel-cliente').classList.remove('hidden');
+            
+            // Só tenta injetar o texto se a tag existir no HTML
+            if (indicador) indicador.innerHTML = `<span class="text-cyan-400 font-bold uppercase tracking-widest"><i data-lucide="server" class="w-4 h-4 inline mr-1"></i> Nó: #${clienteLogadoKey}</span>`;
+            
+            mudarSecaoCliente('visao-geral');
+        }
+        if (window.lucide) window.lucide.createIcons();
+    };
 
         window.iniciarLoginRapido = async function(e, tipo, clientId = null) {
             e.preventDefault();
