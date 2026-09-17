@@ -1,4 +1,4 @@
-// ==========================================
+        // ==========================================
         // MEDIUS CLOUD CORE // SUPABASE INTEGRATION
         // ==========================================
         const SUPABASE_URL = 'https://fkxrcspkxtgiioduwxol.supabase.co';
@@ -1319,13 +1319,62 @@ window.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('cli-sec-equipe').classList.remove('hidden');
                     renderizarEquipeCliente();
                 }
-                if (secao === 'auditoria') document.getElementById('cli-sec-auditoria').classList.remove('hidden');
+                if (secao === 'auditoria') {
+                    document.getElementById('cli-sec-auditoria').classList.remove('hidden');
+                    renderizarTelemetriaCliente(); // NOVO: Gatilho de nuvem SecOps
+                }
                 if (secao === 'forense') {
                     document.getElementById('cli-sec-forense').classList.remove('hidden');
                     renderizarAuditoriaCliente();
                 }
                 if (secao === 'contrato') document.getElementById('cli-sec-contrato').classList.remove('hidden');
                 if (secao === 'suporte') document.getElementById('cli-sec-suporte').classList.remove('hidden');
+            }
+        }
+
+        async function renderizarTelemetriaCliente() {
+            const container = document.getElementById('client-audit-logs');
+            if (!container) return;
+
+            container.innerHTML = '<div class="text-center text-cyan-400 p-4 font-mono text-xs animate-pulse">Consultando Cofre SecOps na Nuvem...</div>';
+
+            try {
+                // Lê apenas os dados que pertencem ao cliente logado
+                const { data: logs, error } = await supabaseClient
+                    .from('telemetry_logs')
+                    .select('*')
+                    .eq('client_id', clienteLogadoKey)
+                    .order('created_at', { ascending: false })
+                    .limit(30);
+
+                if (error) throw error;
+
+                if (!logs || logs.length === 0) {
+                    container.innerHTML = '<div class="text-center text-emerald-400 p-4 font-bold border border-emerald-500/30 bg-emerald-500/10 rounded">Nenhum evento de segurança registrado. Blindagem ativa.</div>';
+                    return;
+                }
+
+                container.innerHTML = logs.map(log => {
+                    const tipo = log.tipo_evento || 'LOG';
+                    const corTema = tipo.includes('CRITICAL') || tipo.includes('ERROR') || tipo.includes('VIOLACAO') ? 'red' : (tipo.includes('WARN') ? 'amber' : 'emerald');
+                    
+                    let msg = "";
+                    try {
+                        const det = typeof log.detalhes === 'string' ? JSON.parse(log.detalhes) : log.detalhes;
+                        msg = det.mensagem || det.acao || det.host || JSON.stringify(det);
+                    } catch(e) { msg = String(log.detalhes); }
+
+                    const horaFormatada = new Date(log.created_at).toLocaleTimeString('pt-BR');
+
+                    return `
+                        <div class="border-l-2 border-${corTema}-500 pl-3 py-1.5 mb-2 bg-${corTema}-500/5 rounded-r">
+                            <span class="text-${corTema}-400 font-bold">[${horaFormatada}]</span> <span class="text-white">${tipo}:</span> <span class="text-slate-300">${msg}</span>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("[SECOPS] Erro ao carregar auditoria do cliente:", err);
+                container.innerHTML = '<div class="text-center text-red-500 p-4 font-mono text-xs border border-red-500/30 bg-red-500/10 rounded">Erro de conexão com o Cofre SecOps.</div>';
             }
         }
 
