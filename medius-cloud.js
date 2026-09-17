@@ -1152,36 +1152,128 @@ const senha = forceLower(document.getElementById('novo-cli-senha').value.trim())
     // ==========================================
     // MOTORES DE CADASTRO DE OPERADORES (RBAC)
     // ==========================================
-    window.cadastrarOperador = function(e) {
+    window.cadastrarOperador = async function(e) {
         e.preventDefault();
-        
-        // Regra Tática: Força 1º caractere minúsculo
         const forceLower = (s) => s ? s.charAt(0).toLowerCase() + s.slice(1) : '';
-
         const id = forceLower(document.getElementById('op-id').value.trim());
         const nome = document.getElementById('op-nome').value.trim();
         const senha = forceLower(document.getElementById('op-senha').value.trim());
         const nivel = document.getElementById('op-nivel').value;
 
-        console.log(`[SECOPS] Operador Gênesis Registrado -> ID: ${id} | Nível: ${nivel}`);
-        alert(`Crachá Digital gerado com sucesso para o operador: ${id}`);
-        e.target.reset();
+        const btn = e.target.querySelector('button[type="submit"]');
+        const txtOri = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Emitindo...`;
+        btn.disabled = true;
+
+        try {
+            const { error } = await supabaseClient.from('genesis_operators').insert([{
+                operator_id: id, client_id: 'master', nome: nome, chave_acesso: senha, nivel_acesso: nivel, ativo: true
+            }]);
+            if (error) throw error;
+            alert(`Crachá Digital gerado e sincronizado para o operador: ${id}`);
+            e.target.reset();
+            window.renderizarEquipeAdmin();
+        } catch (err) {
+            alert("Erro SecOps: " + err.message);
+        } finally {
+            btn.innerHTML = txtOri; btn.disabled = false; if (window.lucide) window.lucide.createIcons();
+        }
     };
 
-    window.cadastrarOperadorCliente = function(e) {
+    window.cadastrarOperadorCliente = async function(e) {
         e.preventDefault();
-        
-        // Regra Tática: Força 1º caractere minúsculo
         const forceLower = (s) => s ? s.charAt(0).toLowerCase() + s.slice(1) : '';
-
         const id = forceLower(document.getElementById('op-cli-id').value.trim());
         const senha = forceLower(document.getElementById('op-cli-senha').value.trim());
         const site = document.getElementById('op-cli-site').value;
         const validade = document.getElementById('op-cli-validade').value;
+        const cliKey = (typeof clienteLogadoKey !== 'undefined' && clienteLogadoKey) ? clienteLogadoKey : 'estudio-marcelao-01';
 
-        console.log(`[SECOPS] Operador Cliente Registrado -> ID: ${id} | Site: ${site}`);
-        alert(`Acesso restrito emitido com sucesso para ${id}.`);
-        e.target.reset();
+        const btn = e.target.querySelector('button[type="submit"]');
+        const txtOri = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Emitindo...`;
+        btn.disabled = true;
+
+        try {
+            const { error } = await supabaseClient.from('genesis_operators').insert([{
+                operator_id: id, client_id: cliKey, nome: id, chave_acesso: senha, dominio_alvo: site, validade: validade || null, ativo: true
+            }]);
+            if (error) throw error;
+            alert(`Acesso restrito emitido com sucesso para ${id}.`);
+            e.target.reset();
+            window.renderizarEquipeCliente();
+        } catch (err) {
+            alert("Erro SecOps: " + err.message);
+        } finally {
+            btn.innerHTML = txtOri; btn.disabled = false; if (window.lucide) window.lucide.createIcons();
+        }
+    };
+
+    // ==========================================
+    // RENDERIZAÇÃO E REVOGAÇÃO DE EQUIPES (KILL SWITCH)
+    // ==========================================
+    window.renderizarEquipeAdmin = async function() {
+        const tbody = document.getElementById('tabela-operadores');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><i data-lucide="loader-2" class="w-4 h-4 animate-spin inline text-cyan-400"></i></td></tr>';
+        
+        const { data: ops, error } = await supabaseClient.from('genesis_operators').select('*').eq('client_id', 'master').order('created_at', { ascending: false });
+        if (error || !ops || ops.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500">Nenhum operador registrado.</td></tr>'; return;
+        }
+
+        tbody.innerHTML = ops.map(op => `
+            <tr class="${op.ativo ? '' : 'opacity-50'} border-b border-slate-800/40">
+                <td class="py-2"><span class="text-white font-bold">${op.nome}</span><br><span class="text-[9px] text-cyan-400">#${op.operator_id}</span></td>
+                <td class="py-2 text-slate-300 font-mono text-[10px]">${op.nivel_acesso || 'N/A'}</td>
+                <td class="py-2">${op.ativo ? '<span class="text-emerald-400 text-[10px] uppercase font-bold">Ativo</span>' : '<span class="text-red-500 text-[10px] uppercase font-bold">Revogado</span>'}</td>
+                <td class="py-2 text-right">
+                    ${op.ativo ? `<button onclick="revogarAcessoOperador('${op.id}', 'master')" class="text-[9px] px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded uppercase font-bold transition flex items-center justify-end ml-auto gap-1"><i data-lucide="shield-off" class="w-3 h-3"></i> Revogar</button>` : '<span class="text-[9px] text-slate-500">Acesso Cortado</span>'}
+                </td>
+            </tr>
+        `).join('');
+        if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.renderizarEquipeCliente = async function() {
+        const tbody = document.getElementById('tabela-operadores-cliente');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><i data-lucide="loader-2" class="w-4 h-4 animate-spin inline text-cyan-400"></i></td></tr>';
+        
+        const cliKey = (typeof clienteLogadoKey !== 'undefined' && clienteLogadoKey) ? clienteLogadoKey : 'estudio-marcelao-01';
+        const { data: ops, error } = await supabaseClient.from('genesis_operators').select('*').eq('client_id', cliKey).order('created_at', { ascending: false });
+        if (error || !ops || ops.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500">Nenhum operador registrado.</td></tr>'; return;
+        }
+
+        tbody.innerHTML = ops.map(op => {
+            const dataEmissao = new Date(op.created_at).toLocaleDateString('pt-BR');
+            const dataValidade = op.validade ? new Date(op.validade).toLocaleDateString('pt-BR') : 'Sem limite';
+            return `
+            <tr class="${op.ativo ? '' : 'opacity-50'} border-b border-slate-800/40">
+                <td class="py-2"><span class="text-white font-bold">#${op.operator_id}</span><br><span class="text-[9px] text-slate-500">Emitido: ${dataEmissao}</span></td>
+                <td class="py-2 text-cyan-400 truncate max-w-[120px]" title="${op.dominio_alvo}">${op.dominio_alvo || 'Global'}</td>
+                <td class="py-2 text-slate-300 text-[10px]">${dataValidade}</td>
+                <td class="py-2 text-right">
+                    ${op.ativo ? `<button onclick="revogarAcessoOperador('${op.id}', 'cliente')" class="text-[9px] px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded uppercase font-bold transition flex items-center justify-end ml-auto gap-1"><i data-lucide="shield-off" class="w-3 h-3"></i> Revogar</button>` : '<span class="text-[9px] text-red-500">Revogado</span>'}
+                </td>
+            </tr>
+            `;
+        }).join('');
+        if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.revogarAcessoOperador = async function(idUuid, painelOrigem) {
+        if(!confirm("Atenção SecOps: Confirmar revogação imediata deste acesso (Kill Switch)?")) return;
+        try {
+            const { error } = await supabaseClient.from('genesis_operators').update({ ativo: false }).eq('id', idUuid);
+            if (error) throw error;
+            alert("Acesso revogado! Operador bloqueado permanentemente na malha.");
+            if (painelOrigem === 'master') window.renderizarEquipeAdmin();
+            if (painelOrigem === 'cliente') window.renderizarEquipeCliente();
+        } catch (err) {
+            alert("Falha no Kill Switch: " + err.message);
+        }
     };
 
         function calcularFinanceiroGeral() {
