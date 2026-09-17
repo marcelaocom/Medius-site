@@ -15,71 +15,64 @@
             "visitante": { nivel: "SUPPORT_GUEST" }
         };
 
-       async function sincronizarMalhaDaNuvem() {
-        try {
-            // Busca os dados das duas tabelas usando Join
-            let { data: clientesSupabase, error } = await supabaseClient
-                .from('clients')
-                .select('*, client_sites(*)');
+     async function sincronizarMalhaDaNuvem() {
+    try {
+        let { data: clientesSupabase, error } = await supabaseClient
+            .from('genesis_clients')
+            .select('*, genesis_sites(*)');
 
-            if (error) {
-                console.error("[SECOPS ERRO] Falha ao sincronizar com o Supabase:", error.message);
-                return;
-            }
-
-            databaseClientes = {}; // Limpa a memória local
-            
-            // Popula a memória com os dados REAIS da nuvem
-            clientesSupabase.forEach(cli => {
-                // Formata o ID exatamente como o login espera
-                const idFormatado = String(cli.id).trim().toLowerCase().replace(/\s+/g, '-');
-                
-                // Trata a array de sites (se o Supabase retornar vazio, garante que é array)
-                const sitesSeguros = Array.isArray(cli.client_sites) ? cli.client_sites : [];
-
-                databaseClientes[idFormatado] = {
-                    nome: cli.nome_empresa || "Sem Nome",
-                    status: cli.status_contrato || "SINCRONIZADO",
-                    statusClass: cli.ativo ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-red-500/10 text-red-400 border-red-500/30",
-                    expires_at: cli.expires_at || "N/A",
-                    ativo: cli.ativo,
-                    faturamento: {
-                        valorMensal: "R$ 1.500,00",
-                        statusPagamento: "PAGO"
-                    },
-                    tickets: [],
-                    equipe: [],
-                    sites: sitesSeguros.map(s => ({
-                        dominio: s.dominio,
-                        tipo: s.tipo_aplicacao || "Geral",
-                        ping: (s.ping_ms || 20) + "ms",
-                        sha: "Válida (256-bit)",
-                        saude: s.saude_percentual || 100,
-                        descSaude: "Nó Operacional Protegido",
-                        uptime: "99.98%",
-                        requisicoesHoje: "14,250",
-                        trafegoMin: 30,
-                        trafegoMax: 90
-                    }))
-                };
-            });
-
-            console.log("[MEDIUS CORE] Malha sincronizada com sucesso. Clientes carregados:", Object.keys(databaseClientes).length);
-            
-            // Salva na memória local do navegador para manter o estado da interface
-            localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
-
-            // Atualiza a tabela na tela
-            if (typeof renderizarTabelaAdmin === 'function') {
-                renderizarTabelaAdmin();
-            }
-            if (typeof renderizarMalhaClientesGeral === 'function') {
-                renderizarMalhaClientesGeral();
-            }
-        } catch (err) {
-            console.error("[CRITICAL] Erro de rede no handshake com a nuvem:", err);
+        if (error) {
+            console.error("[SECOPS ERRO] Falha ao sincronizar com a malha genesis:", error.message);
+            return;
         }
+
+        databaseClientes = {};
+        
+        clientesSupabase.forEach(cli => {
+            const idFormatado = String(cli.id).trim().toLowerCase().replace(/\s+/g, '-');
+            const sitesSeguros = Array.isArray(cli.genesis_sites) ? cli.genesis_sites : [];
+
+            databaseClientes[idFormatado] = {
+                nome: cli.nome_empresa || "Sem Nome",
+                status: cli.status_contrato || "SINCRONIZADO",
+                statusClass: cli.ativo ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-red-500/10 text-red-400 border-red-500/30",
+                expires_at: cli.expires_at || "N/A",
+                ativo: cli.ativo,
+                faturamento: {
+                    valorMensal: "R$ 1.500,00",
+                    statusPagamento: "PAGO"
+                },
+                tickets: [],
+                equipe: [],
+                sites: sitesSeguros.map(s => ({
+                    dominio: s.dominio,
+                    tipo: s.tipo_aplicacao || "Geral",
+                    ping: (s.ping_ms || 20) + "ms",
+                    sha: "Válida (256-bit)",
+                    saude: s.saude_percentual || 100,
+                    descSaude: "Nó Operacional Protegido",
+                    uptime: "99.98%",
+                    requisicoesHoje: "14,250",
+                    trafegoMin: 30,
+                    trafegoMax: 90
+                }))
+            };
+        });
+
+        console.log("[MEDIUS CORE] Malha Gênesis sincronizada com sucesso. Clientes:", Object.keys(databaseClientes).length);
+        
+        localStorage.setItem('medius_database_clientes', JSON.stringify(databaseClientes));
+
+        if (typeof renderizarTabelaAdmin === 'function') {
+            renderizarTabelaAdmin();
+        }
+        if (typeof renderizarMalhaClientesGeral === 'function') {
+            renderizarMalhaClientesGeral();
+        }
+    } catch (err) {
+        console.error("[CRITICAL] Erro de rede no handshake com a malha genesis:", err);
     }
+}
 
         window.addEventListener('DOMContentLoaded', () => {
             sincronizarMalhaDaNuvem();
@@ -806,65 +799,63 @@
         }
 
         async function cadastrarNovoCliente(e) {
-            e.preventDefault();
-            
-            const id = document.getElementById('novo-cli-id').value.trim().toLowerCase().replace(/\s+/g, '-');
-            const nome = document.getElementById('novo-cli-nome').value.trim();
-            const dominio = document.getElementById('novo-cli-dominio').value.trim();
-            const expires = document.getElementById('novo-cli-exp').value || "2026-12-31";
-            const senha = document.getElementById('novo-cli-senha').value.trim();
+    e.preventDefault();
+    
+    const id = document.getElementById('novo-cli-id').value.trim().toLowerCase().replace(/\s+/g, '-');
+    const nome = document.getElementById('novo-cli-nome').value.trim();
+    const dominio = document.getElementById('novo-cli-dominio').value.trim();
+    const expires = document.getElementById('novo-cli-exp').value || "2026-12-31";
+    const senha = document.getElementById('novo-cli-senha').value.trim();
 
-            const btnSubmit = e.target.querySelector('button[type="submit"]');
-            const txtOriginal = btnSubmit.innerHTML;
-            btnSubmit.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sincronizando...`;
-            btnSubmit.disabled = true;
-            if (window.lucide) window.lucide.createIcons();
+    const btnSubmit = e.target.querySelector('button[type="submit"]');
+    const txtOriginal = btnSubmit.innerHTML;
+    btnSubmit.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sincronizando...`;
+    btnSubmit.disabled = true;
+    if (window.lucide) window.lucide.createIcons();
 
-            try {
-                // Disparo 1: Injeta na tabela principal de clientes (Agora com a Senha)
-                const { error: errCliente } = await supabaseClient
-                    .from('clients')
-                    .insert([{
-                        id: id,
-                        nome_empresa: nome,
-                        status_contrato: "SINCRONIZADO",
-                        expires_at: expires,
-                        ativo: true,
-                        chave_sha256: senha,
-                        senha_acesso: senha
-                    }]);
+    try {
+        const { error: errCliente } = await supabaseClient
+            .from('genesis_clients')
+            .insert([{
+                id: id,
+                nome_empresa: nome,
+                status_contrato: "SINCRONIZADO",
+                expires_at: expires,
+                ativo: true,
+                chave_sha256: senha,
+                senha_acesso: senha
+            }]);
 
-                if (errCliente) throw new Error("Falha ao registrar cliente: " + errCliente.message);
+        if (errCliente) throw new Error("Falha ao registrar cliente na malha genesis: " + errCliente.message);
 
-                // Disparo 2: Injeta o domínio na tabela de sites do cliente
-                const { error: errSite } = await supabaseClient
-                    .from('client_sites')
-                    .insert([{
-                        client_id: id,
-                        dominio: dominio,
-                        tipo_aplicacao: "Portal / Hotsite Comercial",
-                        ping_ms: Math.floor(Math.random() * 30) + 10,
-                        saude_percentual: 100,
-                        ativo: true
-                    }]);
+        const { error: errSite } = await supabaseClient
+            .from('genesis_sites')
+            .insert([{
+                client_id: id,
+                dominio: dominio,
+                tipo_aplicacao: "Portal / Hotsite Comercial",
+                ping_ms: Math.floor(Math.random() * 30) + 10,
+                saude_percentual: 100,
+                ativo: true
+            }]);
 
-                if (errSite) throw new Error("Falha ao registrar domínio: " + errSite.message);
+        if (errSite) throw new Error("Falha ao registrar domínio na malha genesis: " + errSite.message);
 
-                alert(`Sucesso SecOps! O nó #${id} foi blindado e gravado na nuvem.`);
-                e.target.reset();
-                
-                await sincronizarMalhaDaNuvem();
-                mudarSecaoAdmin('visao-geral');
+        alert(`Sucesso SecOps! O nó #${id} foi blindado e gravado na nova malha Gênesis.`);
+        e.target.reset();
+        
+        await sincronizarMalhaDaNuvem();
+        mudarSecaoAdmin('visao-geral');
 
-            } catch (error) {
-                console.error("[CRITICAL] Falha na operação de inserção B2B:", error);
-                alert(error.message);
-            } finally {
-                btnSubmit.innerHTML = txtOriginal;
-                btnSubmit.disabled = false;
-                if (window.lucide) window.lucide.createIcons();
-            }
-        }
+    } catch (error) {
+        console.error("[CRITICAL] Falha na operação de inserção B2B:", error);
+        alert(error.message);
+    } finally {
+        btnSubmit.innerHTML = txtOriginal;
+        btnSubmit.disabled = false;
+        if (window.lucide) window.lucide.createIcons();
+    }
+}
 
         function calcularFinanceiroGeral() {
             let mrr = 0;
@@ -1212,66 +1203,59 @@
         };
 
         window.realizarLoginManual = async function(e) {
-        e.preventDefault();
-        const btnLogin = e.target.querySelector('button[type="submit"]');
-        const textoOriginal = btnLogin.innerHTML;
-        btnLogin.innerHTML = `<i data-lucide="scan-face" class="w-4 h-4 animate-pulse"></i> Biometria...`;
-        btnLogin.disabled = true;
-        if (window.lucide) window.lucide.createIcons();
+    e.preventDefault();
+    const btnLogin = e.target.querySelector('button[type="submit"]');
+    const textoOriginal = btnLogin.innerHTML;
+    btnLogin.innerHTML = `<i data-lucide="scan-face" class="w-4 h-4 animate-pulse"></i> Biometria...`;
+    btnLogin.disabled = true;
+    if (window.lucide) window.lucide.createIcons();
+
+    try {
+        const inputUser = document.getElementById('login-user');
+        const inputPass = document.getElementById('login-pass');
+        
+        const idMestre = inputUser ? inputUser.value.trim().toLowerCase().replace(/\s+/g, '-') : '';
+        const senhaMestre = inputPass ? inputPass.value.trim() : '';
+
+        if (!idMestre) {
+            throw new Error("O campo Identificador está vazio.");
+        }
+
+        const { data: clienteEncontrado, error: errBusca } = await supabaseClient
+            .from('genesis_clients')
+            .select('*')
+            .eq('id', idMestre)
+            .single();
+
+        if (errBusca || !clienteEncontrado) {
+            throw new Error("Nó não encontrado na malha oficial Gênesis.");
+        }
+
+        if (clienteEncontrado.senha_acesso !== senhaMestre && clienteEncontrado.chave_sha256 !== senhaMestre) {
+            throw new Error("Chave de acesso inválida para este nó.");
+        }
 
         try {
-            // Captura C.O.R.E. Diretamente dos inputs do HTML
-            const inputUser = document.getElementById('login-user');
-            const inputPass = document.getElementById('login-pass');
-            
-            const idMestre = inputUser ? inputUser.value.trim().toLowerCase().replace(/\s+/g, '-') : '';
-            const senhaMestre = inputPass ? inputPass.value.trim() : '';
-
-            if (!idMestre) {
-                throw new Error("O campo Identificador está vazio.");
-            }
-
-            // Busca a verdade no Supabase usando o ID real
-            const { data: clienteEncontrado, error: errBusca } = await supabaseClient
-                .from('clients')
-                .select('*')
-                .eq('id', idMestre)
-                .single();
-
-            if (errBusca || !clienteEncontrado) {
-                throw new Error("Nó não encontrado na malha oficial.");
-            }
-
-            // Valida a credencial (compatibilidade com as duas colunas)
-            if (clienteEncontrado.senha_acesso !== senhaMestre && clienteEncontrado.chave_sha256 !== senhaMestre) {
-                throw new Error("Chave de acesso inválida para este nó.");
-            }
-
-            // Registra o log sem quebrar a operação
-            try {
-                const snap = null; // Ignorando a câmera para evitar quebra no login
-                await registrarLogAcesso(idMestre, (idMestre === 'admin' || idMestre === 'root') ? 'QG Master' : 'Nó Cliente', snap);
-            } catch (e) { 
-                console.warn("Log SecOps ignorado."); 
-            }
-
-            // Catraca liberada
-            if (idMestre === 'admin' || idMestre === 'root') {
-                autenticarComo('admin');
-            } else {
-                autenticarComo('cliente', idMestre);
-            }
-
-        } catch (err) {
-            console.error("[SECOPS ERRO] Falha no Login via Supabase:", err);
-            alert("Falha de credencial: " + err.message);
-        } finally {
-            // A MÁGICA QUE DESTRAVA O BOTÃO MESMO SE DER ERRO
-            btnLogin.innerHTML = textoOriginal;
-            btnLogin.disabled = false;
-            if (window.lucide) window.lucide.createIcons();
+            await registrarLogAcesso(idMestre, (idMestre === 'admin' || idMestre === 'root') ? 'QG Master' : 'Nó Cliente', null);
+        } catch (e) { 
+            console.warn("Log SecOps ignorado."); 
         }
-    };
+
+        if (idMestre === 'admin' || idMestre === 'root') {
+            autenticarComo('admin');
+        } else {
+            autenticarComo('cliente', idMestre);
+        }
+
+    } catch (err) {
+        console.error("[SECOPS ERRO] Falha no Login via Supabase Gênesis:", err);
+        alert("Falha de credencial: " + err.message);
+    } finally {
+        btnLogin.innerHTML = textoOriginal;
+        btnLogin.disabled = false;
+        if (window.lucide) window.lucide.createIcons();
+    }
+};
         
         window.realizarLogout = function() {
             if (confirm("Encerrar conexão e sanitizar rastros locais?")) {
