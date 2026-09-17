@@ -147,10 +147,140 @@
         if(countAtivos) countAtivos.innerText = ativos;
         if(countVencidos) countVencidos.innerText = vencidos;
     };
-        window.addEventListener('DOMContentLoaded', () => {
-            sincronizarMalhaDaNuvem();
+    // ==========================================
+    // MOTORES DE RENDERIZAÇÃO GÊNESIS (QG MASTER)
+    // ==========================================
+
+    window.renderizarMalhaClientesGeral = function() {
+        const grid = document.getElementById('grid-clientes-admin');
+        const contador = document.getElementById('contador-clientes-cards');
+        if (!grid) return;
+
+        const clientesIds = Object.keys(databaseClientes);
+        if (contador) contador.innerText = `${clientesIds.length} Clientes Registrados`;
+
+        if (clientesIds.length === 0) {
+            grid.innerHTML = `<div class="col-span-full text-center p-6 text-slate-500 font-mono text-xs border border-slate-800 rounded bg-black/20">A malha está vazia. Aguardando novos nós.</div>`;
+            return;
+        }
+
+        let html = '';
+        clientesIds.forEach(id => {
+            const cli = databaseClientes[id];
+            const siteBase = cli.sites && cli.sites.length > 0 ? cli.sites[0].dominio : 'Sem domínio configurado';
+            
+            html += `
+            <div class="cyber-card p-5 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400">
+                                <i data-lucide="server" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-white font-bold text-sm font-mono truncate w-32" title="${cli.nome}">${cli.nome}</h4>
+                                <p class="text-[9px] text-slate-500 font-mono">ID: #${id}</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 text-[9px] font-bold rounded ${cli.statusClass} uppercase tracking-wider flex-shrink-0">${cli.status}</span>
+                    </div>
+                    <div class="space-y-2 mb-4 border-t border-slate-800/80 pt-3">
+                        <div class="flex justify-between text-xs font-mono">
+                            <span class="text-slate-500">Domínio Alvo:</span>
+                            <span class="text-cyan-400 truncate max-w-[130px]" title="${siteBase}">${siteBase}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <!-- O BOTÃO AGORA CHAMA A SALA DE INSPEÇÃO COM O ID CORRETO -->
+                    <button onclick="inspecionarNo('${id}');" class="flex-1 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-[10px] font-bold font-mono uppercase transition">
+                        Inspecionar Nó
+                    </button>
+                </div>
+            </div>`;
         });
 
+        grid.innerHTML = html;
+        if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.renderizarTabelaAdmin = function() {
+        const countAtivos = document.getElementById('count-ativos');
+        const countVencidos = document.getElementById('count-vencidos');
+        let ativos = 0, vencidos = 0;
+        Object.values(databaseClientes).forEach(cli => { cli.ativo ? ativos++ : vencidos++; });
+        if(countAtivos) countAtivos.innerText = ativos;
+        if(countVencidos) countVencidos.innerText = vencidos;
+    };
+
+    window.renderizarSessoesAtivas = function() {
+        const tbody = document.getElementById('tabela-sessoes-admin');
+        if (!tbody) return;
+        const sessoes = JSON.parse(localStorage.getItem('medius_sessoes_ativas') || '[]');
+        if (sessoes.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-500 font-mono text-xs">Nenhuma sessão ativa no radar.</td></tr>`;
+            return;
+        }
+        // Lógica de renderização de sessões aqui (pronta para o futuro)
+    };
+
+    window.renderizarTelemetria = function() {
+        const container = document.getElementById('log-telemetria-container');
+        if (!container) return;
+        const erros = JSON.parse(localStorage.getItem('medius_telemetria_logs') || '[]');
+        if (erros.length === 0) {
+            container.innerHTML = `<div class="text-center py-6 text-emerald-500/70 font-mono text-xs">Malha limpa. Nenhuma anomalia SecOps detectada.</div>`;
+            return;
+        }
+        // Lógica de renderização de telemetria aqui
+    };
+
+    // MOTOR DA SALA DE INSPEÇÃO (Foco em um Cliente)
+    window.inspecionarNo = function(id) {
+        const cli = databaseClientes[id];
+        if (!cli) {
+            console.warn("[SECOPS] Nó não encontrado na memória para inspeção.");
+            return;
+        }
+
+        // 1. Muda para a tela da Sala de Inspeção (Geralmente 'gestao-nos' ou 'inspecao')
+        if (typeof mudarSecaoAdmin === 'function') {
+            mudarSecaoAdmin('gestao-nos'); 
+        }
+
+        // 2. Tenta injetar os dados visualmente (blindado contra nulos)
+        const tituloSala = document.querySelector('#mod-gestao-nos h2, .titulo-inspecao');
+        if (tituloSala) {
+            tituloSala.innerHTML = `<i data-lucide="crosshair" class="w-5 h-5 inline mr-2 text-cyan-400"></i> SALA DE INSPEÇÃO ::: ${cli.nome} (#${id})`;
+        }
+
+        // 3. Atualiza os botões/textos internos da sala (Ping, Integridade, etc)
+        // O SDK no futuro preencherá isso em tempo real, mas já deixamos preparado!
+        console.log(`[C.O.R.E.] Sala de Inspeção ativada para o Nó: ${id}`);
+        
+        if (window.lucide) window.lucide.createIcons();
+    };
+       // ==========================================
+// C.O.R.E INTERCEPTOR (XEQUE-MATE DOS MENUS)
+// ==========================================
+const originalMudarSecaoAdmin = window.mudarSecaoAdmin;
+window.mudarSecaoAdmin = function(secao) {
+    // 1. Libera a troca de tela original que está no HTML
+    if (typeof originalMudarSecaoAdmin === 'function') {
+        originalMudarSecaoAdmin(secao); 
+    }
+    // 2. Aciona os nossos motores de pintura no momento exato
+    if (secao === 'telemetria' && typeof window.renderizarTelemetria === 'function') {
+        window.renderizarTelemetria();
+    }
+    if (secao === 'sessoes' && typeof window.renderizarSessoesAtivas === 'function') {
+        window.renderizarSessoesAtivas();
+    }
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+    sincronizarMalhaDaNuvem();
+});
        // ==========================================
         // MOTOR DE RELATÓRIOS OFICIAIS (CORRIGIDO)
         // ==========================================
