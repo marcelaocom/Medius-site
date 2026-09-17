@@ -669,29 +669,51 @@ window.addEventListener('DOMContentLoaded', () => {
             } catch(e) { return "error-hash"; }
         }
 
-        async function registrarLogAcesso(usuarioId, tipoAcesso, snapshot) {
-            const dataHora = new Date().toLocaleString('pt-BR');
-            const caixaAlvo = usuarioId === 'admin' ? logsAuditoria.admin : (logsAuditoria.clientes[usuarioId] || []);
-            const indexBlock = caixaAlvo.length;
-            const previousHash = indexBlock === 0 ? "0000000000000000000000000000000000000000000000000000000000000000" : caixaAlvo[0].hash;
-            
-            const conteudoParaHash = `${indexBlock}|${usuarioId}|${tipoAcesso}|${dataHora}|${snapshot}|${previousHash}`;
-            const hashAtual = await gerarHashSHA256(conteudoParaHash);
+       async function registrarLogAcesso(usuarioId, tipoAcesso, snapshot) {
+        const dataHora = new Date().toLocaleString('pt-BR');
+        const clientId = usuarioId === 'admin' ? 'master' : usuarioId;
+        
+        // 1. Busca o último hash na nuvem para manter a Cadeia de Custódia inquebrável
+        let previousHash = "0000000000000000000000000000000000000000000000000000000000000000";
+        try {
+            const { data: lastLog } = await supabaseClient
+                .from('genesis_forensics')
+                .select('hash_atual')
+                .eq('client_id', clientId)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+            if (lastLog && lastLog.hash_atual) previousHash = lastLog.hash_atual;
+        } catch(e) { console.warn("[SECOPS] Iniciando nova cadeia de blocos forense para o nó."); }
+        
+        const conteudoParaHash = `${clientId}|${tipoAcesso}|${dataHora}|${snapshot}|${previousHash}`;
+        const hashAtual = await gerarHashSHA256(conteudoParaHash);
 
-            const novoLog = {
-                index: indexBlock, id: usuarioId, tipo: tipoAcesso, dataHora: dataHora, foto: snapshot, previousHash: previousHash, hash: hashAtual
-            };
+        // 2. Grava direto no Cofre do Supabase (Destruindo o uso do localStorage)
+        try {
+            const { error } = await supabaseClient.from('genesis_forensics').insert([{
+                client_id: clientId,
+                operator_id: usuarioId,
+                tipo_acesso: tipoAcesso,
+                snapshot: snapshot,
+                hash_atual: hashAtual,
+                previous_hash: previousHash
+            }]);
             
-            if (usuarioId === 'admin') {
-                logsAuditoria.admin.unshift(novoLog);
+            if (error) throw error;
+            console.log(`[SECOPS] Registro Forense sincronizado na nuvem para o nó: ${clientId}`);
+            
+            // Dispara a re-renderização visual
+            if (clientId === 'master' && typeof renderizarAuditoriaQGMaster === 'function') {
+                renderizarAuditoriaQGMaster();
             } else {
-                if (!logsAuditoria.clientes[usuarioId]) logsAuditoria.clientes[usuarioId] = [];
-                logsAuditoria.clientes[usuarioId].unshift(novoLog);
+                if (typeof renderizarAuditoriaCliente === 'function') renderizarAuditoriaCliente();
+                if (typeof renderizarAuditoriaMaster === 'function') renderizarAuditoriaMaster();
             }
-            
-            localStorage.setItem('medius_logs_auditoria', JSON.stringify(logsAuditoria));
-            renderizarAuditoriaMaster();
+        } catch (err) {
+            console.error("[CRITICAL] Falha ao gravar no Cofre Forense da nuvem: ", err.message);
         }
+    }
         // ==========================================
         // PARTE 2: SISTEMA DE SELEÇÃO E PURGA FORENSE
         // ==========================================
@@ -755,43 +777,61 @@ window.addEventListener('DOMContentLoaded', () => {
         // ==========================================
         // PARTE 3: RENDERIZADORES VISUAIS FORENSES
         // ==========================================
-        function renderizarAuditoriaMaster() {
-            const lista = document.getElementById('lista-auditoria-sala');
-            if (!lista || !tmeClienteKey) return; 
+        // Cache tático para o visualizador (evita buscar no banco 2x)
+    window.memoriaForenseSala = [];
+
+    window.renderizarAuditoriaMaster = async function() {
+        const lista = document.getElementById('lista-auditoria-sala');
+        if (!lista || !tmeClienteKey) return; 
+        
+        lista.innerHTML = `<div class="text-center p-4"><i data-lucide="loader-2" class="w-5 h-5 animate-spin inline text-cyan-400"></i><p class="text-[10px] text-slate-500 font-mono mt-2">Descriptografando Cadeia de Custódia da Nuvem...</p></div>`;
+        if(window.lucide) window.lucide.createIcons();
+
+        try {
+            const { data: logs, error } = await supabaseClient
+                .from('genesis_forensics')
+                .select('*')
+                .eq('client_id', tmeClienteKey)
+                .order('created_at', { ascending: false });
+                
+            if (error) throw error;
             
-            const logsCliente = logsAuditoria.clientes[tmeClienteKey] || [];
-            if (logsCliente.length === 0) {
-                lista.innerHTML = `<div class="text-slate-600 text-[10px] font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Nenhum registro biométrico nesta caixa.</div>`;
+            if (!logs || logs.length === 0) {
+                lista.innerHTML = `<div class="text-slate-600 text-[10px] font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Cofre Vazio. Nenhuma biometria interceptada neste nó.</div>`;
                 return;
             }
+
+            window.memoriaForenseSala = logs;
             
             const grupos = {};
-            logsCliente.forEach((log, index) => {
-                const dataStr = log.dataHora.split(',')[0].trim();
-                const partes = dataStr.split('/');
-                const dia = partes.length >= 3 ? partes[0] : 'Extra';
-                const mesAno = partes.length >= 3 ? `${partes[1]}/${partes[2]}` : 'Lote Especial';
+            logs.forEach((log, index) => {
+                const dt = new Date(log.created_at);
+                const dataFmt = dt.toLocaleDateString('pt-BR');
+                const horaFmt = dt.toLocaleTimeString('pt-BR');
+                const partes = dataFmt.split('/');
+                const dia = partes[0];
+                const mesAno = `${partes[1]}/${partes[2]}`;
+                
                 if (!grupos[mesAno]) grupos[mesAno] = {};
                 if (!grupos[mesAno][dia]) grupos[mesAno][dia] = [];
-                grupos[mesAno][dia].push({ ...log, idxVirtual: index });
+                grupos[mesAno][dia].push({ ...log, idxVirtual: index, dataStr: `${dataFmt}, ${horaFmt}`, horaStr: horaFmt });
             });
 
             let html = '';
             for (const [mesAno, dias] of Object.entries(grupos)) {
                 html += `<div class="mb-4"><div class="text-[10px] text-cyan-400 font-bold uppercase tracking-widest mb-2 border-b border-slate-800 pb-1 flex items-center gap-2"><i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Arquivo Mensal: ${mesAno}</div><div class="space-y-3 pl-2">`;
-                for (const [dia, logs] of Object.entries(dias)) {
+                for (const [dia, logsDoDia] of Object.entries(dias)) {
                     html += `<div><div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><i data-lucide="calendar" class="w-3 h-3 text-indigo-400"></i> Dia ${dia}</div><div class="space-y-1.5 pl-3 border-l border-slate-800">`;
-                    logs.forEach(log => {
-                        const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
+                    logsDoDia.forEach(log => {
                         html += `
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" class="log-chk w-5 h-5 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900 ml-1" onchange="window.alternarSelecaoForense(this, 'sala', ${log.idxVirtual})">
-                                <div onclick="window.abrirVisualizadorForenseAdmin('${tmeClienteKey}', ${log.idxVirtual})" class="flex-1 bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
+                                <input type="checkbox" class="log-chk w-5 h-5 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900 ml-1" onchange="window.alternarSelecaoForense(this, 'sala', '${log.id}')">
+                                <div onclick="window.abrirVisualizadorForenseAdmin(${log.idxVirtual})" class="flex-1 bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
                                     <div class="flex items-center gap-2.5">
                                         <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition"><i data-lucide="scan-face" class="w-3.5 h-3.5"></i></div>
                                         <div class="font-mono text-[9px]">
-                                            <p class="text-slate-300 font-bold">Sessão #${log.index}</p>
-                                            <p class="text-slate-500">Hora: ${horaRegistro}</p>
+                                            <p class="text-slate-300 font-bold">Op: ${log.operator_id}</p>
+                                            <p class="text-slate-500">Hora: ${log.horaStr}</p>
                                         </div>
                                     </div>
                                     <div class="text-emerald-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="eye" class="w-3 h-3"></i></div>
@@ -804,83 +844,106 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             lista.innerHTML = html;
             if(window.lucide) window.lucide.createIcons();
+        } catch(e) {
+            console.error(e);
+            lista.innerHTML = `<div class="text-red-500 text-[10px] font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Falha de comunicação com o Supabase.</div>`;
+        }
+    }
+
+    window.abrirVisualizadorForenseAdmin = function(idx) {
+        const visor = document.getElementById('visualizador-forense-sala');
+        if (!visor) return;
+
+        const log = window.memoriaForenseSala[idx];
+        if (!log) {
+            visor.innerHTML = '<p class="text-red-400 text-xs font-mono">Erro SecOps: Registro perdido no buffer.</p>';
+            return;
         }
 
-        window.abrirVisualizadorForenseAdmin = function(cliKey, idx) {
-            const visor = document.getElementById('visualizador-forense-sala');
-            if (!visor) return;
+        const dataFormatada = new Date(log.created_at).toLocaleString('pt-BR');
+        
+        const imgElement = log.snapshot && !log.snapshot.includes("svg+xml")
+            ? `<img src="${log.snapshot}" class="max-w-full max-h-44 object-cover rounded border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.15)] mb-3">` 
+            : `<div class="w-full h-40 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-3">CÂMERA DESATIVADA (STEALTH)</div>`;
 
-            const log = (logsAuditoria.clientes[cliKey] || [])[idx];
-            if (!log) {
-                visor.innerHTML = '<p class="text-red-400 text-xs font-mono">Erro SecOps: Registro não localizado na partição.</p>';
-                return;
-            }
-
-            const imgElement = log.foto && !log.foto.includes("svg+xml")
-                ? `<img src="${log.foto}" class="max-w-full max-h-44 object-cover rounded border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.15)] mb-3">` 
-                : `<div class="w-full h-40 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-3">CÂMERA DESATIVADA (STEALTH)</div>`;
-
-            visor.innerHTML = `
-                ${imgElement}
-                <div class="font-mono text-[9px] text-left w-full bg-black/60 p-2.5 rounded border border-slate-800 space-y-1.5">
-                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Situação:</span> 
-                        <span class="text-emerald-400 font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Validada</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Data:</span> 
-                        <span class="text-slate-300">${log.dataHora}</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Nome:</span> 
-                        <span class="text-cyan-400 font-bold flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${log.id || 'Desconhecido'}</span>
-                    </div>
-                    <div class="pt-1">
-                        <span class="text-slate-500 block mb-1">Cadeia (SHA-256):</span>
-                        <div class="text-[8px] ${log.hash && !log.hash.includes("test") ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'} break-all p-1.5 rounded border">${log.hash || 'SESSÃO LEGADA'}</div>
-                    </div>
+        visor.innerHTML = `
+            ${imgElement}
+            <div class="font-mono text-[9px] text-left w-full bg-black/60 p-2.5 rounded border border-slate-800 space-y-1.5">
+                <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
+                    <span class="text-slate-500">Situação:</span> 
+                    <span class="text-emerald-400 font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Validada (Nuvem)</span>
                 </div>
-            `;
-            if(window.lucide) window.lucide.createIcons();
-        };
+                <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
+                    <span class="text-slate-500">Data/Hora:</span> 
+                    <span class="text-slate-300">${dataFormatada}</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
+                    <span class="text-slate-500">Operador:</span> 
+                    <span class="text-cyan-400 font-bold flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${log.operator_id}</span>
+                </div>
+                <div class="pt-1">
+                    <span class="text-slate-500 block mb-1">Cadeia SHA-256 (Supabase):</span>
+                    <div class="text-[8px] text-emerald-400 bg-emerald-500/10 border-emerald-500/20 break-all p-1.5 rounded border">${log.hash_atual}</div>
+                </div>
+            </div>
+        `;
+        if(window.lucide) window.lucide.createIcons();
+    };
 
-        function renderizarAuditoriaCliente() {
-            const lista = document.getElementById('lista-auditoria-cliente');
-            if (!lista) return;
+window.memoriaForenseCliente = [];
+
+    window.renderizarAuditoriaCliente = async function() {
+        const lista = document.getElementById('lista-auditoria-cliente');
+        if (!lista) return;
+        
+        lista.innerHTML = `<div class="text-center p-4"><i data-lucide="loader-2" class="w-5 h-5 animate-spin inline text-cyan-500"></i><p class="text-[10px] text-slate-500 font-mono mt-2">Sincronizando Cadeia de Custódia...</p></div>`;
+        if(window.lucide) window.lucide.createIcons();
+
+        try {
+            const { data: logs, error } = await supabaseClient
+                .from('genesis_forensics')
+                .select('*')
+                .eq('client_id', clienteLogadoKey)
+                .order('created_at', { ascending: false });
+                
+            if (error) throw error;
             
-            const logsCliente = logsAuditoria.clientes[clienteLogadoKey] || [];
-            if (logsCliente.length === 0) {
-                lista.innerHTML = `<div class="text-slate-600 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Nenhum acesso registrado em sua malha.</div>`;
+            if (!logs || logs.length === 0) {
+                lista.innerHTML = `<div class="text-slate-600 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Nenhum acesso registrado na nuvem para este nó.</div>`;
                 return;
             }
-            
+
+            window.memoriaForenseCliente = logs;
             const grupos = {};
-            logsCliente.forEach((log, index) => {
-                const dataStr = log.dataHora.split(',')[0].trim();
-                const partes = dataStr.split('/');
-                const dia = partes.length >= 3 ? partes[0] : 'Extra';
-                const mesAno = partes.length >= 3 ? `${partes[1]}/${partes[2]}` : 'Lote Especial';
+            
+            logs.forEach((log, index) => {
+                const dt = new Date(log.created_at);
+                const dataFmt = dt.toLocaleDateString('pt-BR');
+                const horaFmt = dt.toLocaleTimeString('pt-BR');
+                const partes = dataFmt.split('/');
+                const dia = partes[0];
+                const mesAno = `${partes[1]}/${partes[2]}`;
+                
                 if (!grupos[mesAno]) grupos[mesAno] = {};
                 if (!grupos[mesAno][dia]) grupos[mesAno][dia] = [];
-                grupos[mesAno][dia].push({ ...log, idxVirtual: index });
+                grupos[mesAno][dia].push({ ...log, idxVirtual: index, horaStr: horaFmt });
             });
 
             let html = '';
             for (const [mesAno, dias] of Object.entries(grupos)) {
                 html += `<div class="mb-5"><div class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-3 border-b border-slate-700 pb-1 flex items-center gap-2"><i data-lucide="folder-open" class="w-3.5 h-3.5 text-cyan-500"></i> Arquivo Mensal: ${mesAno}</div><div class="space-y-4 pl-2">`;
-                for (const [dia, logs] of Object.entries(dias)) {
+                for (const [dia, logsDoDia] of Object.entries(dias)) {
                     html += `<div><div class="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5"><i data-lucide="calendar" class="w-3 h-3 text-indigo-400"></i> Dia ${dia}</div><div class="space-y-2 pl-3 border-l border-slate-800/80">`;
-                    logs.forEach(log => {
-                        const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
+                    logsDoDia.forEach(log => {
                         html += `
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" class="log-chk w-5 h-5 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900 ml-1" onchange="window.alternarSelecaoForense(this, 'cliente', ${log.idxVirtual})">
+                                <input type="checkbox" class="log-chk w-5 h-5 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900 ml-1" onchange="window.alternarSelecaoForense(this, 'cliente', '${log.id}')">
                                 <div onclick="window.abrirVisualizadorForense(${log.idxVirtual})" class="flex-1 bg-black/40 border border-slate-800 hover:border-cyan-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
                                     <div class="flex items-center gap-3">
                                         <div class="w-8 h-8 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition"><i data-lucide="scan-face" class="w-4 h-4"></i></div>
                                         <div class="font-mono text-[10px]">
-                                            <p class="text-slate-300 font-bold">Sessão #${log.index}</p>
-                                            <p class="text-slate-500">Hora: ${horaRegistro}</p>
+                                            <p class="text-slate-300 font-bold">Op: ${log.operator_id}</p>
+                                            <p class="text-slate-500">Hora: ${log.horaStr}</p>
                                         </div>
                                     </div>
                                     <div class="text-emerald-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="eye" class="w-3 h-3"></i></div>
@@ -893,79 +956,100 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             lista.innerHTML = html;
             if(window.lucide) window.lucide.createIcons();
+        } catch (err) {
+            console.error(err);
+            lista.innerHTML = `<div class="text-red-500 text-xs font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Falha ao conectar com Supabase Forensics.</div>`;
         }
+    }
 
-        window.abrirVisualizadorForense = function(idx) {
-            const visor = document.getElementById('visualizador-forense-cliente');
-            if(!visor) return;
-            const log = logsAuditoria.clientes[clienteLogadoKey][idx];
-            if (!log) return;
+    window.abrirVisualizadorForense = function(idx) {
+        const visor = document.getElementById('visualizador-forense-cliente');
+        if(!visor) return;
+        const log = window.memoriaForenseCliente[idx];
+        if (!log) return;
 
-            const imgElement = log.foto && !log.foto.includes("svg+xml")
-                ? `<img src="${log.foto}" class="max-w-full max-h-48 object-cover rounded border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.15)] mb-4">` 
-                : `<div class="w-full h-48 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-4">CÂMERA DESATIVADA (STEALTH)</div>`;
+        const dataFormatada = new Date(log.created_at).toLocaleString('pt-BR');
+        const imgElement = log.snapshot && !log.snapshot.includes("svg+xml")
+            ? `<img src="${log.snapshot}" class="max-w-full max-h-48 object-cover rounded border border-cyan-500/30 shadow-[0_0_15px_rgba(0,210,255,0.15)] mb-4">` 
+            : `<div class="w-full h-48 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-4">CÂMERA DESATIVADA (STEALTH)</div>`;
 
-            visor.innerHTML = `
-                ${imgElement}
-                <div class="font-mono text-[10px] text-left w-full bg-black/60 p-3 rounded border border-slate-800 space-y-2">
-                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Situação:</span> 
-                        <span class="text-emerald-400 font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Validada</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Data:</span> 
-                        <span class="text-slate-300">${log.dataHora}</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Operador:</span> 
-                        <span class="text-cyan-400 font-bold flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${log.id || 'Desconhecido'}</span>
-                    </div>
-                    <div class="pt-1">
-                        <span class="text-slate-500 block mb-1">Cadeia (SHA-256):</span>
-                        <div class="text-[8px] ${log.hash && !log.hash.includes("test") ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'} break-all p-2 rounded border">${log.hash || 'SESSÃO LEGADA'}</div>
-                    </div>
+        visor.innerHTML = `
+            ${imgElement}
+            <div class="font-mono text-[10px] text-left w-full bg-black/60 p-3 rounded border border-slate-800 space-y-2">
+                <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
+                    <span class="text-slate-500">Situação:</span> 
+                    <span class="text-emerald-400 font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Validada (Nuvem)</span>
                 </div>
-            `;
-            if(window.lucide) window.lucide.createIcons();
-        };
+                <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
+                    <span class="text-slate-500">Data/Hora:</span> 
+                    <span class="text-slate-300">${dataFormatada}</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
+                    <span class="text-slate-500">Operador:</span> 
+                    <span class="text-cyan-400 font-bold flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${log.operator_id}</span>
+                </div>
+                <div class="pt-1">
+                    <span class="text-slate-500 block mb-1">Cadeia SHA-256 (Supabase):</span>
+                    <div class="text-[8px] text-emerald-400 bg-emerald-500/10 border-emerald-500/20 break-all p-2 rounded border">${log.hash_atual}</div>
+                </div>
+            </div>
+        `;
+        if(window.lucide) window.lucide.createIcons();
+    };
 
-        function renderizarAuditoriaQGMaster() {
-            const lista = document.getElementById('lista-auditoria-qg');
-            if (!lista) return;
-            const logsAdmin = logsAuditoria.admin || [];
+    window.memoriaForenseQG = [];
+
+    window.renderizarAuditoriaQGMaster = async function() {
+        const lista = document.getElementById('lista-auditoria-qg');
+        if (!lista) return;
+        
+        lista.innerHTML = `<div class="text-center p-4"><i data-lucide="loader-2" class="w-5 h-5 animate-spin inline text-red-500"></i><p class="text-[10px] text-slate-500 font-mono mt-2">Acessando Cofre Root...</p></div>`;
+        
+        try {
+            const { data: logs, error } = await supabaseClient
+                .from('genesis_forensics')
+                .select('*')
+                .eq('client_id', 'master')
+                .order('created_at', { ascending: false });
+                
+            if (error) throw error;
             
-            if (logsAdmin.length === 0) {
-                lista.innerHTML = `<div class="text-slate-600 text-[10px] font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Nenhum acesso registrado no QG Master.</div>`;
+            if (!logs || logs.length === 0) {
+                lista.innerHTML = `<div class="text-slate-600 text-[10px] font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Cofre Vazio. Nenhum acesso registrado no QG Master.</div>`;
                 return;
             }
-            
+
+            window.memoriaForenseQG = logs;
             const grupos = {};
-            logsAdmin.forEach((log, index) => {
-                const dataStr = log.dataHora.split(',')[0].trim();
-                const partes = dataStr.split('/');
-                const dia = partes.length >= 3 ? partes[0] : 'Extra';
-                const mesAno = partes.length >= 3 ? `${partes[1]}/${partes[2]}` : 'Lote Especial';
+            
+            logs.forEach((log, index) => {
+                const dt = new Date(log.created_at);
+                const dataFmt = dt.toLocaleDateString('pt-BR');
+                const horaFmt = dt.toLocaleTimeString('pt-BR');
+                const partes = dataFmt.split('/');
+                const dia = partes[0];
+                const mesAno = `${partes[1]}/${partes[2]}`;
+                
                 if (!grupos[mesAno]) grupos[mesAno] = {};
                 if (!grupos[mesAno][dia]) grupos[mesAno][dia] = [];
-                grupos[mesAno][dia].push({ ...log, idxVirtual: index });
+                grupos[mesAno][dia].push({ ...log, idxVirtual: index, horaStr: horaFmt });
             });
 
             let html = '';
             for (const [mesAno, dias] of Object.entries(grupos)) {
                 html += `<div class="mb-4"><div class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2 border-b border-slate-800 pb-1 flex items-center gap-2"><i data-lucide="folder-lock" class="w-3.5 h-3.5"></i> Arquivo Root: ${mesAno}</div><div class="space-y-3 pl-2">`;
-                for (const [dia, logs] of Object.entries(dias)) {
+                for (const [dia, logsDoDia] of Object.entries(dias)) {
                     html += `<div><div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><i data-lucide="calendar" class="w-3 h-3 text-red-500/60"></i> Dia ${dia}</div><div class="space-y-1.5 pl-3 border-l border-slate-800">`;
-                    logs.forEach(log => {
-                        const horaRegistro = log.dataHora.split(',')[1] ? log.dataHora.split(',')[1].trim() : log.dataHora;
+                    logsDoDia.forEach(log => {
                         html += `
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" class="log-chk w-5 h-5 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900 ml-1" onchange="window.alternarSelecaoForense(this, 'admin', ${log.idxVirtual})">
+                                <input type="checkbox" class="log-chk w-5 h-5 cursor-pointer accent-red-500 rounded border-slate-700 bg-slate-900 ml-1" onchange="window.alternarSelecaoForense(this, 'admin', '${log.id}')">
                                 <div onclick="window.abrirVisualizadorForenseQG(${log.idxVirtual})" class="flex-1 bg-black/40 border border-slate-800 hover:border-red-500/50 cursor-pointer rounded p-2 flex justify-between items-center transition group">
                                     <div class="flex items-center gap-2.5">
                                         <div class="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-red-400 group-hover:bg-red-500/20 transition"><i data-lucide="scan-face" class="w-3.5 h-3.5"></i></div>
                                         <div class="font-mono text-[9px]">
-                                            <p class="text-slate-300 font-bold">Acesso #${log.index}</p>
-                                            <p class="text-slate-500">Hora: ${horaRegistro}</p>
+                                            <p class="text-slate-300 font-bold">Op: ${log.operator_id}</p>
+                                            <p class="text-slate-500">Hora: ${log.horaStr}</p>
                                         </div>
                                     </div>
                                     <div class="text-red-400 text-[10px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="eye" class="w-3 h-3"></i></div>
@@ -978,41 +1062,46 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             lista.innerHTML = html;
             if(window.lucide) window.lucide.createIcons();
+        } catch (err) {
+            console.error(err);
+            lista.innerHTML = `<div class="text-red-500 text-[10px] font-mono p-4 border border-slate-800 rounded bg-black/20 text-center">Falha ao acessar Cofre Root.</div>`;
         }
+    }
 
-        window.abrirVisualizadorForenseQG = function(idx) {
-            const visor = document.getElementById('visualizador-forense-qg');
-            if (!visor) return;
-            const log = (logsAuditoria.admin || [])[idx];
-            if (!log) return;
+    window.abrirVisualizadorForenseQG = function(idx) {
+        const visor = document.getElementById('visualizador-forense-qg');
+        if (!visor) return;
+        const log = window.memoriaForenseQG[idx];
+        if (!log) return;
 
-            const imgElement = log.foto && !log.foto.includes("svg+xml")
-                ? `<img src="${log.foto}" class="max-w-full max-h-44 object-cover rounded border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.15)] mb-3">` 
-                : `<div class="w-full h-40 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-3">CÂMERA DESATIVADA (STEALTH)</div>`;
+        const dataFormatada = new Date(log.created_at).toLocaleString('pt-BR');
+        const imgElement = log.snapshot && !log.snapshot.includes("svg+xml")
+            ? `<img src="${log.snapshot}" class="max-w-full max-h-44 object-cover rounded border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.15)] mb-3">` 
+            : `<div class="w-full h-40 bg-slate-900 rounded flex items-center justify-center text-[10px] text-slate-500 border border-slate-800 mb-3">CÂMERA DESATIVADA (STEALTH)</div>`;
 
-            visor.innerHTML = `
-                ${imgElement}
-                <div class="font-mono text-[9px] text-left w-full bg-black/60 p-2.5 rounded border border-slate-800 space-y-1.5">
-                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Situação:</span> 
-                        <span class="text-red-400 font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Validada (Root)</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Data:</span> 
-                        <span class="text-slate-300">${log.dataHora}</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
-                        <span class="text-slate-500">Operador:</span> 
-                        <span class="text-red-400 font-bold flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${log.id || 'admin'}</span>
-                    </div>
-                    <div class="pt-1">
-                        <span class="text-slate-500 block mb-0.5">Hash (SHA-256):</span>
-                        <div class="text-[8px] ${log.hash && !log.hash.includes("test") ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'} break-all p-1.5 rounded border">${log.hash || 'SESSÃO LEGADA'}</div>
-                    </div>
+        visor.innerHTML = `
+            ${imgElement}
+            <div class="font-mono text-[9px] text-left w-full bg-black/60 p-2.5 rounded border border-slate-800 space-y-1.5">
+                <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
+                    <span class="text-slate-500">Situação:</span> 
+                    <span class="text-red-400 font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Validada (Root)</span>
                 </div>
-            `;
-            if(window.lucide) window.lucide.createIcons();
-        };
+                <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
+                    <span class="text-slate-500">Data/Hora:</span> 
+                    <span class="text-slate-300">${dataFormatada}</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-700/60 pb-1.5">
+                    <span class="text-slate-500">Operador:</span> 
+                    <span class="text-red-400 font-bold flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${log.operator_id}</span>
+                </div>
+                <div class="pt-1">
+                    <span class="text-slate-500 block mb-0.5">Hash SHA-256 (Supabase):</span>
+                    <div class="text-[8px] text-emerald-400 bg-emerald-500/10 border-emerald-500/20 break-all p-1.5 rounded border">${log.hash_atual}</div>
+                </div>
+            </div>
+        `;
+        if(window.lucide) window.lucide.createIcons();
+    };
         // ==========================================
         // RENDERIZADOR DE GRÁFICOS (NOVO APEXCHARTS)
         // ==========================================
