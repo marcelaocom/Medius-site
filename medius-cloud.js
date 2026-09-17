@@ -235,132 +235,52 @@
         // Lógica de renderização de telemetria aqui
     };
 
-   // ==========================================
-    // MOTOR DA SALA DE INSPEÇÃO (Admin)
-    // ==========================================
+    // MOTOR DA SALA DE INSPEÇÃO (Foco em um Cliente)
     window.inspecionarNo = function(id) {
         const cli = databaseClientes[id];
-        if (!cli) return;
+        if (!cli) {
+            console.warn("[SECOPS] Nó não encontrado na memória para inspeção.");
+            return;
+        }
 
-        if (typeof mudarSecaoAdmin === 'function') mudarSecaoAdmin('gestao-nos'); 
+        // 1. Muda para a tela da Sala de Inspeção (Geralmente 'gestao-nos' ou 'inspecao')
+        if (typeof mudarSecaoAdmin === 'function') {
+            mudarSecaoAdmin('gestao-nos'); 
+        }
 
+        // 2. Tenta injetar os dados visualmente (blindado contra nulos)
         const tituloSala = document.querySelector('#mod-gestao-nos h2, .titulo-inspecao');
-        if (tituloSala) tituloSala.innerHTML = `<i data-lucide="crosshair" class="w-5 h-5 inline mr-2 text-cyan-400"></i> SALA DE INSPEÇÃO ::: ${cli.nome} (#${id})`;
-        
-        const elNome = document.getElementById('sala-client-name');
-        const elId = document.getElementById('sala-client-id');
-        const elSha = document.getElementById('tme-client-sha');
-        if (elNome) elNome.innerText = cli.nome;
-        if (elId) elId.innerText = id;
-        if (elSha) elSha.innerText = "Válida (256-bit)";
-
-        const selectSite = document.getElementById('tme-select-site');
-        const ativoDisplay = document.getElementById('tme-active-site-display');
-        if (selectSite && cli.sites) {
-            selectSite.innerHTML = cli.sites.map(s => `<option value="${s.dominio}">${s.dominio}</option>`).join('');
-            if (cli.sites.length > 0 && ativoDisplay) {
-                ativoDisplay.innerText = cli.sites[0].dominio;
-            }
+        if (tituloSala) {
+            tituloSala.innerHTML = `<i data-lucide="crosshair" class="w-5 h-5 inline mr-2 text-cyan-400"></i> SALA DE INSPEÇÃO ::: ${cli.nome} (#${id})`;
         }
+
+        // 3. Atualiza os botões/textos internos da sala (Ping, Integridade, etc)
+        // O SDK no futuro preencherá isso em tempo real, mas já deixamos preparado!
+        console.log(`[C.O.R.E.] Sala de Inspeção ativada para o Nó: ${id}`);
         
         if (window.lucide) window.lucide.createIcons();
     };
+       // ==========================================
+// C.O.R.E INTERCEPTOR (XEQUE-MATE DOS MENUS)
+// ==========================================
+const originalMudarSecaoAdmin = window.mudarSecaoAdmin;
+window.mudarSecaoAdmin = function(secao) {
+    // 1. Libera a troca de tela original que está no HTML
+    if (typeof originalMudarSecaoAdmin === 'function') {
+        originalMudarSecaoAdmin(secao); 
+    }
+    // 2. Aciona os nossos motores de pintura no momento exato
+    if (secao === 'telemetria' && typeof window.renderizarTelemetria === 'function') {
+        window.renderizarTelemetria();
+    }
+    if (secao === 'sessoes' && typeof window.renderizarSessoesAtivas === 'function') {
+        window.renderizarSessoesAtivas();
+    }
+};
 
-    // ==========================================
-    // MOTORES DE RENDERIZAÇÃO (Painel do Cliente)
-    // ==========================================
-    window.renderizarPainelClienteBase = function(id) {
-        const cli = databaseClientes[id];
-        if (!cli) return;
-
-        const elNome = document.getElementById('client-view-name');
-        const elId = document.getElementById('client-view-id');
-        if (elNome) elNome.innerText = cli.nome;
-        if (elId) elId.innerText = `#${id}`;
-
-        const elTitle = document.getElementById('client-active-domain-title');
-        const elDesc = document.getElementById('client-active-domain-desc');
-        const elPing = document.getElementById('client-active-ping');
-        
-        if (cli.sites && cli.sites.length > 0) {
-            const siteBase = cli.sites[0];
-            if (elTitle) elTitle.innerText = siteBase.dominio;
-            if (elDesc) elDesc.innerText = siteBase.tipo || 'Portal SecOps';
-            if (elPing) elPing.innerText = siteBase.ping || '20ms';
-        }
-
-        const tbodyDominios = document.getElementById('client-domains-table-body');
-        if (tbodyDominios) {
-            tbodyDominios.innerHTML = (cli.sites || []).map(s => `
-                <tr class="hover:bg-slate-800/40 border-b border-slate-800/50">
-                    <td class="py-3 px-2 text-cyan-400 font-bold">${s.dominio}</td>
-                    <td class="py-3 px-2 text-slate-300 text-xs">${s.tipo || 'Projeto Web'}</td>
-                    <td class="py-3 px-2 text-emerald-400 text-xs"><i data-lucide="lock" class="w-3 h-3 inline mr-1"></i> ATIVO</td>
-                    <td class="py-3 px-2 text-emerald-500 text-xs font-bold">100% BLINDADO</td>
-                </tr>
-            `).join('');
-        }
-        
-        const elCliNome = document.getElementById('cli-contract-name');
-        const elCliId = document.getElementById('cli-contract-id');
-        const elCliExp = document.getElementById('cli-contract-exp');
-        if(elCliNome) elCliNome.innerText = cli.nome;
-        if(elCliId) elCliId.innerText = `#${id}`;
-        if(elCliExp) elCliExp.innerText = cli.expires_at || '31/12/2026';
-
-        if (window.lucide) window.lucide.createIcons();
-    };
-
-    window.renderizarAuditoriaCliente = function(id) {
-        const container = document.getElementById('client-audit-logs');
-        if (!container) return;
-        
-        container.innerHTML = `
-            <div class="border-l-2 border-emerald-500 pl-3 py-2 bg-emerald-500/5 mb-2 rounded-r">
-                <span class="text-emerald-400 font-bold text-[10px] uppercase"><i data-lucide="shield-check" class="w-3 h-3 inline mr-1"></i> [AUTO-CURA]</span> 
-                <span class="text-slate-300 text-xs">SHA-256 Íntegra no nó #${id}. Rede protegida.</span>
-            </div>
-            <div class="border-l-2 border-blue-500 pl-3 py-2 bg-blue-500/5 mb-2 rounded-r">
-                <span class="text-blue-400 font-bold text-[10px] uppercase"><i data-lucide="activity" class="w-3 h-3 inline mr-1"></i> [TELEMETRIA]</span> 
-                <span class="text-slate-300 text-xs">Latência estabilizada na malha de distribuição global.</span>
-            </div>
-            <div class="border-l-2 border-amber-500 pl-3 py-2 bg-amber-500/5 mb-2 rounded-r">
-                <span class="text-amber-400 font-bold text-[10px] uppercase"><i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1"></i> [SECOPS]</span> 
-                <span class="text-slate-300 text-xs">Escudo em prontidão máxima. Kill Switch remoto armado.</span>
-            </div>
-        `;
-        if (window.lucide) window.lucide.createIcons();
-    };
-
-    // ==========================================
-    // C.O.R.E INTERCEPTOR MESTRE (ADMIN + CLIENTE)
-    // ==========================================
-    const originalMudarSecaoAdmin = window.mudarSecaoAdmin;
-    window.mudarSecaoAdmin = function(secao) {
-        if (typeof originalMudarSecaoAdmin === 'function') originalMudarSecaoAdmin(secao); 
-        
-        if (secao === 'telemetria' && typeof window.renderizarTelemetria === 'function') window.renderizarTelemetria();
-        if (secao === 'sessoes' && typeof window.renderizarSessoesAtivas === 'function') window.renderizarSessoesAtivas();
-    };
-
-    const originalMudarSecaoCliente = window.mudarSecaoCliente;
-    window.mudarSecaoCliente = function(secao) {
-        if (typeof originalMudarSecaoCliente === 'function') originalMudarSecaoCliente(secao); 
-        
-        const idLogado = window.clienteLogadoKey; 
-        if (!idLogado) return;
-        
-        if (secao === 'visao-geral' || secao === 'dominios' || secao === 'contrato') {
-            if (typeof window.renderizarPainelClienteBase === 'function') window.renderizarPainelClienteBase(idLogado);
-        }
-        if (secao === 'auditoria' && typeof window.renderizarAuditoriaCliente === 'function') {
-            window.renderizarAuditoriaCliente(idLogado);
-        }
-    };
-
-    window.addEventListener('DOMContentLoaded', () => {
-        sincronizarMalhaDaNuvem();
-    });
+window.addEventListener('DOMContentLoaded', () => {
+    sincronizarMalhaDaNuvem();
+});
        // ==========================================
         // MOTOR DE RELATÓRIOS OFICIAIS (CORRIGIDO)
         // ==========================================
