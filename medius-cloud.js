@@ -352,8 +352,21 @@ window.mudarSecaoAdmin = function(secao) {
     }
 };
 
+// ==========================================
+// MOTOR DO MENU RETRÁTIL (SIDEBAR TOGGLE)
+// ==========================================
+window.toggleSidebarAdmin = function() {
+    const sidebar = document.getElementById('sidebar-admin');
+    if (sidebar) sidebar.classList.toggle('recolhido');
+};
+
+window.toggleSidebarCliente = function() {
+    const sidebar = document.getElementById('sidebar-cliente');
+    if (sidebar) sidebar.classList.toggle('recolhido');
+};
+
 window.addEventListener('DOMContentLoaded', () => {
-    sincronizarMalhaDaNuvem();
+    if (typeof sincronizarMalhaDaNuvem === 'function') sincronizarMalhaDaNuvem();
 });
        // ==========================================
         // MOTOR DE RELATÓRIOS OFICIAIS (CORRIGIDO)
@@ -1075,15 +1088,17 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        async function cadastrarNovoCliente(e) {
-    e.preventDefault();
-    
-    const id = document.getElementById('novo-cli-id').value.trim().toLowerCase().replace(/\s+/g, '-');
-    const nome = document.getElementById('novo-cli-nome').value.trim();
-    const dominio = document.getElementById('novo-cli-dominio').value.trim();
-    const expires = document.getElementById('novo-cli-exp').value || "2026-12-31";
-    const senha = document.getElementById('novo-cli-senha').value.trim();
+    async function cadastrarNovoCliente(e) {
+e.preventDefault();
 
+const forceLower = (s) => s ? s.charAt(0).toLowerCase() + s.slice(1) : '';
+
+const idBruto = document.getElementById('novo-cli-id').value.trim().replace(/\s+/g, '-');
+const id = forceLower(idBruto);
+const nome = document.getElementById('novo-cli-nome').value.trim();
+const dominio = document.getElementById('novo-cli-dominio').value.trim();
+const expires = document.getElementById('novo-cli-exp').value || "2026-12-31";
+const senha = forceLower(document.getElementById('novo-cli-senha').value.trim());
     const btnSubmit = e.target.querySelector('button[type="submit"]');
     const txtOriginal = btnSubmit.innerHTML;
     btnSubmit.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sincronizando...`;
@@ -1128,11 +1143,46 @@ window.addEventListener('DOMContentLoaded', () => {
         console.error("[CRITICAL] Falha na operação de inserção B2B:", error);
         alert(error.message);
     } finally {
-        btnSubmit.innerHTML = txtOriginal;
-        btnSubmit.disabled = false;
-        if (window.lucide) window.lucide.createIcons();
+       btnSubmit.innerHTML = txtOriginal;
+            btnSubmit.disabled = false;
+            if (window.lucide) window.lucide.createIcons();
+        }
     }
-}
+
+    // ==========================================
+    // MOTORES DE CADASTRO DE OPERADORES (RBAC)
+    // ==========================================
+    window.cadastrarOperador = function(e) {
+        e.preventDefault();
+        
+        // Regra Tática: Força 1º caractere minúsculo
+        const forceLower = (s) => s ? s.charAt(0).toLowerCase() + s.slice(1) : '';
+
+        const id = forceLower(document.getElementById('op-id').value.trim());
+        const nome = document.getElementById('op-nome').value.trim();
+        const senha = forceLower(document.getElementById('op-senha').value.trim());
+        const nivel = document.getElementById('op-nivel').value;
+
+        console.log(`[SECOPS] Operador Gênesis Registrado -> ID: ${id} | Nível: ${nivel}`);
+        alert(`Crachá Digital gerado com sucesso para o operador: ${id}`);
+        e.target.reset();
+    };
+
+    window.cadastrarOperadorCliente = function(e) {
+        e.preventDefault();
+        
+        // Regra Tática: Força 1º caractere minúsculo
+        const forceLower = (s) => s ? s.charAt(0).toLowerCase() + s.slice(1) : '';
+
+        const id = forceLower(document.getElementById('op-cli-id').value.trim());
+        const senha = forceLower(document.getElementById('op-cli-senha').value.trim());
+        const site = document.getElementById('op-cli-site').value;
+        const validade = document.getElementById('op-cli-validade').value;
+
+        console.log(`[SECOPS] Operador Cliente Registrado -> ID: ${id} | Site: ${site}`);
+        alert(`Acesso restrito emitido com sucesso para ${id}.`);
+        e.target.reset();
+    };
 
         function calcularFinanceiroGeral() {
             let mrr = 0;
