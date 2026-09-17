@@ -224,15 +224,56 @@
         // Lógica de renderização de sessões aqui (pronta para o futuro)
     };
 
-    window.renderizarTelemetria = function() {
+    window.renderizarTelemetria = async function() {
         const container = document.getElementById('log-telemetria-container');
         if (!container) return;
-        const erros = JSON.parse(localStorage.getItem('medius_telemetria_logs') || '[]');
-        if (erros.length === 0) {
-            container.innerHTML = `<div class="text-center py-6 text-emerald-500/70 font-mono text-xs">Malha limpa. Nenhuma anomalia SecOps detectada.</div>`;
-            return;
+
+        container.innerHTML = '<div class="text-center text-cyan-400 p-4 font-mono text-xs animate-pulse">Sincronizando radar de anomalias com a malha Supabase...</div>';
+
+        try {
+            const { data: logs, error } = await supabaseClient
+                .from('telemetry_logs')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) throw error;
+
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<div class="text-center text-emerald-400 p-4 font-bold border border-emerald-500/30 bg-emerald-500/10 rounded">Radar Limpo. Nenhuma anomalia detectada na malha.</div>';
+                return;
+            }
+
+            container.innerHTML = logs.map(log => {
+                const tipo = log.tipo_evento || 'LOG';
+                const corTema = tipo.includes('CRITICAL') || tipo.includes('ERROR') || tipo.includes('VIOLACAO') ? 'red' : (tipo.includes('WARN') ? 'amber' : 'blue');
+                
+                let msg = "";
+                let scriptLocal = log.dominio_origem || "Desconhecido";
+                try {
+                    const det = typeof log.detalhes === 'string' ? JSON.parse(log.detalhes) : log.detalhes;
+                    msg = det.mensagem || det.acao || det.host || JSON.stringify(det);
+                    if(det.local) scriptLocal = det.local;
+                } catch(e) { msg = String(log.detalhes); }
+
+                const dataFormatada = new Date(log.created_at).toLocaleString('pt-BR');
+
+                return `
+                    <div class="border-l-2 border-${corTema}-500 bg-black/60 p-3 rounded shadow-md hover:bg-slate-800/40 transition">
+                        <div class="flex justify-between mb-1">
+                            <span class="font-bold text-${corTema}-400">[NÓ #${log.client_id}] ${tipo}</span>
+                            <span class="text-slate-500 text-[10px]">${dataFormatada}</span>
+                        </div>
+                        <p class="text-white font-sans text-sm mb-1">${msg}</p>
+                        <p class="text-slate-400 text-[10px] uppercase">Host Real: <span class="text-cyan-300">${log.dominio_origem}</span> | Ref: ${scriptLocal}</p>
+                    </div>
+                `;
+            }).join('');
+            if(window.lucide) window.lucide.createIcons();
+        } catch (err) {
+            console.error("[SECOPS] Falha ao ler nuvem:", err);
+            container.innerHTML = '<div class="text-center text-red-500 p-4 border border-red-500/30 bg-red-500/10 rounded font-mono text-xs">Erro 500: Radar desconectado da base Supabase.</div>';
         }
-        // Lógica de renderização de telemetria aqui
     };
 
     // MOTOR DA SALA DE INSPEÇÃO (Foco em um Cliente)
