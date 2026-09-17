@@ -343,13 +343,20 @@ window.mudarSecaoAdmin = function(secao) {
     if (typeof originalMudarSecaoAdmin === 'function') {
         originalMudarSecaoAdmin(secao); 
     }
-    // 2. Aciona os nossos motores de pintura no momento exato
-    if (secao === 'telemetria' && typeof window.renderizarTelemetria === 'function') {
-        window.renderizarTelemetria();
+    // 2. Aciona os nossos motores de pintura no momento exato (Admin)
+    if (secao === 'telemetria' && typeof window.renderizarTelemetria === 'function') window.renderizarTelemetria();
+    if (secao === 'sessoes' && typeof window.renderizarSessoesAtivas === 'function') window.renderizarSessoesAtivas();
+    if (secao === 'operadores' && typeof window.renderizarEquipeAdmin === 'function') window.renderizarEquipeAdmin();
+};
+
+const originalMudarSecaoCliente = window.mudarSecaoCliente;
+window.mudarSecaoCliente = function(secao) {
+    // 1. Libera a troca de tela original do Cliente
+    if (typeof originalMudarSecaoCliente === 'function') {
+        originalMudarSecaoCliente(secao); 
     }
-    if (secao === 'sessoes' && typeof window.renderizarSessoesAtivas === 'function') {
-        window.renderizarSessoesAtivas();
-    }
+    // 2. Aciona o motor de pintura no momento exato (Cliente)
+    if (secao === 'equipe' && typeof window.renderizarEquipeCliente === 'function') window.renderizarEquipeCliente();
 };
 
 // ==========================================
