@@ -315,28 +315,23 @@
             mudarSecaoAdmin('gestao-nos'); 
         }
 
-        // Extrai com segurança os dados do site principal do cliente
+        // Extrai os dados reais da nuvem
         const sitePrincipal = (cli.sites && cli.sites.length > 0) ? cli.sites[0].dominio : 'Nenhum domínio vinculado';
-        const pingReal = (cli.sites && cli.sites.length > 0) ? cli.sites[0].ping : '18ms';
-        const saudeReal = (cli.sites && cli.sites.length > 0) ? cli.sites[0].saude : 100;
 
-        // Injeta os dados nos seletores da Sala de Inspeção
+        // Atualiza o título principal da Sala
         const tituloSala = document.querySelector('#mod-gestao-nos h2, .titulo-inspecao');
         if (tituloSala) {
             tituloSala.innerHTML = `<i data-lucide="crosshair" class="w-5 h-5 inline mr-2 text-cyan-400"></i> SALA DE INSPEÇÃO ::: ${cli.nome} (#${id})`;
         }
 
-        // Preenche os campos do painel superior da sala
-        const noIdEl = document.querySelector('#mod-gestao-nos .text-cyan-400, #mod-gestao-nos span');
-        
-        // Atualiza elementos visuais da Sala de Inspeção se existirem
-        document.querySelectorAll('#mod-gestao-nos .font-mono').forEach(el => {
-            if (el.innerText.includes('Nó ID:')) {
-                el.innerHTML = `Nó ID: <span class="text-cyan-400">#${id}</span> | Alvo Ativo: <span class="text-cyan-400">${sitePrincipal}</span> | SHA-256: <span class="text-emerald-400">Válida (256-bit)</span>`;
+        // ALVO DIRETO: Varre todas as linhas de texto técnico e injeta os dados reais do Marcelão
+        document.querySelectorAll('#mod-gestao-nos p, #mod-gestao-nos div, #mod-gestao-nos span').forEach(el => {
+            if (el.innerHTML.includes('Nó ID:') || el.innerHTML.includes('Alvo Ativo:')) {
+                el.innerHTML = `Nó ID: <span class="text-cyan-400 font-bold">#${id}</span> &nbsp;|&nbsp; Alvo Ativo: <span class="text-cyan-400 font-bold">${sitePrincipal}</span> &nbsp;|&nbsp; SHA-256: <span class="text-emerald-400 font-bold">Válida (256-bit)</span>`;
             }
         });
 
-        console.log(`[C.O.R.E.] Sala de Inspeção ativada e blindada para o Nó: ${id}`);
+        console.log(`[C.O.R.E.] Sala de Inspeção sincronizada para o Nó: ${id}`);
         if (window.lucide) window.lucide.createIcons();
     };
        // ==========================================
