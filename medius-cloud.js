@@ -1465,24 +1465,98 @@ window.addEventListener('DOMContentLoaded', () => {
             
             mudarSecaoAdmin('visao-geral');
             if (typeof renderizarFinanceiroAdmin === 'function') renderizarFinanceiroAdmin();
-        } else if (tipo === 'cliente') {
+       } else if (tipo === 'cliente') {
             perfilLogado = 'cliente';
             clienteLogadoKey = clientId || 'estudio-marcelao-01';
             document.getElementById('painel-cliente').classList.remove('hidden');
             
-            // Só tenta injetar o texto se a tag existir no HTML
             if (indicador) indicador.innerHTML = `<span class="text-cyan-400 font-bold uppercase tracking-widest"><i data-lucide="server" class="w-4 h-4 inline mr-1"></i> Nó: #${clienteLogadoKey}</span>`;
             
-            // RELIGANDO A MALHA: Injeta os dados vivos do Supabase na tabela de domínios e nos cards
-            if (typeof carregarConsoleDoCliente === 'function') {
-                carregarConsoleDoCliente(clienteLogadoKey);
+            // RELIGANDO A MALHA: Injeta os dados da nuvem e mata os manequins
+            if (typeof carregarConsoleDoCliente === 'undefined') {
+                window.carregarConsoleDoCliente = function(id) {
+                    const c = databaseClientes[id];
+                    if (!c) return;
+
+                    const nomeEl = document.getElementById('client-view-name');
+                    const idEl = document.getElementById('client-view-id');
+                    if (nomeEl) nomeEl.innerText = c.nome;
+                    if (idEl) idEl.innerText = "#" + id;
+
+                    const tbodyDominios = document.getElementById('client-domains-table-body');
+                    if (tbodyDominios && c.sites) {
+                        tbodyDominios.innerHTML = c.sites.map(s => `
+                            <tr class="hover:bg-slate-800/40 border-b border-slate-800/50">
+                                <td class="py-3 text-cyan-400 font-bold">${s.dominio}</td>
+                                <td class="py-3 text-slate-400">${s.tipo}</td>
+                                <td class="py-3 text-emerald-400 font-mono text-[10px] uppercase flex items-center gap-1 mt-1"><i data-lucide="shield-check" class="w-3 h-3"></i> ${s.sha}</td>
+                                <td class="py-3 text-emerald-500 font-bold text-xs uppercase tracking-widest">Ativo</td>
+                            </tr>
+                        `).join('');
+                    }
+                    if (c.sites && c.sites.length > 0) selecionarSiteCliente(0);
+                };
+
+                window.selecionarSiteCliente = function(idx) {
+                    const c = databaseClientes[clienteLogadoKey];
+                    if (!c || !c.sites || !c.sites[idx]) return;
+                    const site = c.sites[idx];
+
+                    const titleEl = document.getElementById('client-active-domain-title');
+                    const descEl = document.getElementById('client-active-domain-desc');
+                    const pingEl = document.getElementById('client-active-ping');
+                    const uptimeEl = document.getElementById('client-card-uptime');
+                    const reqEl = document.getElementById('client-card-req');
+
+                    if (titleEl) titleEl.innerText = site.dominio;
+                    if (descEl) descEl.innerText = site.tipo;
+                    if (pingEl) pingEl.innerText = site.ping;
+                    if (uptimeEl) uptimeEl.innerText = site.uptime;
+                    if (reqEl) reqEl.innerText = site.requisicoesHoje;
+
+                    renderizarGraficosCliente();
+                };
+
+                window.renderizarGraficosCliente = function() {
+                    if (chartTrafegoCliente) { chartTrafegoCliente.destroy(); chartTrafegoCliente = null; }
+                    if (chartCoesaoCliente) { chartCoesaoCliente.destroy(); chartCoesaoCliente = null; }
+
+                    const elTrafego = document.querySelector("#chart-trafego-cliente");
+                    const elCoesao = document.querySelector("#chart-coesao-cliente");
+
+                    if (elTrafego) {
+                        chartTrafegoCliente = new ApexCharts(elTrafego, {
+                            series: [{ name: 'Tráfego', data: seriesClienteData }],
+                            chart: { type: 'area', height: 240, toolbar: { show: false }, background: 'transparent' },
+                            colors: ['#3b82f6'],
+                            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0 } },
+                            dataLabels: { enabled: false },
+                            stroke: { curve: 'smooth', width: 2 },
+                            xaxis: { labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
+                            yaxis: { labels: { style: { colors: '#64748b' } } },
+                            grid: { borderColor: 'rgba(255,255,255,0.05)', strokeDashArray: 4 },
+                            theme: { mode: 'dark' }
+                        });
+                        chartTrafegoCliente.render();
+                    }
+
+                    if (elCoesao) {
+                        chartCoesaoCliente = new ApexCharts(elCoesao, {
+                            series: [100],
+                            chart: { type: 'radialBar', height: 220, background: 'transparent' },
+                            plotOptions: { radialBar: { hollow: { size: '65%' }, dataLabels: { value: { color: '#10b981', fontSize: '20px', fontWeight: 'bold', formatter: val => val + "%" } } } },
+                            labels: ['Integridade'], colors: ['#10b981'], theme: { mode: 'dark' }
+                        });
+                        chartCoesaoCliente.render();
+                    }
+                };
             }
             
+            carregarConsoleDoCliente(clienteLogadoKey);
             mudarSecaoCliente('visao-geral');
         }
         if (window.lucide) window.lucide.createIcons();
     };
-
         window.iniciarLoginRapido = async function(e, tipo, clientId = null) {
             e.preventDefault();
             const btnLogin = e.currentTarget;
