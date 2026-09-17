@@ -1473,6 +1473,11 @@ window.addEventListener('DOMContentLoaded', () => {
             // Só tenta injetar o texto se a tag existir no HTML
             if (indicador) indicador.innerHTML = `<span class="text-cyan-400 font-bold uppercase tracking-widest"><i data-lucide="server" class="w-4 h-4 inline mr-1"></i> Nó: #${clienteLogadoKey}</span>`;
             
+            // RELIGANDO A MALHA: Injeta os dados vivos do Supabase na tabela de domínios e nos cards
+            if (typeof carregarConsoleDoCliente === 'function') {
+                carregarConsoleDoCliente(clienteLogadoKey);
+            }
+            
             mudarSecaoCliente('visao-geral');
         }
         if (window.lucide) window.lucide.createIcons();
