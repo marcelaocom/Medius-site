@@ -1080,15 +1080,19 @@
                                     <label class="block text-slate-400 mb-1">Nome Completo:</label>
                                     <input type="text" id="op-nome" required placeholder="João Silva" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
                                 </div>
-                                <div>
-                                    <label class="block text-slate-400 mb-1">Nível de Acesso (RBAC):</label>
-                                    <select id="op-nivel" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
-                                        <option value="FORENSIC_ADMIN">Forensic Admin (C.O. / Acesso Absoluto)</option>
-                                        <option value="FINANCE">Finance (Administrativo / Financeiro)</option>
-                                        <option value="MONITOR_TECH">Monitor Tech (Técnico de Monitoramento)</option>
-                                        <option value="SUPPORT_GUEST">Support Guest (Suporte Técnico Temporário)</option>
-                                    </select>
-                                </div>
+                               <div>
+                                <label class="block text-slate-400 mb-1">Chave de Acesso Inicial:</label>
+                                <input type="text" id="op-senha" required placeholder="ex: alfa2026" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">Nível de Acesso (RBAC):</label>
+                                <select id="op-nivel" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                                    <option value="FORENSIC_ADMIN">Forensic Admin (C.O. / Acesso Absoluto)</option>
+                                    <option value="FINANCE">Finance (Administrativo / Financeiro)</option>
+                                    <option value="MONITOR_TECH">Monitor Tech (Técnico de Monitoramento)</option>
+                                    <option value="SUPPORT_GUEST">Support Guest (Suporte Técnico Temporário)</option>
+                                </select>
+                            </div>
                                 <button type="submit" class="w-full py-2.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold border border-cyan-500/40 transition">
                                     Gerar Crachá Digital
                                 </button>
@@ -1407,10 +1411,14 @@
                                     <label class="block text-slate-400 mb-1">Nome / ID do Operador:</label>
                                     <input type="text" id="op-cli-id" required placeholder="ex: thiago-seo" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
                                 </div>
-                                <div>
-                                    <label class="block text-slate-400 mb-1">Domínio Alvo (Permissão):</label>
-                                    <select id="op-cli-site" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400"></select>
-                                </div>
+                                <<div>
+                                <label class="block text-slate-400 mb-1">Chave de Acesso Inicial:</label>
+                                <input type="text" id="op-cli-senha" required placeholder="ex: alfa2026" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">Domínio Alvo (Permissão):</label>
+                                <select id="op-cli-site" class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400"></select>
+                            </div>
                                 <div>
                                     <label class="block text-slate-400 mb-1">Validade (Expiração):</label>
                                     <input type="datetime-local" id="op-cli-validade" required class="w-full bg-[#030610] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
