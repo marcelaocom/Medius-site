@@ -73,7 +73,80 @@
         console.error("[CRITICAL] Erro de rede no handshake com a malha genesis:", err);
     }
 }
+// ==========================================
+    // MOTOR DE RENDERIZAÇÃO DA MALHA (QG MASTER)
+    // ==========================================
+    window.renderizarMalhaClientesGeral = function() {
+        const grid = document.getElementById('grid-clientes-admin');
+        const contador = document.getElementById('contador-clientes-cards');
+        if (!grid) return;
 
+        const clientesIds = Object.keys(databaseClientes);
+        if (contador) contador.innerText = `${clientesIds.length} Clientes Registrados`;
+
+        if (clientesIds.length === 0) {
+            grid.innerHTML = `<div class="col-span-full text-center p-6 text-slate-500 font-mono text-xs border border-slate-800 rounded bg-black/20">A malha está vazia. Aguardando novos nós.</div>`;
+            return;
+        }
+
+        let html = '';
+        clientesIds.forEach(id => {
+            const cli = databaseClientes[id];
+            const siteBase = cli.sites && cli.sites.length > 0 ? cli.sites[0].dominio : 'Sem domínio configurado';
+            
+            html += `
+            <div class="cyber-card p-5 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400">
+                                <i data-lucide="server" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-white font-bold text-sm font-mono truncate w-32" title="${cli.nome}">${cli.nome}</h4>
+                                <p class="text-[9px] text-slate-500 font-mono">ID: #${id}</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 text-[9px] font-bold rounded ${cli.statusClass} uppercase tracking-wider flex-shrink-0">${cli.status}</span>
+                    </div>
+                    <div class="space-y-2 mb-4 border-t border-slate-800/80 pt-3">
+                        <div class="flex justify-between text-xs font-mono">
+                            <span class="text-slate-500">Domínio Alvo:</span>
+                            <span class="text-cyan-400 truncate max-w-[130px]" title="${siteBase}">${siteBase}</span>
+                        </div>
+                        <div class="flex justify-between text-xs font-mono">
+                            <span class="text-slate-500">Vencimento:</span>
+                            <span class="text-slate-300">${cli.expires_at}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="mudarSecaoAdmin('gestao-nos');" class="flex-1 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-[10px] font-bold font-mono uppercase transition">
+                        Inspecionar Nó
+                    </button>
+                </div>
+            </div>`;
+        });
+
+        grid.innerHTML = html;
+        if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.renderizarTabelaAdmin = function() {
+        // Atualiza os contadores principais da Visão Geral
+        const countAtivos = document.getElementById('count-ativos');
+        const countVencidos = document.getElementById('count-vencidos');
+        let ativos = 0;
+        let vencidos = 0;
+        
+        Object.values(databaseClientes).forEach(cli => {
+            if(cli.ativo) ativos++;
+            else vencidos++;
+        });
+        
+        if(countAtivos) countAtivos.innerText = ativos;
+        if(countVencidos) countVencidos.innerText = vencidos;
+    };
         window.addEventListener('DOMContentLoaded', () => {
             sincronizarMalhaDaNuvem();
         });
