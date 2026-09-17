@@ -204,13 +204,39 @@
         if (window.lucide) window.lucide.createIcons();
     };
 
-    window.renderizarTabelaAdmin = function() {
+    window.renderizarTabelaAdmin = async function() {
         const countAtivos = document.getElementById('count-ativos');
         const countVencidos = document.getElementById('count-vencidos');
+        const dadoSanitizacao = document.getElementById('dado-sanitizacao');
+        
         let ativos = 0, vencidos = 0;
+        
+        // Calcula a volumetria de clientes reais sincronizados da nuvem
         Object.values(databaseClientes).forEach(cli => { cli.ativo ? ativos++ : vencidos++; });
+        
         if(countAtivos) countAtivos.innerText = ativos;
         if(countVencidos) countVencidos.innerText = vencidos;
+
+        // Bate na nuvem (Supabase) para buscar os bloqueios reais e aniquilar o manequim "1,428"
+        if (dadoSanitizacao) {
+            dadoSanitizacao.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin inline text-cyan-400"></i>';
+            if(window.lucide) window.lucide.createIcons();
+            
+            try {
+                // Conta o total exato de linhas de erro na tabela telemetry_logs
+                const { count, error } = await supabaseClient
+                    .from('telemetry_logs')
+                    .select('*', { count: 'exact', head: true });
+                
+                if (!error && count !== null) {
+                    dadoSanitizacao.innerText = count;
+                } else {
+                    dadoSanitizacao.innerText = "0";
+                }
+            } catch(e) {
+                dadoSanitizacao.innerText = "0";
+            }
+        }
     };
 
     window.renderizarSessoesAtivas = function() {
