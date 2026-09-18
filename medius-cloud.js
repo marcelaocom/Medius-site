@@ -334,29 +334,126 @@
         console.log(`[C.O.R.E.] Sala de Inspeção sincronizada para o Nó: ${id}`);
         if (window.lucide) window.lucide.createIcons();
     };
-       // ==========================================
+// ==========================================
+// MOTOR DE HELPDESK & TICKETS (SUPABASE)
+// ==========================================
+window.abrirChamadoCliente = async function(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    const txtOri = btn.innerHTML;
+    
+    const assunto = document.getElementById('ticket-assunto').value.trim();
+    const urgencia = document.getElementById('ticket-urgencia').value;
+    const mensagem = document.getElementById('ticket-mensagem').value.trim();
+    const cliKey = (typeof clienteLogadoKey !== 'undefined' && clienteLogadoKey) ? clienteLogadoKey : 'estudio-marcelao-01';
+
+    btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Transmitindo...`;
+    btn.disabled = true;
+
+    try {
+        const { error } = await supabaseClient.from('genesis_tickets').insert([{
+            client_id: cliKey,
+            assunto: assunto,
+            urgencia: urgencia,
+            mensagem: mensagem,
+            status: 'ABERTO'
+        }]);
+        
+        if (error) throw error;
+        
+        alert("Chamado transmitido com sucesso ao QG Master. Equipe SecOps notificada.");
+        e.target.reset();
+        // window.renderizarTicketsCliente(); // Opcional para o futuro
+    } catch (err) {
+        alert("Falha na transmissão do chamado: " + err.message);
+    } finally {
+        btn.innerHTML = txtOri;
+        btn.disabled = false;
+        if (window.lucide) window.lucide.createIcons();
+    }
+};
+
+// ==========================================
 // C.O.R.E INTERCEPTOR (XEQUE-MATE DOS MENUS)
 // ==========================================
+window.renderizarTicketsCliente = async function() {
+    const grid = document.getElementById('grid-tickets-cliente');
+    if (!grid) return;
+    const cliKey = (typeof clienteLogadoKey !== 'undefined' && clienteLogadoKey) ? clienteLogadoKey : 'estudio-marcelao-01';
+    
+    grid.innerHTML = `<div class="text-center p-4"><i data-lucide="loader-2" class="w-4 h-4 animate-spin inline text-cyan-400"></i> Sincronizando chamados...</div>`;
+    if(window.lucide) window.lucide.createIcons();
+
+    try {
+        const { data, error } = await supabaseClient.from('genesis_tickets').select('*').eq('client_id', cliKey).order('created_at', { ascending: false });
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            grid.innerHTML = `<div class="p-3 bg-black/40 border border-slate-800 rounded text-center text-[10px] text-slate-500">Nenhum chamado aberto.</div>`;
+            return;
+        }
+        grid.innerHTML = data.map(t => `
+            <div class="bg-[#030610] border ${t.urgencia === 'ALTA' ? 'border-red-500/30' : 'border-slate-800'} rounded p-3 text-[10px]">
+                <div class="flex justify-between items-start mb-2 border-b border-slate-800/60 pb-1">
+                    <span class="text-cyan-400 font-bold">${t.assunto}</span>
+                    <span class="${t.status === 'ABERTO' ? 'text-amber-400' : 'text-emerald-400'} font-bold uppercase">${t.status}</span>
+                </div>
+                <p class="text-slate-400 mb-2 text-xs">${t.mensagem}</p>
+                <div class="flex justify-between items-center text-[9px] text-slate-500">
+                    <span>Prioridade: <strong class="${t.urgencia === 'ALTA' ? 'text-red-400' : 'text-slate-300'}">${t.urgencia}</strong></span>
+                    <span>${new Date(t.created_at).toLocaleDateString('pt-BR')}</span>
+                </div>
+            </div>`).join('');
+    } catch (err) { grid.innerHTML = `<div class="text-red-500 text-[10px]">Erro: ${err.message}</div>`; }
+    if(window.lucide) window.lucide.createIcons();
+};
+
+window.renderizarTicketsAdmin = async function() {
+    const grid = document.getElementById('grid-tickets-admin');
+    if (!grid) return;
+    
+    grid.innerHTML = `<div class="text-center p-4 col-span-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin inline text-cyan-400"></i> Sincronizando chamados...</div>`;
+    if(window.lucide) window.lucide.createIcons();
+
+    try {
+        const { data, error } = await supabaseClient.from('genesis_tickets').select('*').order('created_at', { ascending: false }).limit(20);
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            grid.innerHTML = `<div class="p-3 bg-black/40 border border-slate-800 rounded text-center text-[10px] text-slate-500 col-span-2">Caixa de Entrada Vazia.</div>`;
+            return;
+        }
+        grid.innerHTML = data.map(t => `
+            <div class="bg-[#030610] border ${t.urgencia === 'ALTA' ? 'border-red-500/50 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : 'border-slate-800'} rounded p-3 text-[10px]">
+                <div class="flex justify-between items-start mb-2 border-b border-slate-800/60 pb-1">
+                    <div>
+                        <span class="text-cyan-400 font-bold block">${t.assunto}</span>
+                        <span class="text-slate-500 text-[9px]">Cliente: #${t.client_id}</span>
+                    </div>
+                    <span class="${t.status === 'ABERTO' ? 'text-amber-400' : 'text-emerald-400'} font-bold uppercase">${t.status}</span>
+                </div>
+                <p class="text-slate-400 mb-2 text-xs truncate">${t.mensagem}</p>
+                <div class="flex justify-between items-center text-[9px] text-slate-500">
+                    <span>Prioridade: <strong class="${t.urgencia === 'ALTA' ? 'text-red-400' : 'text-slate-300'}">${t.urgencia}</strong></span>
+                    <button class="text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 px-2 py-1 rounded">Responder</button>
+                </div>
+            </div>`).join('');
+    } catch (err) { grid.innerHTML = `<div class="text-red-500 text-[10px] col-span-2">Erro: ${err.message}</div>`; }
+    if(window.lucide) window.lucide.createIcons();
+};
+
 const originalMudarSecaoAdmin = window.mudarSecaoAdmin;
 window.mudarSecaoAdmin = function(secao) {
-    // 1. Libera a troca de tela original que está no HTML
-    if (typeof originalMudarSecaoAdmin === 'function') {
-        originalMudarSecaoAdmin(secao); 
-    }
-    // 2. Aciona os nossos motores de pintura no momento exato (Admin)
+    if (typeof originalMudarSecaoAdmin === 'function') originalMudarSecaoAdmin(secao); 
     if (secao === 'telemetria' && typeof window.renderizarTelemetria === 'function') window.renderizarTelemetria();
     if (secao === 'sessoes' && typeof window.renderizarSessoesAtivas === 'function') window.renderizarSessoesAtivas();
     if (secao === 'operadores' && typeof window.renderizarEquipeAdmin === 'function') window.renderizarEquipeAdmin();
+    if (secao === 'whitelabel' && typeof window.renderizarTicketsAdmin === 'function') window.renderizarTicketsAdmin();
 };
 
 const originalMudarSecaoCliente = window.mudarSecaoCliente;
 window.mudarSecaoCliente = function(secao) {
-    // 1. Libera a troca de tela original do Cliente
-    if (typeof originalMudarSecaoCliente === 'function') {
-        originalMudarSecaoCliente(secao); 
-    }
-    // 2. Aciona o motor de pintura no momento exato (Cliente)
+    if (typeof originalMudarSecaoCliente === 'function') originalMudarSecaoCliente(secao); 
     if (secao === 'equipe' && typeof window.renderizarEquipeCliente === 'function') window.renderizarEquipeCliente();
+    if (secao === 'suporte' && typeof window.renderizarTicketsCliente === 'function') window.renderizarTicketsCliente();
 };
 
 // ==========================================
