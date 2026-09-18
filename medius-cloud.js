@@ -220,39 +220,47 @@
     };
 
     window.renderizarTabelaAdmin = async function() {
-        const countAtivos = document.getElementById('count-ativos');
-        const countVencidos = document.getElementById('count-vencidos');
-        const dadoSanitizacao = document.getElementById('dado-sanitizacao');
-        
-        let ativos = 0, vencidos = 0;
-        
-        // Calcula a volumetria de clientes reais sincronizados da nuvem
-        Object.values(databaseClientes).forEach(cli => { cli.ativo ? ativos++ : vencidos++; });
-        
-        if(countAtivos) countAtivos.innerText = ativos;
-        if(countVencidos) countVencidos.innerText = vencidos;
+    const countAtivos = document.getElementById('count-ativos');
+    const countVencidos = document.getElementById('count-vencidos');
+    const dadoSanitizacao = document.getElementById('dado-sanitizacao');
+    
+    let ativos = 0, vencidos = 0;
+    Object.values(databaseClientes).forEach(cli => { cli.ativo ? ativos++ : vencidos++; });
+    if(countAtivos) countAtivos.innerText = ativos;
+    if(countVencidos) countVencidos.innerText = vencidos;
 
-        // Bate na nuvem (Supabase) para buscar os bloqueios reais e aniquilar o manequim "1,428"
-        if (dadoSanitizacao) {
-            dadoSanitizacao.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin inline text-cyan-400"></i>';
-            if(window.lucide) window.lucide.createIcons();
+    if (dadoSanitizacao) {
+        dadoSanitizacao.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin inline text-cyan-400"></i>';
+        
+        try {
+            // 1. Atualiza a Métrica de Sanitização
+            const { count, error } = await supabaseClient.from('telemetry_logs').select('*', { count: 'exact', head: true });
+            if (!error && count !== null) dadoSanitizacao.innerText = count;
+            else dadoSanitizacao.innerText = "0";
+
+            // 2. Aniquila Manequins: Injeta os últimos logs do Supabase na Visão Geral
+            const { data: logsRecentes } = await supabaseClient.from('telemetry_logs').select('*').order('created_at', { ascending: false }).limit(3);
+            const painelSecOps = document.querySelector('#log-secops'); // Alvo direto no seu HTML
             
-            try {
-                // Conta o total exato de linhas de erro na tabela telemetry_logs
-                const { count, error } = await supabaseClient
-                    .from('telemetry_logs')
-                    .select('*', { count: 'exact', head: true });
-                
-                if (!error && count !== null) {
-                    dadoSanitizacao.innerText = count;
-                } else {
-                    dadoSanitizacao.innerText = "0";
-                }
-            } catch(e) {
-                dadoSanitizacao.innerText = "0";
+            if (painelSecOps && logsRecentes && logsRecentes.length > 0) {
+                painelSecOps.innerHTML = logsRecentes.map(log => {
+                    const isErro = log.tipo_evento && (log.tipo_evento.includes('VIOLACAO') || log.tipo_evento.includes('ERROR') || log.tipo_evento.includes('KILL'));
+                    const cor = isErro ? 'red' : 'emerald';
+                    const tipoTexto = log.tipo_evento || 'LOG';
+                    const msg = (typeof log.detalhes === 'string' ? log.detalhes : JSON.stringify(log.detalhes)).substring(0, 50);
+                    return `<div class="border-l-2 border-${cor}-500 pl-3 bg-${cor}-500/5 p-2 mb-2">
+                                <span class="text-${cor}-400 font-bold uppercase">[${tipoTexto}]</span> Nó #${log.client_id}: ${msg}...
+                            </div>`;
+                }).join('');
+            } else if (painelSecOps) {
+                painelSecOps.innerHTML = `<div class="border-l-2 border-emerald-500 pl-3 bg-emerald-500/5 p-2"><span class="text-emerald-400 font-bold">[AUTO-CURA]</span> Malha operando sem anomalias.</div>`;
             }
+        } catch(e) {
+            if (dadoSanitizacao) dadoSanitizacao.innerText = "0";
         }
-    };
+    }
+    if(window.lucide) window.lucide.createIcons();
+};
 
     window.renderizarSessoesAtivas = function() {
         const tbody = document.getElementById('tabela-sessoes-admin');
@@ -318,37 +326,58 @@
     };
 
     // MOTOR DA SALA DE INSPEÇÃO (Foco em um Cliente)
-   window.inspecionarNo = function(id) {
-        const cli = databaseClientes[id];
-        if (!cli) {
-            console.warn("[SECOPS] Nó não encontrado na memória para inspeção.");
-            alert("Erro SecOps: Sincronize a malha da nuvem antes de inspecionar este nó.");
-            return;
+  window.inspecionarNo = function(id) { 
+    const cli = databaseClientes[id]; 
+    if (!cli) { console.warn("[SECOPS] Nó não encontrado na memória para inspeção."); alert("Erro SecOps: Sincronize a malha antes de inspecionar."); return; }
+    
+    if (typeof mudarSecaoAdmin === 'function') {
+        mudarSecaoAdmin('gestao-nos'); 
+    }
+
+    const sitePrincipal = (cli.sites && cli.sites.length > 0) ? cli.sites[0].dominio : 'Nenhum domínio vinculado';
+    const tituloSala = document.querySelector('#mod-gestao-nos h2, .titulo-inspecao');
+    if (tituloSala) {
+        tituloSala.innerHTML = `<i data-lucide="crosshair" class="w-5 h-5 inline mr-2 text-cyan-400"></i> SALA DE INSPEÇÃO ::: ${cli.nome} (#${id})`;
+    }
+
+    document.querySelectorAll('#mod-gestao-nos p, #mod-gestao-nos div, #mod-gestao-nos span').forEach(el => {
+        if (el.innerHTML.includes('Nó ID:') || el.innerHTML.includes('Alvo Ativo:')) {
+            el.innerHTML = `Nó ID: <span class="text-cyan-400 font-bold">#${id}</span> &nbsp;|&nbsp; Alvo Ativo: <span class="text-cyan-400 font-bold">${sitePrincipal}</span> &nbsp;|&nbsp; SHA-256: <span class="text-emerald-400 font-bold">Válida (256-bit)</span>`;
+        }
+    });
+
+    // IGNIÇÃO DO MOTOR GRÁFICO (APEXCHARTS)
+    if (typeof ApexCharts !== 'undefined') {
+        const elTrafego = document.querySelector("#chart-trafego-admin");
+        const elSaude = document.querySelector("#chart-saude-admin");
+
+        if (elTrafego) {
+            elTrafego.innerHTML = ''; 
+            new ApexCharts(elTrafego, {
+                series: [{ name: 'Requisições/s', data: [12, 19, 15, 25, 32, 28, 40, 35, 45, 50, 42, 38] }],
+                chart: { type: 'area', height: 250, toolbar: { show: false }, background: 'transparent', animations: { enabled: true, easing: 'easeinout', speed: 800 } },
+                colors: ['#00d2ff'], fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0 } },
+                dataLabels: { enabled: false }, stroke: { curve: 'smooth', width: 2 },
+                xaxis: { labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
+                yaxis: { labels: { style: { colors: '#64748b' } } },
+                grid: { borderColor: 'rgba(255,255,255,0.05)', strokeDashArray: 4 }, theme: { mode: 'dark' }
+            }).render();
         }
 
-        if (typeof mudarSecaoAdmin === 'function') {
-            mudarSecaoAdmin('gestao-nos'); 
+        if (elSaude) {
+            elSaude.innerHTML = '';
+            new ApexCharts(elSaude, {
+                series: [100],
+                chart: { type: 'radialBar', height: 250, background: 'transparent', animations: { enabled: true } },
+                plotOptions: { radialBar: { hollow: { size: '65%' }, dataLabels: { value: { color: '#10b981', fontSize: '24px', fontWeight: 'bold', formatter: val => val + "%" } } } },
+                labels: ['SLA da Malha'], colors: ['#10b981'], theme: { mode: 'dark' }
+            }).render();
         }
+    }
 
-        // Extrai os dados reais da nuvem
-        const sitePrincipal = (cli.sites && cli.sites.length > 0) ? cli.sites[0].dominio : 'Nenhum domínio vinculado';
-
-        // Atualiza o título principal da Sala
-        const tituloSala = document.querySelector('#mod-gestao-nos h2, .titulo-inspecao');
-        if (tituloSala) {
-            tituloSala.innerHTML = `<i data-lucide="crosshair" class="w-5 h-5 inline mr-2 text-cyan-400"></i> SALA DE INSPEÇÃO ::: ${cli.nome} (#${id})`;
-        }
-
-        // ALVO DIRETO: Varre todas as linhas de texto técnico e injeta os dados reais do Marcelão
-        document.querySelectorAll('#mod-gestao-nos p, #mod-gestao-nos div, #mod-gestao-nos span').forEach(el => {
-            if (el.innerHTML.includes('Nó ID:') || el.innerHTML.includes('Alvo Ativo:')) {
-                el.innerHTML = `Nó ID: <span class="text-cyan-400 font-bold">#${id}</span> &nbsp;|&nbsp; Alvo Ativo: <span class="text-cyan-400 font-bold">${sitePrincipal}</span> &nbsp;|&nbsp; SHA-256: <span class="text-emerald-400 font-bold">Válida (256-bit)</span>`;
-            }
-        });
-
-        console.log(`[C.O.R.E.] Sala de Inspeção sincronizada para o Nó: ${id}`);
-        if (window.lucide) window.lucide.createIcons();
-    };
+    console.log(`[C.O.R.E.] Sala de Inspeção sincronizada para o Nó: ${id}`);
+    if (window.lucide) window.lucide.createIcons();
+};
 // ==========================================
 // MOTOR DE HELPDESK & TICKETS (SUPABASE)
 // ==========================================
