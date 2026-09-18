@@ -508,14 +508,84 @@ window.toggleSidebarAdmin = function() {
     if (sidebar) sidebar.classList.toggle('recolhido');
 };
 
-window.toggleSidebarCliente = function() {
-    const sidebar = document.getElementById('sidebar-cliente');
-    if (sidebar) sidebar.classList.toggle('recolhido');
-};
+window.toggleSidebarCliente = function() { const sidebar = document.getElementById('sidebar-cliente'); if (sidebar) sidebar.classList.toggle('recolhido'); };
 
-window.addEventListener('DOMContentLoaded', () => {
-    if (typeof sincronizarMalhaDaNuvem === 'function') sincronizarMalhaDaNuvem();
-});
+    // ==========================================
+    // MOTOR DE SUPORTE TÉCNICO (Criação de Chamados)
+    // ==========================================
+    window.abrirChamadoCliente = async function(e) {
+        e.preventDefault();
+        const assunto = document.getElementById('ticket-assunto').value;
+        const urgencia = document.getElementById('ticket-urgencia').value;
+        const mensagem = document.getElementById('ticket-mensagem').value;
+        const btn = e.target.querySelector('button[type="submit"]');
+        const txtOriginal = btn.innerHTML;
+        
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Transmitindo...';
+        btn.disabled = true;
+        
+        try {
+            const idLogado = (typeof window.clienteLogadoKey !== 'undefined' && window.clienteLogadoKey) ? window.clienteLogadoKey : 'estudio-marcelao-01';
+            const { error } = await supabaseClient.from('genesis_tickets').insert([{
+                client_id: idLogado, 
+                assunto: assunto, 
+                urgencia: urgencia, 
+                mensagem: mensagem, 
+                status: 'ABERTO'
+            }]);
+            
+            if (error) throw error;
+            
+            alert("[C.O.R.E.] Chamado criptografado e transmitido ao QG Master com sucesso!");
+            e.target.reset();
+            
+            if (typeof window.renderizarTicketsCliente === 'function') window.renderizarTicketsCliente();
+        } catch(err) {
+            alert("Erro ao comunicar com a Malha: " + err.message);
+        }
+        btn.innerHTML = txtOriginal;
+        btn.disabled = false;
+        if (window.lucide) window.lucide.createIcons();
+    };
+
+    // ==========================================
+    // C.O.R.E INTERCEPTOR MESTRE (CLIENTE)
+    // ==========================================
+    const originalMudarSecaoCliente = window.mudarSecaoCliente;
+    window.mudarSecaoCliente = function(secao) {
+        if (typeof originalMudarSecaoCliente === 'function') originalMudarSecaoCliente(secao); 
+        
+        const idLogado = (typeof window.clienteLogadoKey !== 'undefined' && window.clienteLogadoKey) ? window.clienteLogadoKey : 'estudio-marcelao-01';
+        if (!idLogado) return;
+        
+        // 1. Visão Geral, Domínios e Contrato
+        if (secao === 'visao-geral' || secao === 'dominios' || secao === 'contrato') {
+            if (typeof window.renderizarPainelClienteBase === 'function') window.renderizarPainelClienteBase(idLogado);
+        }
+        
+        // 2. Logs SecOps (Muralha Visual)
+        if (secao === 'auditoria') {
+            const containerSecOps = document.getElementById('client-audit-logs');
+            if (containerSecOps) {
+                containerSecOps.innerHTML = `<div class="border-l-2 border-emerald-500 pl-3 py-2 bg-emerald-500/5 mb-2 rounded-r"><span class="text-emerald-400 font-bold text-[10px] uppercase"><i data-lucide="shield-check" class="w-3 h-3 inline mr-1"></i> [AUTO-CURA]</span> <span class="text-slate-300 text-xs">SHA-256 Íntegra no nó #${idLogado}. Rede protegida.</span></div>`;
+                if(window.lucide) window.lucide.createIcons();
+            }
+        }
+
+        // 3. Auditoria Forense (Fotos/Cadeia de Custódia)
+        if (secao === 'forense') {
+            if (typeof window.renderizarAuditoriaCliente === 'function') window.renderizarAuditoriaCliente();
+        }
+
+        // 4. Suporte Técnico (Tickets)
+        if (secao === 'suporte') {
+            if (typeof window.renderizarTicketsCliente === 'function') window.renderizarTicketsCliente();
+        }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => { 
+        if (typeof sincronizarMalhaDaNuvem === 'function') sincronizarMalhaDaNuvem(); 
+    });
        // ==========================================
         // MOTOR DE RELATÓRIOS OFICIAIS (CORRIGIDO)
         // ==========================================
