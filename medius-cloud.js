@@ -151,6 +151,19 @@
     // MOTORES DE RENDERIZAÇÃO GÊNESIS (QG MASTER)
     // ==========================================
 
+    // TÁTICA DE CACHE-BUSTING: Gerador de Snippet SDK
+    window.copiarSnippetSDK = function(id) {
+        const versaoGlobal = "1.0.1"; // Mude este número sempre que atualizar o SDK no GitHub
+        const urlSDK = `https://raw.githack.com/marcelaocom/Medius-site/main/medius-sdk.min.js?v=${versaoGlobal}`;
+        const snippet = `<script id="medius-core-sdk" src="${urlSDK}" data-client="${id}"><\/script>`;
+        
+        navigator.clipboard.writeText(snippet).then(() => {
+            alert(`[SECOPS] Armamento liberado para o Nó #${id}!\n\nO Snippet foi copiado com Cache-Busting (v${versaoGlobal}).\nBasta dar Ctrl+V no <head> do site do cliente.`);
+        }).catch(err => {
+            prompt("Aviso: Área de transferência bloqueada pelo navegador. Copie o código manualmente abaixo:", snippet);
+        });
+    };
+
     window.renderizarMalhaClientesGeral = function() {
         const grid = document.getElementById('grid-clientes-admin');
         const contador = document.getElementById('contador-clientes-cards');
@@ -191,10 +204,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex gap-2">
-                    <!-- O BOTÃO AGORA CHAMA A SALA DE INSPEÇÃO COM O ID CORRETO -->
+                <div class="flex gap-2 mt-1">
                     <button onclick="inspecionarNo('${id}');" class="flex-1 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-[10px] font-bold font-mono uppercase transition">
-                        Inspecionar Nó
+                        Inspecionar
+                    </button>
+                    <button onclick="copiarSnippetSDK('${id}');" class="flex-1 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded text-[10px] font-bold font-mono uppercase transition flex items-center justify-center gap-1">
+                        <i data-lucide="code" class="w-3 h-3"></i> Copiar SDK
                     </button>
                 </div>
             </div>`;
